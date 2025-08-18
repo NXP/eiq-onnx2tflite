@@ -1,0 +1,38 @@
+#
+# Copyright 2024 NXP
+#
+# License: LA_OPT_Online Code Hosting NXP_Software_License
+# See the LICENSE for more details.
+#
+
+from typing import Iterable
+
+import onnx
+
+import onnx2tflite.src.logger as logger
+import onnx2tflite.src.onnx_parser.meta.meta as meta
+
+
+class ReduceL2(meta.ONNXOperatorAttributes):
+    axes: meta.ONNXIntListAttribute | None  # Till 13 - then input tensor
+    keepdims: int
+    noop_with_empty_axes: int  # Since 18
+
+    def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
+        super().__init__(descriptor)
+
+    def _default_values(self):
+        self.axes = None
+        self.keepdims = 1
+        self.noop_with_empty_axes = 0
+
+    def _init_attributes(self):
+        for attr in self._descriptor:
+            if attr.name == "axes":
+                self.axes = meta.ONNXIntListAttribute(attr)
+            elif attr.name == "keepdims":
+                self.keepdims = attr.i
+            elif attr.name == "noop_with_empty_axes":
+                self.noop_with_empty_axes = attr.i
+            else:
+                logger.w(f"ONNX ReduceL2 attribute '{attr.name}' is not supported!")

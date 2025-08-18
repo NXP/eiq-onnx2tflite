@@ -1,0 +1,7 @@
+-r requirements.txt
+Pillow
+coverage
+py-cpuinfo
+tqdm
+pandas
+matplotlib

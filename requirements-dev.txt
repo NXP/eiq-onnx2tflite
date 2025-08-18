@@ -1,0 +1,10 @@
+-r requirements.txt
+tensorflow==2.18.1
+Pillow
+pytest
+pytest-html
+pytest-mock
+coverage
+py-cpuinfo
+pyc_wheel<1.3.0
+build

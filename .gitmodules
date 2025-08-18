@@ -1,0 +1,3 @@
+[submodule "thirdparty/onnx"]
+	path = thirdparty/onnx
+	url = https://github.com/onnx/onnx.git

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["onnx2tflite*", "onnx2quant*", "tflite_optimizer*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "onnx2tflite.__version__" }
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.dynamic.optional-dependencies]
+dev = { file = ["requirements-dev.txt"] }
+accuracy = { file = ["requirements-accuracy.txt"] }
+
+[project]
+name = "eiq-onnx2tflite"
+authors = [
+    { name = "NXP" },
+]
+dynamic = ["version", "dependencies"]
+description = "ONNX2TFLite project offers tools for ONNX models quantization and their conversion into TFLite"
+license = { text = "PROPRIETARY" }
+keywords = ["nxp", "eiq", "toolkit", "converter", "quantizer", "onnx", "tflite"]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Intended Audience :: Developers",
+]
+
+[project.urls]
+url = "https://www.nxp.com"
+
+[project.entry-points.console_scripts]
+onnx2tflite = "onnx2tflite.__main__:run_conversion"
+onnx2quant = "onnx2quant.__main__:run_quantization"

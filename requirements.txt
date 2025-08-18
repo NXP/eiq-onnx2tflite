@@ -1,0 +1,9 @@
+# Make sure to propagate updates into eiq/converter/onnx2tflite/pyproject.toml and also to
+# https://bitbucket.sw.nxp.com/projects/AITEC/repos/auzone-tools-python/browse
+flatbuffers==24.3.25 # TensorFlow dependency
+numpy
+protobuf
+onnx~=1.17.0
+onnxruntime~=1.21.1
+sympy
+deprecated
