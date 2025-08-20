@@ -153,7 +153,7 @@ class FuseActivationFunctions(BaseOptimization):
         to_remove = []
         for [leading_op, act_fun_op], tensor_map, _, _ in matcher.match_patterns():
             builtin_leading_op = leading_op.builtin_options.operator_type
-            logger.internal_assert(builtin_leading_op in self.supported_activations_for_op.keys(),
+            logger.internal_assert(builtin_leading_op in self.supported_activations_for_op,
                                    f"FuseActivationFunctions: supported activations for operator `{builtin_leading_op}`"
                                    "are not known.")
 

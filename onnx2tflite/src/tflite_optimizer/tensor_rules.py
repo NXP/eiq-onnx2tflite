@@ -59,7 +59,7 @@ class TensorHasRank(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -77,8 +77,7 @@ class TensorHasData(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
-
+        return self.tensor in tensor_map
 
 @dataclass
 class TensorsHaveData(MultipleTensorRule):
@@ -122,7 +121,7 @@ class TensorHasStaticValue(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -154,7 +153,7 @@ class TensorHasNConsumers(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 class TensorHasOneConsumer(TensorHasNConsumers):
@@ -191,7 +190,7 @@ class TensorConsumedOnlyBy(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -216,7 +215,7 @@ class TensorDimensionsMatch(TensorRule):
         return t1.shape[self.dim_idx_1] == t2.shape[self.dim_idx_2]
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor_1 in tensor_map.keys() and self.tensor_2 in tensor_map.keys()
+        return self.tensor_1 in tensor_map and self.tensor_2 in tensor_map
 
 
 @dataclass
@@ -238,7 +237,7 @@ class TensorHasDimensionOfSize(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -262,7 +261,7 @@ class TensorsHaveSameShape(TensorRule):
         return all(t.shape == first_shape for t in mapped_tensors)
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return all(tensor in tensor_map.keys() for tensor in self.tensors)
+        return all(tensor in tensor_map for tensor in self.tensors)
 
 
 @dataclass
@@ -282,7 +281,7 @@ class TensorsHaveSameType(TensorRule):
         return all(t.type == first_type for t in mapped_tensors)
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return all(tensor in tensor_map.keys() for tensor in self.tensors)
+        return all(tensor in tensor_map for tensor in self.tensors)
 
 
 @dataclass
@@ -343,7 +342,7 @@ class TensorHasType(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -371,7 +370,7 @@ class TensorIsChannelsLast(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -389,7 +388,7 @@ class TensorIsChannelsFirst(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -407,7 +406,7 @@ class TensorIsFormatless(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -425,7 +424,7 @@ class TensorIsQuantized(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -443,7 +442,7 @@ class TensorIsNotQuantized(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 @dataclass
@@ -464,7 +463,7 @@ class TensorIsPerTensorQuantized(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 class TensorsAreQuantized(MultipleTensorRule):
@@ -519,7 +518,7 @@ class TensorsHaveSameQuantization(TensorRule):
             all(t.type == first_type for t in all_tensors)
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return all(tensor in tensor_map.keys() for tensor in self.tensors)
+        return all(tensor in tensor_map for tensor in self.tensors)
 
 
 @dataclass
@@ -537,7 +536,7 @@ class TensorIsNotModelOutput(TensorRule):
                 raise ValueError
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
-        return self.tensor in tensor_map.keys()
+        return self.tensor in tensor_map
 
 
 class TensorsAreNotModelOutputs(MultipleTensorRule):

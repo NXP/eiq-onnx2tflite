@@ -352,7 +352,7 @@ class QDQClustersRecognizer:
             else:
                 recognized_ops.non_quantized_float_ops.append(node_name)
 
-        for quantization_node in quantization_nodes.keys():
+        for quantization_node in quantization_nodes:
             if quantization_node not in recognized_ops.qdq_cluster_quantization_ops:
                 recognized_ops.standalone_quantization_ops.append(quantization_node)
 

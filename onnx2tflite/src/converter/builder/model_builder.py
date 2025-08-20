@@ -90,7 +90,7 @@ class ModelBuilder:
             tensor_as_string = str_dims + dtype.name
 
             # Check if such tensor already exists
-            if tensor_as_string in self._zeros_tensor_map.keys():
+            if tensor_as_string in self._zeros_tensor_map:
                 logger.d(f"REUSING zero tensor of size {str_dims} with type {dtype.name}.")
                 return self._zeros_tensor_map[tensor_as_string]
 
@@ -164,7 +164,7 @@ class ModelBuilder:
         """Get the channels first version of non-static 't_tensor'. If one is not
         available in the graph yet, add transpose operator to create it.
         """
-        if t_tensor in self._nchw_tensor_version.keys():
+        if t_tensor in self._nchw_tensor_version:
             return self._nchw_tensor_version[t_tensor]
 
         # Need to add Transpose operator to transform 't_tensor' to NCHW.
@@ -203,7 +203,7 @@ class ModelBuilder:
                 return
 
         # 'to_tensor' might have been redirected too (and so on) -> find the root of the redirection.
-        while to_tensor in self._skipped_output_map.keys():
+        while to_tensor in self._skipped_output_map:
             to_tensor = self._skipped_output_map[to_tensor]
 
         # Map 'from_tensor' to 'to_tensor'.
@@ -638,10 +638,10 @@ class ModelBuilder:
         if custom_code is not None:
             version_name = f"{custom_code}_{version}"
 
-        if op_type not in self.op_code_type_index_map.keys():
+        if op_type not in self.op_code_type_index_map:
             self.op_code_type_index_map[op_type] = dict()
 
-        if version_name not in self.op_code_type_index_map[op_type].keys():
+        if version_name not in self.op_code_type_index_map[op_type]:
             self.op_code_type_index_map[op_type][version_name] = self.operator_codes_size()
             self._build_operator_code(op_type, version, custom_code)
 
@@ -649,7 +649,7 @@ class ModelBuilder:
 
     def tensor_exists(self, name: str):
         """Determine if a tensor with 'name' already exists or not."""
-        return name in self._tensor_name_map.keys()
+        return name in self._tensor_name_map
 
     def _remove_tensor_with_name_from_collection(self, name, collection):
         """Find and remove a tensor with given 'name' from given 'collection'.
@@ -681,7 +681,7 @@ class ModelBuilder:
         :param name: Name of the tensor.
         :return: Tensor instance.
         """
-        if name not in self._tensor_name_map.keys():
+        if name not in self._tensor_name_map:
             logger.d(f"Tensor '{name}' is not yet in the tensors. Adding it!")
 
             new_tensor = tflite_model.Tensor(tflite_model.Shape([]), name)
@@ -721,7 +721,7 @@ class ModelBuilder:
 
     def append_new_tensor(self, t_tensor: tflite_model.Tensor, overwrite: bool = False):
         """Append the TFLite tensor 't_tensor' to the 'SubGraph.tensors' and register it."""
-        if t_tensor.name in self._tensor_name_map.keys():
+        if t_tensor.name in self._tensor_name_map:
             """ Tensor has already been added. Sometimes however, ONNX models 
                 will have tensors in their 'inputs' or 'outputs', which don't
                 belong there and are in fact static. I this case we need to 

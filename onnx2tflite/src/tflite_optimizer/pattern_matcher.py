@@ -160,7 +160,7 @@ class Op(OpLikeBlock):
             else:
                 # A tensor name is specified.
                 real_in = real_op.tmp_inputs[real_input_index]
-                if inpt in tensor_map.keys():
+                if inpt in tensor_map:
                     # Tensor has already been mapped.
                     logger.internal_assert(type(tensor_map[inpt]) == tflite_model.Tensor,
                                            f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.")
@@ -223,7 +223,7 @@ class Op(OpLikeBlock):
             else:
                 # A tensor name is specified.
                 real_out = real_op.tmp_outputs[real_output_index]
-                if out in tensor_map.keys():
+                if out in tensor_map:
                     # Tensor has already been mapped.
                     if tensor_map[out] != real_out:
                         # The tensor doesn't match.
@@ -354,7 +354,7 @@ class MultipleSameOps(OpLikeBlock):
                 else:
                     # A tensor name is specified.
                     real_in = real_op.tmp_inputs[real_input_index]
-                    if inpt in tensor_map.keys():
+                    if inpt in tensor_map:
                         # Tensor has already been mapped.
                         logger.internal_assert(type(tensor_map[inpt]) == tflite_model.Tensor,
                                                f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.")
@@ -423,7 +423,7 @@ class MultipleSameOps(OpLikeBlock):
                 else:
                     # A tensor name is specified.
                     real_out = real_op.tmp_outputs[real_output_index]
-                    if output in tensor_map.keys():
+                    if output in tensor_map:
                         # Tensor has already been mapped. This isn't supported right now.
                         logger.e(logger.Code.INTERNAL_ERROR, "PatternMatcher: MultipleSameOps is producing an already "
                                                              f"defined tensor `{output}`, which is not yet supported.")
@@ -530,7 +530,7 @@ class PatternMatcher:
         This function finds a suitable TFLite operator in the model, and adds it to `real_pattern`.
         :return: True, if a matching operator was found. Otherwise, False.
         """
-        if all(tensor not in tensor_map.keys() for tensor in op.io_as_list()):
+        if all(tensor not in tensor_map for tensor in op.io_as_list()):
             # The operator is not connected to the already matched part of the pattern. This is not supported.
             logger.e(logger.Code.INTERNAL_ERROR, f"PatternMatcher: Op on index {len(real_pattern)} is not connected "
                                                  "to the preceding operators in the pattern.")
@@ -541,7 +541,7 @@ class PatternMatcher:
 
         # Check if it is connected via the inputs.
         for inpt in op.inputs_as_list():
-            if inpt not in tensor_map_copy.keys():
+            if inpt not in tensor_map_copy:
                 continue
 
             # Found connecting input.
@@ -565,7 +565,7 @@ class PatternMatcher:
 
         # Try operators connected via the outputs.
         for out in op.outputs_as_list():
-            if out not in tensor_map_copy.keys():
+            if out not in tensor_map_copy:
                 continue
 
             # Found connecting output.
@@ -594,7 +594,7 @@ class PatternMatcher:
         This function finds suitable TFLite operators in the model, and adds them to `real_pattern`.
         :return: True, if a matching operators were found. Otherwise, False.
         """
-        if all(tensor not in tensor_map.keys() for tensor in multiple_same_ops.io_as_list()):
+        if all(tensor not in tensor_map for tensor in multiple_same_ops.io_as_list()):
             # The `MultipleSameOps` is not connected to the already matched part of the pattern. This is not supported.
             logger.e(logger.Code.INTERNAL_ERROR, f"PatternMatcher: MultipleSameOps on index {len(real_pattern)} is not "
                                                  "connected to any preceding Ops in the pattern.")
@@ -605,7 +605,7 @@ class PatternMatcher:
 
         # Check if it is connected via the inputs.
         for inpt in multiple_same_ops.inputs_as_list():
-            if inpt not in tensor_map_copy.keys():
+            if inpt not in tensor_map_copy:
                 continue
 
             # Found connecting input.

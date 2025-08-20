@@ -302,7 +302,7 @@ class ONNXModelInspector:
 
             # Explicitly initialize the counts of the output tensors to 0, if they don't yet have a value.
             for output_tensor_name in node.outputs:
-                if output_tensor_name not in tensor_consumers_count.keys():
+                if output_tensor_name not in tensor_consumers_count:
                     tensor_consumers_count[output_tensor_name] = 0
 
         # Increment the counts for tensors, which are the output of the graph.

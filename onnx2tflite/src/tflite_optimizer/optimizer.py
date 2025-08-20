@@ -162,7 +162,7 @@ class Optimizer:
             run_again = False
 
             for optimization in optimizations:
-                if optimization not in self.optimization_map.keys():
+                if optimization not in self.optimization_map:
                     logger.e(logger.Code.INVALID_OPTIMIZATION,
                              f"The converter doesn't recognise the '{optimization}' optimization.")
 

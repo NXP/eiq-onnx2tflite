@@ -28,7 +28,7 @@ def create_tensor_to_operator_dictionaries(builder: "model_builder.ModelBuilder"
 
     for op in builder.get_operators().vector:
         for input_tensor in op.tmp_inputs:
-            if input_tensor.name not in input_tensor_to_operators.keys():
+            if input_tensor.name not in input_tensor_to_operators:
                 input_tensor_to_operators[input_tensor.name] = []
 
             input_tensor_to_operators[input_tensor.name].append(op)

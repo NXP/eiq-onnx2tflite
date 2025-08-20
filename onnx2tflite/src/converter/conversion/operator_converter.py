@@ -182,7 +182,7 @@ class OperatorConverter:
             ops_to_add = []
 
         else:
-            if node.op_type not in self._op_type_to_node_converter_constructor_map.keys():
+            if node.op_type not in self._op_type_to_node_converter_constructor_map:
                 logger.e(logger.Code.UNSUPPORTED_OPERATOR,
                          f"Conversion of ONNX operator '{node.op_type}' is not yet supported!")
 
@@ -241,7 +241,7 @@ class OperatorConverter:
                     return False
 
                 if any(self._context.onnx_inspector.is_output_of_model(t)
-                       for t in inferred_output_data.keys()):
+                       for t in inferred_output_data):
                     return False
 
                 return True

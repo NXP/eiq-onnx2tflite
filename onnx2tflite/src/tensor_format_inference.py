@@ -116,7 +116,7 @@ class TensorFormatInference:
 
         :param node: The ONNX NodeProto object, that will have the format of its tensors inferred.
         """
-        if node.op_type in self.onnx_ops_with_channels_first_tensors.keys():
+        if node.op_type in self.onnx_ops_with_channels_first_tensors:
             # Node uses channels first tensors
             self._handle_operator_which_uses_channels_first_tensors(node)
 
@@ -411,7 +411,7 @@ class TensorFormatInference:
         for value_info in itertools.chain(self.model.graph.value_info, self.model.graph.inputs,
                                           self.model.graph.outputs):
             tensor_name = value_info.name
-            if tensor_name in self.inferred_tensor_formats.keys():
+            if tensor_name in self.inferred_tensor_formats:
                 value_info.tensor_format = self.inferred_tensor_formats[tensor_name]
 
             else:
@@ -419,7 +419,7 @@ class TensorFormatInference:
 
         for tensor in self.model.graph.initializers:
             tensor_name = tensor.name
-            if tensor_name in self.inferred_tensor_formats.keys():
+            if tensor_name in self.inferred_tensor_formats:
                 tensor.tensor_format = self.inferred_tensor_formats[tensor_name]
 
             else:

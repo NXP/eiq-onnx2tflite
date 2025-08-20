@@ -333,7 +333,7 @@ class NodeProto(meta.ONNXObject):
             self.unique_name = f"{self.name}_{self.index}"
 
         if self._init_node_attributes:
-            if self.op_type not in NodeProto.op_type_to_attribute_constructor_map.keys():
+            if self.op_type not in NodeProto.op_type_to_attribute_constructor_map:
                 logger.e(logger.Code.UNSUPPORTED_OPERATOR, f"ONNX operator '{self.op_type}' is not yet supported!")
 
             get_attributes_fn = NodeProto.op_type_to_attribute_constructor_map[self.op_type]
