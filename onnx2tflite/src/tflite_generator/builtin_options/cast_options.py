@@ -19,12 +19,12 @@ class Cast(meta.BuiltinOptions):
     in_data_type: TensorType
     out_data_type: TensorType
 
-    def __init__(self, in_data_type: TensorType, out_data_type: TensorType) -> None:
+    def __init__(self, in_data_type: TensorType | int, out_data_type: TensorType | int) -> None:
         super().__init__(BuiltinOptions.CastOptions, BuiltinOperator.CAST)
         self.in_data_type = in_data_type
         self.out_data_type = out_data_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libCastOptions.Start(builder)
 
         libCastOptions.AddInDataType(builder, self.in_data_type)

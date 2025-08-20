@@ -19,7 +19,7 @@ class BroadcastTo(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.BroadcastToOptions,
                          BuiltinOperator.BROADCAST_TO)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libBroadcastToOptions.Start(builder)
 
         return libBroadcastToOptions.End(builder)

@@ -20,7 +20,7 @@ class ReplaceDivWithQuantizableMul(PreprocessingStep):
     def disabling_flag(self) -> str:
         return "--no-replace-div-with-mul"
 
-    def run(self):
+    def run(self) -> None:
         num_affected_nodes = 0
 
         for node in self.model.graph.node:

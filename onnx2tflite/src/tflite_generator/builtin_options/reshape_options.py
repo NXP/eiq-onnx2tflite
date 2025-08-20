@@ -34,7 +34,7 @@ class Reshape(meta.BuiltinOptions):
         else:
             self.new_shape = None
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         if self.new_shape is not None:
             tfl_new_shape = self.new_shape.gen_tflite(builder)
         else:

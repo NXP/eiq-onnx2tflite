@@ -31,7 +31,8 @@ TFTensor = tflite_model.Tensor
 TFOperator = tflite_model.Operator
 
 
-def group_conv_convertible_as_depthwise(o_conv_attributes: ConvAttributes, t_op: TFOperator, weight_tensor_index: int):
+def group_conv_convertible_as_depthwise(o_conv_attributes: ConvAttributes, t_op: TFOperator,
+                                        weight_tensor_index: int) -> bool:
     """Check whether provided Conv/QLinearConv ONNX operator could be converted into TFLite DepthwiseConv2D.
 
     :param o_conv_attributes: ONNX Conv/QLinearConv operator attributes.

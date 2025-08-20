@@ -13,6 +13,7 @@ from onnx import TensorProto
 
 from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
+from onnx2tflite.src.onnx_parser.onnx_model import RepeatedNodeProto
 
 
 class ONNXModelInspector:
@@ -146,14 +147,14 @@ class ONNXModelInspector:
         input_nodes = self.get_ops_with_input_tensor(tensor_name)
         return all(i.op_type == "QuantizeLinear" for i in input_nodes)
 
-    def is_output_of_model(self, tensor_name):
+    def is_output_of_model(self, tensor_name) -> int:
         return any(t.name == tensor_name for t in self.model.graph.outputs)
 
     def is_input_of_model(self, tensor_name: str) -> bool:
         """Determine whether a tensor with given name is an input to the ONNX graph."""
         return any(t.name == tensor_name for t in self.model.graph.inputs)
 
-    def tensor_is_float(self, tensor_name):
+    def tensor_is_float(self, tensor_name) -> bool:
         """Check if tensor's type is float.
 
         :param tensor_name: Name of the searched tensor.
@@ -161,7 +162,7 @@ class ONNXModelInspector:
         """
         return self.get_tensor_type(tensor_name) == onnx.TensorProto.FLOAT
 
-    def tensor_not_float(self, tensor_name):
+    def tensor_not_float(self, tensor_name) -> bool:
         """Check if tensor's type is NOT float.
 
         :param tensor_name: Name of the searched tensor.
@@ -235,11 +236,11 @@ class ONNXModelInspector:
 
         return {t.name: t for t in graph.inputs + graph.initializers + graph.value_info + graph.outputs}
 
-    def get_non_initializer_input_names(self):
+    def get_non_initializer_input_names(self) -> list[str]:
         initializer_names = [i.name for i in self.model.graph.initializers]
         return [i.name for i in self.model.graph.inputs if i.name not in initializer_names]
 
-    def get_nodes(self):
+    def get_nodes(self) -> RepeatedNodeProto:
         return self.model.graph.nodes
 
     def contains_quantization_nodes(self) -> bool:

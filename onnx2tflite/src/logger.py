@@ -156,22 +156,22 @@ class ConversionLog:
     _log = defaultdict(list)
     _log_count = 0
 
-    def append_context(self, loggingContext: LoggingContext):
+    def append_context(self, loggingContext: LoggingContext) -> None:
         if len(self._current_logging_context) == 0:
             self._log = defaultdict(list)
             self._log_count = 0
 
         self._current_logging_context.append(loggingContext.context_name)
 
-    def pop_last_context(self):
+    def pop_last_context(self) -> None:
         self._current_logging_context.pop()
 
-    def reset(self):
+    def reset(self) -> None:
         self._log = defaultdict(list)
         self._current_logging_context = []
         self._log_count = 0
 
-    def add_log(self, importance: MessageImportance, message: str, error_code: Code | None = None):
+    def add_log(self, importance: MessageImportance, message: str, error_code: Code | None = None) -> None:
         data = {
             "message": message,
             "logging_context_hierarchy": list(self._current_logging_context),
@@ -246,7 +246,7 @@ class loggingContext:
         conversion_log.pop_last_context()
 
 
-def d(msg: str):
+def d(msg: str) -> None:
     """Log internal debug message with given parameters."""
     logger.debug(msg)
 
@@ -255,7 +255,7 @@ def d(msg: str):
     conversion_log.add_log(MessageImportance.DEBUG, msg)
 
 
-def i(msg: str):
+def i(msg: str) -> None:
     """Log info message with given parameters."""
     logger.info(msg)
 
@@ -264,7 +264,7 @@ def i(msg: str):
     conversion_log.add_log(MessageImportance.INFO, msg)
 
 
-def w(msg: str):
+def w(msg: str) -> None:
     """Log warning message with given parameters."""
     logger.warning(msg)
 
@@ -286,17 +286,17 @@ def e(err_code: Code, msg: str, exception: Exception | None = None) -> NoReturn:
     raise error
 
 
-def expect_type(obj, expected_type, msg: str = ""):
+def expect_type(obj, expected_type, msg: str = "") -> None:
     if type(obj) != expected_type:
         w(msg + f":Object '{obj}' is of type '{type(obj)}' where '{expected_type}' was expected!")
 
 
-def require_type(obj, required_type, msg: str = ""):
+def require_type(obj, required_type, msg: str = "") -> None:
     if type(obj) != required_type:
         e(Code.INVALID_TYPE, msg + f":Object '{obj}' is of type '{type(obj)}' where '{required_type}' was required!")
 
 
-def internal_assert(truth_value: bool, msg: str = ""):
+def internal_assert(truth_value: bool, msg: str = "") -> None:
     """Assert that the 'truth_value' is True. If not, raise a logger INTERNAL_ERROR with message 'msg'.
 
     :param truth_value: Boolean to check.

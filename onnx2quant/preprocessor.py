@@ -20,7 +20,7 @@ class Preprocessor:
     model: onnx.ModelProto
     quantization_config: QuantizationConfig
 
-    def preprocess(self):
+    def preprocess(self) -> None:
         preprocessing_steps = []
         if self.quantization_config.replace_constant_with_static_tensor:
             preprocessing_steps.append(ReplaceConstantWithStaticTensor(self.model))

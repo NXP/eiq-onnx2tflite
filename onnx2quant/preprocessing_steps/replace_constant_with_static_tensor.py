@@ -19,7 +19,7 @@ class ReplaceConstantWithStaticTensor(PreprocessingStep):
     def disabling_flag(self) -> str:
         return "--no-replace-constant-with-static-tensor"
 
-    def run(self):
+    def run(self) -> None:
         to_remove = []
         for node in self.model.graph.node:
             if node.op_type != "Constant":

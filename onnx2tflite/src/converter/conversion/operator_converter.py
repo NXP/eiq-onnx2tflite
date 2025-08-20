@@ -206,7 +206,7 @@ class OperatorConverter:
 
             self._context.tflite_builder.check_and_append_operator(op)
 
-    def convert_operators(self, o_nodes: onnx_model.RepeatedNodeProto):
+    def convert_operators(self, o_nodes: onnx_model.RepeatedNodeProto) -> None:
         """Find the best way to convert all operators in the ONNX model and convert them to TFLite."""
         # A list of operators (op_type, name), that have been skipped because their output data was inferred during
         #  shape inference.

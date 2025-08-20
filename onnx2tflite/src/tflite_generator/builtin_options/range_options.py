@@ -19,7 +19,7 @@ class Range(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.RangeOptions, BuiltinOperator.RANGE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         RangeOptions.Start(builder)
 
         return RangeOptions.End(builder)

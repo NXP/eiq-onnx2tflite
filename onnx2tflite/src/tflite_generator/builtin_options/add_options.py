@@ -30,7 +30,7 @@ class Add(meta.BuiltinOptions):
                          libBuiltinOperator.BuiltinOperator.ADD)
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libAddOptions.Start(builder)
 
         libAddOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

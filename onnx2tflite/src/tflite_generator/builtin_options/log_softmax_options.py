@@ -22,6 +22,6 @@ class LogSoftmax(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.LogSoftmaxOptions,
                          libBuiltinOperator.BuiltinOperator.LOG_SOFTMAX)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libLogSoftmaxOptions.Start(builder)
         return libLogSoftmaxOptions.End(builder)

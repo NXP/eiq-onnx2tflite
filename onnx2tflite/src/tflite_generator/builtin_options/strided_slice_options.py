@@ -24,7 +24,7 @@ class StridedSlice(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.StridedSliceOptions, BuiltinOperator.STRIDED_SLICE)
         self.offset = offset
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libStridedSliceOptions.Start(builder)
         libStridedSliceOptions.AddOffset(builder, self.offset)
         return libStridedSliceOptions.End(builder)

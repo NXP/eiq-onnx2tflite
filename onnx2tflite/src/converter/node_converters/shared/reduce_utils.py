@@ -19,7 +19,7 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
 
 
-def convert_axes_from_attribute(t_op: tflite_model.Operator, builder: ModelBuilder, axes: list[int] | None):
+def convert_axes_from_attribute(t_op: tflite_model.Operator, builder: ModelBuilder, axes: list[int] | None) -> None:
     """Create an `axes` tensor and assign it as an input to the `t_op`, which is expected to represent an ONNX
     reduction operator.
     """
@@ -40,7 +40,7 @@ def convert_axes_from_attribute(t_op: tflite_model.Operator, builder: ModelBuild
 
 
 def convert_axes_from_input_tensor(t_op: tflite_model.Operator, builder: ModelBuilder, inspector: ONNXModelInspector,
-                                   ops: OpsList, noop_with_empty_axes: int, op_type: str):
+                                   ops: OpsList, noop_with_empty_axes: int, op_type: str) -> None:
     """Verify the `axes` tensor (on input index 1) of the `t_op`, which is expected to represent an ONNX reduction
     operator.
     """
@@ -120,7 +120,7 @@ def convert_axes_from_input_tensor(t_op: tflite_model.Operator, builder: ModelBu
         t_op.tmp_inputs.append(axes_tensor)
 
 
-def ensure_reduce_transposition(builder, ops: OpsList):
+def ensure_reduce_transposition(builder, ops: OpsList) -> None:
     """Ensure transposition of ReduceX operator is defined correctly based on tensor format.
     New operators (Transpose) are added into "ops" collection when necessary.
 

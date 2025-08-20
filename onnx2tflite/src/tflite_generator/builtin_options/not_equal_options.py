@@ -18,7 +18,7 @@ class NotEqual(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.NotEqualOptions, BuiltinOperator.NOT_EQUAL)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         NotEqualOptions.Start(builder)
 
         return NotEqualOptions.End(builder)

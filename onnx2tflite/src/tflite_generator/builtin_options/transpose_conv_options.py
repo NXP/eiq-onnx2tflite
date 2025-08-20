@@ -30,7 +30,7 @@ class TransposeConv(meta.BuiltinOptions):
         self.stride_h = stride_h
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libTransposeConvOptions.Start(builder)
 
         libTransposeConvOptions.AddPadding(builder, self.padding)

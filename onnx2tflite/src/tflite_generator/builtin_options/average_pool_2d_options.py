@@ -40,7 +40,7 @@ class AveragePool2D(meta.BuiltinOptions):
         self.filter_h = filter_h
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libPool2DOptions.Start(builder)
 
         libPool2DOptions.AddPadding(builder, self.padding)

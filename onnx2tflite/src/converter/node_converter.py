@@ -59,7 +59,7 @@ class NodeConverter(ABC):
         """
         return self.context.onnx_inspector
 
-    def assert_type_allowed(self, _type: TensorType):
+    def assert_type_allowed(self, _type: TensorType) -> None:
         """Check if the given type is supported by ONNX, TFLite and the converter based on the lists of types declared
         at the top of the class. Child classes must define these lists in order to use this method.
         """

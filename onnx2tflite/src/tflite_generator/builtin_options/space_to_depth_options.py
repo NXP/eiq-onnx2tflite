@@ -20,7 +20,7 @@ class SpaceToDepth(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.SpaceToDepthOptions, BuiltinOperator.SPACE_TO_DEPTH)
         self.block_size = block_size
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         SpaceToDepthOptions.Start(builder)
 
         SpaceToDepthOptions.SpaceToDepthOptionsAddBlockSize(builder, self.block_size)

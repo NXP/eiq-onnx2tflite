@@ -21,6 +21,6 @@ class Slice(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.SliceOptions, BuiltinOperator.SLICE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libSliceOptions.Start(builder)
         return libSliceOptions.End(builder)

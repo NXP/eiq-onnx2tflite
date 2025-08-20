@@ -18,7 +18,7 @@ class LogicalNot(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.LogicalNotOptions, BuiltinOperator.LOGICAL_NOT)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         LogicalNotOptions.Start(builder)
 
         return LogicalNotOptions.End(builder)

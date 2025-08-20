@@ -69,7 +69,7 @@ class QLinearConvConverter(NodeConverter):
             return 2
         logger.e(logger.Code.INTERNAL_ERROR, "Attempt to get index of bias tensor of incorrect ONNX operator.")
 
-    def get_weight_tensor_index(self, attrs: ConvAttributes):
+    def get_weight_tensor_index(self, attrs: ConvAttributes) -> int:
         if isinstance(attrs, q_linear_conv_attributes.QLinearConv):
             return 3
         if isinstance(attrs, conv_attributes.Conv):

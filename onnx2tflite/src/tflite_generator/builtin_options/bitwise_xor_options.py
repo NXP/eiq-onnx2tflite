@@ -18,7 +18,7 @@ class BitwiseXor(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.BitwiseXorOptions, BuiltinOperator.BITWISE_XOR)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         BitwiseXorOptions.Start(builder)
 
         return BitwiseXorOptions.End(builder)

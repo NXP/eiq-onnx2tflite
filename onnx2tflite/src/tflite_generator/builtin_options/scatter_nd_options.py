@@ -18,7 +18,7 @@ class ScatterND(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.ScatterNdOptions, BuiltinOperator.SCATTER_ND)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ScatterNdOptions.Start(builder)
 
         return ScatterNdOptions.End(builder)

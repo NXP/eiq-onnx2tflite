@@ -29,7 +29,7 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import TensorFlowDataType
 
 
-def permute_static_tensor(tensor: tflite_model.Tensor, perm: list[int]):
+def permute_static_tensor(tensor: tflite_model.Tensor, perm: list[int]) -> None:
     """Take a static TFLite tensor and permute its shape and data according to the permutation in 'perm'.
 
     :param tensor: Static TFLite tensor to permute.
@@ -121,7 +121,7 @@ def dims_to_channels_last(channels_first_dimensions: list[int]) -> list[int]:
     return res
 
 
-def collections_equal(col_a, col_b):
+def collections_equal(col_a, col_b) -> bool:
     """Compare each individual element of both collections.
     They can be any combination of lists, tuples or numpy arrays.
     Return True if they are equal.
@@ -332,7 +332,7 @@ def nhc_dimensions_to_nhwc(nhc_dimensions: list[int]) -> list[int]:
     return nhwc_dimensions
 
 
-def shape_from_numpy(numpy_array):
+def shape_from_numpy(numpy_array) -> tflite_model.Shape:
     """Return a 'Shape' object representing the shape of given 'numpy_array'."""
     dims = list(numpy_array.shape)
     return tflite_model.Shape(dims)
@@ -579,7 +579,7 @@ def create_channels_first_to_channels_last_permutation(rank: int, return_list: b
     return np.asarray(perm, np.int32)
 
 
-def create_axis_to_last_perm(axis, num_dims):
+def create_axis_to_last_perm(axis, num_dims) -> np.ndarray:
     """Create a numpy array representing the transpose permutations needed, to
     make the 'axis' dimension, the last dimension.
     """
@@ -653,7 +653,7 @@ def get_min_value_for_type(dtype: np.dtype) -> any:
     logger.e(logger.Code.INTERNAL_ERROR, f"translator.get_min_value_for_type(): unexpected type {dtype.name}.")
 
 
-def convert_data_type(o_type: onnx.TensorProto.DataType) -> TensorType:
+def convert_data_type(o_type: onnx.TensorProto.DataType) -> TensorType | int:
     """Convert ONNX DataType to TFLite TensorType"""
     if o_type == onnx.TensorProto.UNDEFINED:
         logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'UNDEFINED' to TFLite.")

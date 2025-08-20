@@ -98,7 +98,7 @@ def builtin_operator_for_op_type(op_type: str) -> BuiltinOperator:
     return builtin_op
 
 
-def operator_is_type(op: tflite_model.Operator, op_type: str, builder: "model_builder.ModelBuilder"):
+def operator_is_type(op: tflite_model.Operator, op_type: str, builder: "model_builder.ModelBuilder") -> bool:
     builtin_op = builtin_operator_for_op_type(op_type)
 
     opcode_indices = builder.op_code_type_index_map.get(builtin_op, None)

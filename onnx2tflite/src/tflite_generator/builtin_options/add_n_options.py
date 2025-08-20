@@ -22,6 +22,6 @@ class AddN(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.AddNOptions,
                          libBuiltinOperator.BuiltinOperator.ADD_N)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libAddNOptions.Start(builder)
         return libAddNOptions.End(builder)

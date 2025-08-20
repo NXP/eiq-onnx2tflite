@@ -20,6 +20,6 @@ class SelectV2(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.SelectV2Options,
                          libBuiltinOperator.BuiltinOperator.SELECT_V2)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libSelectV2Options.Start(builder)
         return libSelectV2Options.End(builder)

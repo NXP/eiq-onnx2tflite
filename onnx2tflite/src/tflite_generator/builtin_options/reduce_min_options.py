@@ -20,7 +20,7 @@ class ReduceMin(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.ReducerOptions, BuiltinOperator.REDUCE_MIN)
         self.keep_dims = keep_dims
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ReducerOptions.Start(builder)
 
         ReducerOptions.AddKeepDims(builder, self.keep_dims)

@@ -28,7 +28,7 @@ class BidirectionalSequenceRNN(meta.BuiltinOptions):
         self.merge_outputs = merge_outputs
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libBRNNOptions.Start(builder)
 
         libBRNNOptions.AddTimeMajor(builder, self.time_major)

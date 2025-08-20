@@ -41,7 +41,7 @@ class ClipConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32, TensorType.UINT8] + INTS
 
     def _return_as_activation_function(self, t_op: tflite_model.Operator,
-                                       builtin_operator: BuiltinOperator) -> tflite_model.Operator:
+                                       builtin_operator: BuiltinOperator | int) -> tflite_model.Operator:
         """Turn 't_op' into a TFLite operator identified by 'builtin_operator'.
 
         :param t_op: TFLite operator, that will be turned into 'builtin_operator'.

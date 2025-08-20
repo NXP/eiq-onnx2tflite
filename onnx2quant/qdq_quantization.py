@@ -443,7 +443,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 
         return RandomDataCalibrationDataReader(inputs, num_samples=num_samples, seed=seed)
 
-    def to_config(self):
+    def to_config(self) -> QuantizationConfig:
         return QuantizationConfig(self)
 
     def get_next(self) -> dict:
@@ -479,7 +479,7 @@ class QDQOperator(QDQOperatorBase):
 
 
 class QDQClip(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Clip"
 
@@ -505,7 +505,7 @@ class QDQClip(QDQOperator):
 
 
 class QDQConcat(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Concat"
 
@@ -525,7 +525,7 @@ class QDQConcat(QDQOperator):
 
 
 class QDQMatMul(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "MatMul"
 
@@ -555,7 +555,7 @@ class QDQMatMul(QDQOperator):
 
 
 class QDQNormalization(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type in ["InstanceNormalization", "LayerNormalization"]
 
         per_channel = self.quantizer.per_channel
@@ -570,7 +570,7 @@ class QDQNormalization(QDQOperator):
 
 
 class QDQLogSoftmax(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "LogSoftmax"
 
         super().quantize()
@@ -590,7 +590,7 @@ class QDQLogSoftmax(QDQOperator):
 
 
 class QDQMinMax(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type in ["Max", "Min"]
 
         if len(self.node.input) == 1:
@@ -601,7 +601,7 @@ class QDQMinMax(QDQOperator):
 
 
 class QDQReduceProd(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "ReduceProd"
 
         # Only INT8 supported in TFLite
@@ -610,7 +610,7 @@ class QDQReduceProd(QDQOperator):
 
 
 class QDQScatterND(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "ScatterND"
 
@@ -629,7 +629,7 @@ class QDQScatterND(QDQOperator):
 
 
 class QDQSoftmax(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "Softmax"
 
         super().quantize()
@@ -649,7 +649,7 @@ class QDQSoftmax(QDQOperator):
 
 
 class QDQTanh(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "Tanh"
         assert self.quantizer.activation_qType == TensorProto.INT8, "Quantization of Tanh supported only for INT8"
 
@@ -664,7 +664,7 @@ class QDQTanh(QDQOperator):
 
 
 class QDQPad(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Pad"
 
@@ -683,7 +683,7 @@ class QDQPad(QDQOperator):
 
 
 class QDQSigmoid(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "Sigmoid"
 
         super().quantize()
@@ -702,7 +702,7 @@ class QDQSigmoid(QDQOperator):
 
 
 class QDQWhere(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Where"
 
@@ -883,7 +883,7 @@ class QDQQuantizer:
         )
 
     def quantize_model(self, model_proto: onnx_model.ModelProto, quantization_config: QuantizationConfig,
-                       save_model=False, saved_model_name="quantized_model.onnx"):
+                       save_model=False, saved_model_name="quantized_model.onnx") -> None:
         if self._model_has_QDQ_nodes(model_proto):
             logger.e(logger.Code.INVALID_ONNX_MODEL,
                      "Model is already quantized. Quantization of such model can lead to infinite loop. "

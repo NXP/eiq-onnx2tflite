@@ -18,7 +18,7 @@ class HardSwish(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.HardSwishOptions, BuiltinOperator.HARD_SWISH)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         HardSwishOptions.Start(builder)
 
         return HardSwishOptions.End(builder)

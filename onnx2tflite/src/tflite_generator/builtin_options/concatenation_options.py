@@ -25,7 +25,7 @@ class Concatenation(meta.BuiltinOptions):
         self.axis = axis
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libConcatenationOptions.Start(builder)
 
         libConcatenationOptions.AddAxis(builder, self.axis)

@@ -22,6 +22,6 @@ class Transpose(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.TransposeOptions,
                          libBuiltinOperator.BuiltinOperator.TRANSPOSE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libTransposeOptions.Start(builder)
         return libTransposeOptions.End(builder)

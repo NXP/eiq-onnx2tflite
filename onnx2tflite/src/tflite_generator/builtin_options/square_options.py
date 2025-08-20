@@ -18,6 +18,6 @@ class Square(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.SquareOptions, BuiltinOperator.SQUARE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libSquareOptions.Start(builder)
         return libSquareOptions.End(builder)

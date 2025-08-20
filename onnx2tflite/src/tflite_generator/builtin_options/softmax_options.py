@@ -25,7 +25,7 @@ class Softmax(meta.BuiltinOptions):
                          libBuiltinOperator.BuiltinOperator.SOFTMAX)
         self.beta = beta
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libSoftmaxOptions.Start(builder)
 
         libSoftmaxOptions.AddBeta(builder, self.beta)

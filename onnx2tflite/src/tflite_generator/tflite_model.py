@@ -7,7 +7,7 @@
 #
 
 import itertools
-from typing import Optional
+from typing import Optional, Callable, Any
 
 import flatbuffers as fb
 import numpy as np
@@ -54,10 +54,10 @@ class Buffer(meta.TFLiteObject):
         """Determine if the buffer data is empty."""
         return (self.data is None) or (self.data.size == 0)
 
-    def get_prepend_function(self, builder: fb.Builder):
+    def get_prepend_function(self, builder: fb.Builder) -> Callable[[Any], Any]:
         return types.prepend_function(builder, self.type)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         if self.__data_is_empty():
             # If there is no data, table is empty
             libBuffer.Start(builder)
@@ -136,7 +136,7 @@ class OperatorCode(meta.TFLiteObject):
             logger.e(logger.Code.INTERNAL_ERROR,
                      f"Attempt to use custom code with non-CUSTOM builtin code ({builtin_code}).")
 
-    def gen_tflite(self, builder: fb.builder):
+    def gen_tflite(self, builder: fb.builder) -> int:
         """Generate TFLite representation for this OperatorCode"""
         if self.custom_code is not None:
             custom_code = builder.CreateString(self.custom_code)
@@ -244,7 +244,7 @@ class Quantization(meta.TFLiteObject):
 
         return False
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         # Sometimes 1D per-tensor quantized tensors can have quantized_dimension != 0
         # (residue from badly defined ONNX models). This would cause TFLite inference to crash.
         if not self.is_per_channel():
@@ -286,7 +286,7 @@ class Shape(meta.IntVector):
         self.__also_has_signature = False
 
     @property
-    def flat_size(self):
+    def flat_size(self) -> int:
         logger.internal_assert(self.is_well_defined(), f"Failed to compute flat size of shape {self}.")
         return np.prod(self.vector).item()
 
@@ -323,7 +323,7 @@ class Shape(meta.IntVector):
         if self.__also_has_signature:
             self.vector = [abs(val) for val in self.__shape_signature_vector]
 
-    def gen_tflite(self, builder: fb.Builder, tensor):
+    def gen_tflite(self, builder: fb.Builder, tensor) -> None:
         """Generates TFLite code for the Shape"""
         self.__check_dims()
 
@@ -335,7 +335,7 @@ class Shape(meta.IntVector):
             self.vector = self.__shape_signature_vector
             self.__shape_signature_offset = super().gen_tflite(builder)
 
-    def add_tf_lite(self, builder):
+    def add_tf_lite(self, builder) -> None:
         libTensor.AddShape(builder, self.__shape_offset)
 
         if self.__also_has_signature:
@@ -345,7 +345,7 @@ class Shape(meta.IntVector):
 class Tensor(meta.TFLiteObject):
     is_variable: bool
     has_rank: bool
-    type: libTensorType.TensorType
+    type: libTensorType.TensorType | int
     buffer: int
     name: str
     shape: Shape
@@ -376,7 +376,7 @@ class Tensor(meta.TFLiteObject):
     tmp_null_tensor: bool
 
     @property
-    def rank(self):
+    def rank(self) -> int:
         """Get the number of dimensions of this `Tensor`."""
         return self.shape.len()
 
@@ -399,7 +399,7 @@ class Tensor(meta.TFLiteObject):
 
         self.tensor_format = tensor_formatting.TensorFormat.NONE
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
 
         if self.shape is not None:
             self.shape.gen_tflite(builder, self)
@@ -466,7 +466,7 @@ class Operator(meta.TFLiteObject):
     mutating_variable_inputs: MutatingVariableInputs
     inputs: OperatorInputs
     outputs: OperatorOutputs
-    builtin_options: meta.BuiltinOptions
+    builtin_options: meta.BuiltinOptions | None
     custom_options: meta.CustomOptions
     # TODO intermediates
 
@@ -553,7 +553,7 @@ class Operator(meta.TFLiteObject):
         # Check if any of the inputs is quantized
         return any(x.quantization is not None for x in self.tmp_inputs)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         if self.inputs is not None:
             tfl_inputs = self.inputs.gen_tflite(builder)
         else:
@@ -649,7 +649,7 @@ class SubGraph(meta.TFLiteObject):
         self.tensors = tensors
         self.operators = operators
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         logger.expect_type(self.tensors, Tensors, "SubGraph.tensors")
         if self.tensors is not None:
             tfl_tensors = self.tensors.gen_tflite(builder)
@@ -726,7 +726,7 @@ class Model(meta.TFLiteObject):
         self.sub_graphs = sub_graphs
         self.buffers = buffers
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> None:
         logger.expect_type(self.operator_codes, OperatorCodes, "Model.operatorCodes")  # TODO change to 'require_type'
         if self.operator_codes is not None:
             tfl_operator_codes = self.operator_codes.gen_tflite(builder)

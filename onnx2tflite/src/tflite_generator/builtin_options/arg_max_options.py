@@ -21,7 +21,7 @@ class ArgMax(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.ArgMaxOptions, BuiltinOperator.ARG_MAX)
         self.output_type = output_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ArgMaxOptions.Start(builder)
 
         ArgMaxOptions.AddOutputType(builder, self.output_type)

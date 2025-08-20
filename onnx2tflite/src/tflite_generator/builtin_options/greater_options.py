@@ -18,7 +18,7 @@ class Greater(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.GreaterOptions, BuiltinOperator.GREATER)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         GreaterOptions.Start(builder)
 
         return GreaterOptions.End(builder)

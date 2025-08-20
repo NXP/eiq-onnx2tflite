@@ -22,7 +22,7 @@ class LeakyRelu(meta.BuiltinOptions):
                          libBuiltinOperator.BuiltinOperator.LEAKY_RELU)
         self.alpha = alpha
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libLeakyReluOptions.Start(builder)
 
         libLeakyReluOptions.AddAlpha(builder, self.alpha)

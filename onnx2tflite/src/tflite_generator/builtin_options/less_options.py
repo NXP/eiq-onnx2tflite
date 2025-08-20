@@ -18,7 +18,7 @@ class Less(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.LessOptions, BuiltinOperator.LESS)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libLessOptions.Start(builder)
 
         return libLessOptions.End(builder)

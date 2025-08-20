@@ -23,7 +23,7 @@ class ResizeBilinear(meta.BuiltinOptions):
         self.align_corners = align_corners
         self.half_pixel_centers = half_pixel_centers
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ResizeBilinearOptions.Start(builder)
 
         ResizeBilinearOptions.AddAlignCorners(builder, self.align_corners)

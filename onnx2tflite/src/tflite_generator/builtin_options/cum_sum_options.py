@@ -22,7 +22,7 @@ class CumSum(meta.BuiltinOptions):
         self.exclusive = exclusive
         self.reverse = reverse
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         CumsumOptions.Start(builder)
 
         CumsumOptions.AddExclusive(builder, self.exclusive)

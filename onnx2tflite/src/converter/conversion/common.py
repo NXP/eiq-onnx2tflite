@@ -68,28 +68,28 @@ def try_get_input(t_op: tflite_model.Operator, idx: int) -> tflite_model.Tensor 
     return tensor
 
 
-def extend_1d_pads_to_2d(onnx_1d_pads: MutableSequence):
+def extend_1d_pads_to_2d(onnx_1d_pads: MutableSequence) -> None:
     """Extend the onnx 'pads' operator attribute that represents padding for a 1D kernel to 2D, by adding '0's."""
     if onnx_1d_pads is not None:
         onnx_1d_pads.insert(1, 0)
         onnx_1d_pads.append(0)
 
 
-def extend_1d_strides_to_2d(onnx_1d_strides: MutableSequence):
+def extend_1d_strides_to_2d(onnx_1d_strides: MutableSequence) -> None:
     """Extend the onnx 'strides' operator attribute that represents strides for a 1D kernel to 2D, by adding '1'.
     """
     if onnx_1d_strides is not None:
         onnx_1d_strides.append(1)
 
 
-def extend_1d_dilations_to_2d(onnx_1d_dilations: MutableSequence):
+def extend_1d_dilations_to_2d(onnx_1d_dilations: MutableSequence) -> None:
     """Extend the onnx 'dilations' operator attribute that represents dilations for a 1D kernel to 2D, by adding '1'.
     """
     if onnx_1d_dilations is not None:
         onnx_1d_dilations.append(1)
 
 
-def extend_1d_kernel_shape_to_2d(onnx_1d_kernel_shape: MutableSequence):
+def extend_1d_kernel_shape_to_2d(onnx_1d_kernel_shape: MutableSequence) -> None:
     """Extend the onnx 1D 'kernel_shape' operator attribute to 2D, by adding '1'."""
     if onnx_1d_kernel_shape is not None:
         onnx_1d_kernel_shape.append(1)
@@ -99,7 +99,7 @@ StridedOptions = (average_pool_2d_options.AveragePool2D | conv_2d_options.Conv2D
                   max_pool_2d_options.MaxPool2D | transpose_conv_options.TransposeConv)
 
 
-def assign_2d_strides(options: StridedOptions, strides: list[int] | None):
+def assign_2d_strides(options: StridedOptions, strides: list[int] | None) -> None:
     """Assign to 'obj' the attributes 'stride_h' and 'stride_w' from 'strides'.
          If 'strides' is None, assign 1s.
 
@@ -120,7 +120,7 @@ def assign_2d_strides(options: StridedOptions, strides: list[int] | None):
                  f"ONNX operator has invalid 'strides' attribute! ('{strides}')")
 
 
-def assign_2d_dilations(conv_2d: conv_2d_options, dilations: list[int] | None):
+def assign_2d_dilations(conv_2d: conv_2d_options, dilations: list[int] | None) -> None:
     """Assign the 'conv_2d' attributes 'dilations_h' and 'dilations_2' from 'dilations'."""
     if dilations is None:
         return
@@ -184,10 +184,10 @@ class OpsList:
         self.middle_op = middle_op
         self.post_ops = post_ops or []
 
-    def flatten(self):
+    def flatten(self) -> list[tflite_model.Operator]:
         return self.pre_ops + [self.middle_op] + self.post_ops
 
-    def add_pre(self, ops: tflite_model.Operator | list[tflite_model.Operator]):
+    def add_pre(self, ops: tflite_model.Operator | list[tflite_model.Operator]) -> None:
         if isinstance(ops, tflite_model.Operator):
             ops = [ops]
 
@@ -195,7 +195,7 @@ class OpsList:
 
         self.pre_ops.extend(ops)
 
-    def add_post(self, ops: tflite_model.Operator | list[tflite_model.Operator]):
+    def add_post(self, ops: tflite_model.Operator | list[tflite_model.Operator]) -> None:
         if isinstance(ops, tflite_model.Operator):
             ops = [ops]
 

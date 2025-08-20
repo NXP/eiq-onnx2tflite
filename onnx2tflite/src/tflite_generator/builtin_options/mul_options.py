@@ -22,7 +22,7 @@ class Mul(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.MulOptions, BuiltinOperator.MUL)
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         MulOptions.Start(builder)
 
         MulOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

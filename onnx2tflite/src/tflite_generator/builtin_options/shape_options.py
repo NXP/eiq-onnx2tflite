@@ -25,7 +25,7 @@ class Shape(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.ShapeOptions, BuiltinOperator.SHAPE)
         self.out_type = out_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libShapeOptions.Start(builder)
 
         libShapeOptions.AddOutType(builder, self.out_type)

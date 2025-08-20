@@ -55,7 +55,7 @@ class QuantizationRule(abc.ABC):
 
 class SharedParamsForType(QuantizationRule):
 
-    def __init__(self, tensor_type: TensorType, *tensors: IOTensor):
+    def __init__(self, tensor_type: TensorType | int, *tensors: IOTensor):
         self.tensor_type = tensor_type
         self.tensors = tensors
 
@@ -93,7 +93,7 @@ class SharedParamsForType(QuantizationRule):
 
 class ExactValueForType(QuantizationRule):
 
-    def __init__(self, tensor_type: TensorType, tensor: IOTensor, scale: list[float], zero_point: list):
+    def __init__(self, tensor_type: TensorType | int, tensor: IOTensor, scale: list[float], zero_point: list):
         self.tensor = tensor
         self.tensor_type = tensor_type
         self.scale = scale
@@ -194,7 +194,7 @@ class ValidBiasValues(QuantizationRule):
         return "ExactBiasValues()"
 
 
-def verify_quantization_integrity(model: tflite_model.Model):
+def verify_quantization_integrity(model: tflite_model.Model) -> None:
     rules = {
         BuiltinOperator.AVERAGE_POOL_2D: [
             SharedParamsForType(TensorType.INT8, Input(0), Output(0)),

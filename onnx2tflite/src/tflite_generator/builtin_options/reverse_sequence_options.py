@@ -22,7 +22,7 @@ class ReverseSequence(meta.BuiltinOptions):
         self.seq_dim = seq_dim
         self.batch_dim = batch_dim
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ReverseSequenceOptions.Start(builder)
 
         ReverseSequenceOptions.AddSeqDim(builder, self.seq_dim)

@@ -20,7 +20,7 @@ class OneHot(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.OneHotOptions, BuiltinOperator.ONE_HOT)
         self.axis = axis
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         OneHotOptions.Start(builder)
 
         OneHotOptions.AddAxis(builder, self.axis)

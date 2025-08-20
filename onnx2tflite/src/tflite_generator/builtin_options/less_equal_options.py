@@ -18,7 +18,7 @@ class LessEqual(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.LessEqualOptions, BuiltinOperator.LESS_EQUAL)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         LessEqualOptions.Start(builder)
 
         return LessEqualOptions.End(builder)

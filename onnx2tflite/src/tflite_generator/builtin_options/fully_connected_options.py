@@ -33,7 +33,7 @@ class FullyConnected(meta.BuiltinOptions):
         self.keep_num_dims = keep_num_dims
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libFullyConnectedOptions.Start(builder)
 
         libFullyConnectedOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

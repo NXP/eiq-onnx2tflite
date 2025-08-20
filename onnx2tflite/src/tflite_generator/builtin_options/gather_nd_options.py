@@ -18,7 +18,7 @@ class GatherND(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.GatherNdOptions, BuiltinOperator.GATHER_ND)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libGatherNDOptions.Start(builder)
 
         return libGatherNDOptions.End(builder)

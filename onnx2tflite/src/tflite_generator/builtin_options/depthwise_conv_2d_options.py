@@ -43,7 +43,7 @@ class DepthwiseConv2D(meta.BuiltinOptions):
         self.dilation_h_factor = dilation_h_factor
         self.depth_multiplier = depth_multiplier
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libDepthwiseConv2DOptions.Start(builder)
 
         libDepthwiseConv2DOptions.AddPadding(builder, self.padding)

@@ -19,7 +19,7 @@ class Dequantize(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.DequantizeOptions,
                          libBuiltinOperator.BuiltinOperator.DEQUANTIZE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libQuantizeOptions.Start(builder)
 
         return libQuantizeOptions.End(builder)

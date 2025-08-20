@@ -21,7 +21,7 @@ class Gelu(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.GeluOptions, BuiltinOperator.GELU)
         self.approximate = approximate
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         GeluOptions.Start(builder)
 
         GeluOptions.AddApproximate(builder, self.approximate)

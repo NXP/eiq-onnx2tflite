@@ -28,7 +28,7 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorRule
 
 class OperatorBlock(ABC):
     @abstractmethod
-    def validate(self):
+    def validate(self) -> None:
         pass
 
 
@@ -39,7 +39,7 @@ class OpLikeBlock(OperatorBlock):
     outputs: list[str | None] | None = None
     op_rules: list[OpRule] | None = None
 
-    def validate(self):
+    def validate(self) -> None:
         """Check if the `Op` follows the limitations of the PatternMatcher.
         If it doesn't exit with error and a corresponding message.
         """
@@ -282,7 +282,7 @@ class MultipleSameOps(OpLikeBlock):
             # Unexpected failure.
             return False
 
-    def validate(self):
+    def validate(self) -> None:
         super().validate()
         logger.internal_assert(self.ops is not None,
                                "PatternMatcher: `MultipleSameOps` doesn't support `ops=None` yet.")
@@ -446,7 +446,7 @@ class OneOf(OperatorBlock):
     # For now, limited to `Op` objects.
     one_of_ops: list[Op]
 
-    def validate(self):
+    def validate(self) -> None:
         for op in self.one_of_ops:
             op.validate()
 

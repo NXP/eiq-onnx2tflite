@@ -26,7 +26,7 @@ class Div(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.DivOptions, BuiltinOperator.DIV)
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libDivOptions.Start(builder)
 
         libDivOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

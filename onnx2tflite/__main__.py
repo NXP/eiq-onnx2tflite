@@ -13,6 +13,7 @@ This module provides a CLI for the converter of ONNX models to TFLite.
 import argparse
 import logging
 import ntpath
+from argparse import Namespace
 
 import onnx2tflite.src.logger as context_logger
 from onnx2tflite.src.conversion_config import ConversionConfig
@@ -90,7 +91,7 @@ def _get_conversion_parser():
     return parser
 
 
-def parse_arguments():
+def parse_arguments() -> Namespace:
     parser = argparse.ArgumentParser(
         prog="onnx2tflite", parents=[_get_conversion_parser(), _get_user_choice_parser()],
         description="""
@@ -108,7 +109,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def run_conversion():
+def run_conversion() -> None:
     """Create argument parser"""
     args = parse_arguments()
     output_tflite = args.output

@@ -10,6 +10,7 @@
 Module contains helper functions that work with TFLite data types.
 """
 from enum import Enum
+from typing import Callable, Any
 
 import flatbuffers as fb
 
@@ -105,7 +106,7 @@ def name_for_type(data_type: TensorType) -> str:
     return names[data_type]
 
 
-def type_size(data_type: TensorType):
+def type_size(data_type: TensorType) -> int:
     """Return the memory size in bytes of given TFLite data type."""
     if data_type in {TensorType.UINT8, TensorType.INT8}:
         return 1
@@ -121,7 +122,7 @@ def type_size(data_type: TensorType):
     logger.e(logger.Code.INTERNAL_ERROR, f"Unexpected type '{data_type}' in types.type_size().")
 
 
-def prepend_function(builder: fb.Builder, data_type: TensorType):
+def prepend_function(builder: fb.Builder, data_type: TensorType) -> Callable[[Any], Any]:
     """Return the flatbuffer 'Prepend<type>()' function for given type."""
     if data_type == TensorType.UINT8:
         return builder.PrependUint8

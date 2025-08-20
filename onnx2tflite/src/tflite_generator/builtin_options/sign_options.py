@@ -17,7 +17,7 @@ class Sign(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.SignOptions, BuiltinOperator.SIGN)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         SignOptions.Start(builder)
 
         return SignOptions.End(builder)

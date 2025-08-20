@@ -37,7 +37,7 @@ class LSTM(meta.BuiltinOptions):
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libLSTMOptions.Start(builder)
 
         libLSTMOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

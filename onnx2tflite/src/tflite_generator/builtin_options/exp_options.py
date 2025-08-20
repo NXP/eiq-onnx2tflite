@@ -18,7 +18,7 @@ class Exp(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.ExpOptions, BuiltinOperator.EXP)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libExpOptions.Start(builder)
 
         return libExpOptions.End(builder)

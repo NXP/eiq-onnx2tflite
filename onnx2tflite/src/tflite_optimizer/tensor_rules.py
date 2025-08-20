@@ -347,7 +347,7 @@ class TensorHasType(TensorRule):
 
 @dataclass
 class TensorsHaveType(MultipleTensorRule):
-    def __init__(self, tensors: list[str], type_: TensorType):
+    def __init__(self, tensors: list[str], type_: TensorType | int):
         self._rules = [TensorHasType(t, type_) for t in tensors]
 
     @property

@@ -130,7 +130,7 @@ class Optimizer:
         }
 
     def optimize(self, optimization_whitelist: list[Optimization] | None = None,
-                 optimization_blacklist: list[Optimization] | None = None):
+                 optimization_blacklist: list[Optimization] | None = None) -> None:
         """Apply optimizations to the TFLite model encapsulated by 'self._builder'.
         :param optimization_whitelist: A list of optimizations to apply to the model.
         :param optimization_blacklist: A list of optimizations to NOT apply to the model.

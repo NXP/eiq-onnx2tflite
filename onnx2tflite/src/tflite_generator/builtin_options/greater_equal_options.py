@@ -18,7 +18,7 @@ class GreaterEqual(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.GreaterEqualOptions, BuiltinOperator.GREATER_EQUAL)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         GreaterEqualOptions.Start(builder)
 
         return GreaterEqualOptions.End(builder)

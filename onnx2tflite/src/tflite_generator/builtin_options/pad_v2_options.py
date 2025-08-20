@@ -16,7 +16,7 @@ class PadV2(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.BuiltinOptions.PadV2Options, BuiltinOperator.BuiltinOperator.PADV2)
 
-    def gen_tflite(self, builder: flatbuffers.Builder):
+    def gen_tflite(self, builder: flatbuffers.Builder) -> int:
         PadV2Options.Start(builder)
 
         return PadV2Options.End(builder)

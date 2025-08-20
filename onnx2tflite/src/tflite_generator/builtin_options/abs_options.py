@@ -18,7 +18,7 @@ class Abs(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.AbsOptions, BuiltinOperator.ABS)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         AbsOptions.Start(builder)
 
         return AbsOptions.End(builder)

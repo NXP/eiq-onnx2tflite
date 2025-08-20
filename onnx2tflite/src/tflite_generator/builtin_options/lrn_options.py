@@ -32,7 +32,7 @@ class LRN(meta.BuiltinOptions):
         self.alpha = alpha
         self.beta = beta
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libLocalResponseNormalizationOptions.Start(builder)
 
         libLocalResponseNormalizationOptions.AddRadius(builder, self.radius)

@@ -91,6 +91,7 @@ class QGemmConverter(NodeConverter):
         if tensor_has_data(t):
             # Transpose statically.
             t_op.tmp_inputs[input_idx] = self.builder.create_transposed_tensor(t)
+            return None
         else:
             # Dynamic tensor -> prepend a Transpose op.
             return self.builder.create_transpose_operator_before(t_op, input_idx, [1, 0])

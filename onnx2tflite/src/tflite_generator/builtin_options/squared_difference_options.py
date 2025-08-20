@@ -18,7 +18,7 @@ class SquaredDifference(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.SquaredDifferenceOptions, BuiltinOperator.SQUARED_DIFFERENCE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         SquaredDifferenceOptions.Start(builder)
 
         return SquaredDifferenceOptions.End(builder)

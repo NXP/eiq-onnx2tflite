@@ -22,7 +22,7 @@ class Gather(meta.BuiltinOptions):
         self.axis = axis
         self.batch_dims = batch_dims
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libGatherOptions.Start(builder)
 
         libGatherOptions.AddAxis(builder, self.axis)

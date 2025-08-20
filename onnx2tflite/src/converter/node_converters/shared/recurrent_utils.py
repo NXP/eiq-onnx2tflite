@@ -14,7 +14,8 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 
 
-def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model_builder.ModelBuilder, ops: OpsList):
+def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model_builder.ModelBuilder,
+                                     ops: OpsList) -> None:
     """Make sure that all input and output tensors of 't_op' have the correct format. 't_op' is assumed to be an LSTM
          or RNN operator.
 
@@ -74,7 +75,7 @@ def get_activation_function_for_name(name: str, op_type: str = "LSTM") -> Activa
              f"Conversion of ONNX {op_type} with activation function '{name}' is not possible.")
 
 
-def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: str = "LSTM"):
+def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: str = "LSTM") -> None:
     """Check if the 'sequence_lens' operand of ONNX LSTM/RNN has an effect. If it does, exit with error.
 
     :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.

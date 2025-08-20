@@ -18,7 +18,7 @@ class Tile(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.TileOptions, BuiltinOperator.TILE)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         TileOptions.Start(builder)
 
         return TileOptions.End(builder)

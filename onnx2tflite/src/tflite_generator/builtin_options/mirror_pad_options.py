@@ -45,7 +45,7 @@ class MirrorPad(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.BuiltinOptions.MirrorPadOptions, BuiltinOperator.BuiltinOperator.MIRROR_PAD)
         self.mode = mode
 
-    def gen_tflite(self, builder: flatbuffers.Builder):
+    def gen_tflite(self, builder: flatbuffers.Builder) -> int:
         MirrorPadOptions.Start(builder)
 
         MirrorPadOptions.AddMode(builder, self.mode)

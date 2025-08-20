@@ -16,7 +16,7 @@ class Pad(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.BuiltinOptions.PadOptions, BuiltinOperator.BuiltinOperator.PAD)
 
-    def gen_tflite(self, builder: flatbuffers.Builder):
+    def gen_tflite(self, builder: flatbuffers.Builder) -> int:
         PadOptions.Start(builder)
 
         return PadOptions.End(builder)

@@ -24,7 +24,7 @@ class PreprocessingStep(ABC):
         pass
 
     @abstractmethod
-    def run(self):
+    def run(self) -> None:
         # Execute the preprocessing step on the `self.model` onnx model.
         pass
 
@@ -45,7 +45,7 @@ class PreprocessingStep(ABC):
 
         return name
 
-    def add_initializer(self, initializer: onnx.TensorProto):
+    def add_initializer(self, initializer: onnx.TensorProto) -> None:
         """Add a `TensorProto` to the `graph.initializers`, with all necessary additional steps."""
         self.model.graph.initializer.append(initializer)
         if self.model.ir_version <= 3:
@@ -73,7 +73,7 @@ class PreprocessingStep(ABC):
             n += 1
         return tensor_name + f"_{n}"
 
-    def try_get_tensor_type(self, tensor: str):
+    def try_get_tensor_type(self, tensor: str) -> int | None:
         for vi in chain(self.model.graph.value_info, self.model.graph.input, self.model.graph.output):
             if vi.name == tensor:
                 if hasattr(vi, "type_proto"):

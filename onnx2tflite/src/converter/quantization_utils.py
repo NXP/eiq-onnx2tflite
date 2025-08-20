@@ -64,19 +64,19 @@ def quantization_params_to_lists(scale: np.ndarray, zero_point: np.ndarray) -> (
     return scale, zero_point
 
 
-def is_quantization_valid(scale, zero_point):
+def is_quantization_valid(scale, zero_point) -> bool:
     return scale.size == zero_point.size
 
 
-def is_per_tensor_quantized(scale, zero_point):
+def is_per_tensor_quantized(scale, zero_point) -> bool:
     return (scale.size == 1) and (zero_point.size == 1)
 
 
-def is_per_channel_quantized(scale, zero_point):
+def is_per_channel_quantized(scale, zero_point) -> bool:
     return is_quantization_valid(scale, zero_point) and not is_per_tensor_quantized(scale, zero_point)
 
 
-def get_symmetric_zero_point_for_type(tensor_type: TensorType):
+def get_symmetric_zero_point_for_type(tensor_type: TensorType) -> int:
     match tensor_type:
         case TensorType.INT8:
             return 0
@@ -141,7 +141,7 @@ def _validate_or_set_quant_params(tensor: tflite_model.Tensor,
 
 
 def propagate_quantization(from_tensor: tflite_model.Tensor,
-                           to_tensor: tflite_model.Tensor):
+                           to_tensor: tflite_model.Tensor) -> None:
     """Propagates quantization parameters from from_tensor to to_tensor. If to_tensor already has the params set
     checks the consistency.
     :raises: logger.Error - INVALID_ONNX_MODEL
@@ -159,7 +159,7 @@ def propagate_quantization(from_tensor: tflite_model.Tensor,
 
 
 def set_quantization_parameters_to_tensor(tflite_tensor: tflite_model.Tensor, scale: np.ndarray,
-                                          zero_point: np.ndarray, quantized_dimension: int = 0):
+                                          zero_point: np.ndarray, quantized_dimension: int = 0) -> None:
     """Create a TFLite QuantizationParameters object, initialize it from given parameters and add it to the
     'tflite_tensor'.
     :param tflite_tensor: The TFLite tensor in the model, to add the quantization to.

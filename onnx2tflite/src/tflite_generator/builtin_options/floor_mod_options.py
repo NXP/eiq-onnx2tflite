@@ -18,7 +18,7 @@ class FloorMod(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.FloorModOptions, BuiltinOperator.FLOOR_MOD)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         FloorModOptions.Start(builder)
 
         return FloorModOptions.End(builder)

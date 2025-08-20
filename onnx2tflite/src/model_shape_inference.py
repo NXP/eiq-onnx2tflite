@@ -1274,7 +1274,7 @@ class ModelShapeInference(SymbolicShapeInference):
         return None
 
     def preprocess_model(self, in_mp: ModelProto, symbolic_dimensions_mapping: dict[str, int] | None,
-                         input_shapes_mapping: dict[str, tuple] | None):
+                         input_shapes_mapping: dict[str, tuple] | None) -> None:
         if input_shapes_mapping:
             for input_name, input_shape in input_shapes_mapping.items():
                 make_input_shape_fixed(in_mp.graph, input_name, input_shape)
@@ -1298,7 +1298,7 @@ class ModelShapeInference(SymbolicShapeInference):
         return tensor_name in super().initializers_
 
     # noinspection PyMethodMayBeStatic
-    def optional_input_not_given(self, node: onnx.NodeProto, input_index: int):
+    def optional_input_not_given(self, node: onnx.NodeProto, input_index: int) -> bool:
         """Return `True` if `node` doesn't have and optional input tensor on index `input_index` specified."""
         return (len(node.input) <= input_index) or (node.input[input_index] == "")
 
@@ -1322,7 +1322,7 @@ class ModelShapeInference(SymbolicShapeInference):
         return shapes
 
     # noinspection PyMethodMayBeStatic
-    def check_for_problematic_nodes(self, model: onnx.ModelProto):
+    def check_for_problematic_nodes(self, model: onnx.ModelProto) -> None:
         """Check if the model contains nodes which can never have their shapes statically inferred. If it does, raise
         an error with a corresponding message.
         """

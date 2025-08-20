@@ -17,7 +17,7 @@ class Equal(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.EqualOptions, BuiltinOperator.EQUAL)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libEqualOptions.Start(builder)
 
         return libEqualOptions.End(builder)

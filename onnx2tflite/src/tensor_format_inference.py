@@ -94,7 +94,7 @@ class TensorFormatInference:
         self.operator_for_output_tensor = self._initialize_output_tensor_to_operator_dictionary()
         self._type_changed_during_last_run = False
 
-    def identify_tensor_formats(self):
+    def identify_tensor_formats(self) -> None:
         """Identify the format of all tensors in the ONNX model.
         Store the format in their '.tensor_format' attribute.
         """

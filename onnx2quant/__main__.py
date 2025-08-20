@@ -189,11 +189,11 @@ class NpyCalibrationDataReader(CalibrationDataReader):
 
         return result
 
-    def rewind(self):
+    def rewind(self) -> None:
         self.iterator_pos = 0
 
 
-def run_quantization():
+def run_quantization() -> None:
     """Create argument parser"""
     args = _parse_arguments()
 

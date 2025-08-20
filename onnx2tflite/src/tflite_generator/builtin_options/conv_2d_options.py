@@ -36,7 +36,7 @@ class Conv2D(meta.BuiltinOptions):
         self.dilation_h_factor = dilation_h_factor
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libConv2DOptions.Start(builder)
 
         libConv2DOptions.AddPadding(builder, self.padding)

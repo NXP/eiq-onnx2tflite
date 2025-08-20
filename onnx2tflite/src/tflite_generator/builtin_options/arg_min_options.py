@@ -21,7 +21,7 @@ class ArgMin(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.ArgMinOptions, BuiltinOperator.ARG_MIN)
         self.output_type = output_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ArgMinOptions.Start(builder)
 
         ArgMinOptions.AddOutputType(builder, self.output_type)

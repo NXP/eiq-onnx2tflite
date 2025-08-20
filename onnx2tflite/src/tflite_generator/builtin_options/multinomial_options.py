@@ -22,7 +22,7 @@ class Multinomial(meta.BuiltinOptions):
         self.seed = seed
         self.seed2 = seed2
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         RandomOptions.Start(builder)
 
         RandomOptions.AddSeed(builder, self.seed)

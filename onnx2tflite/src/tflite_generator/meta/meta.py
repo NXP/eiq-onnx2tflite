@@ -9,7 +9,7 @@
 
 Implementations of classes that all classes in /src/tflite_generator/ inherit from.
 """
-
+from abc import abstractmethod
 from collections.abc import Callable, Iterator
 
 import flatbuffers as fb
@@ -62,30 +62,30 @@ class TFLiteVector(TFLiteObject):
         self.prepend_function = prepend_function
         self.gen_empty = gen_empty
 
-    def append(self, item):
+    def append(self, item) -> None:
         self.vector.append(item)
 
-    def insert(self, index: int, item):
+    def insert(self, index: int, item) -> None:
         self.vector.insert(index, item)
 
     def index(self, item) -> int:
         return self.vector.index(item)
 
-    def remove(self, item):
+    def remove(self, item) -> None:
         self.vector.remove(item)
 
-    def get(self, index: int):
+    def get(self, index: int) -> TFLiteObject | int | float | bool:
         return self.vector[index]
 
-    def get_last(self):
+    def get_last(self) -> TFLiteObject | int | float | bool | None:
         if len(self.vector) > 0:
             return self.vector[-1]
         return None
 
-    def len(self):
+    def len(self) -> int:
         return self.vector.__len__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.vector.__str__()
 
     def __iter__(self) -> Iterator:
@@ -94,7 +94,7 @@ class TFLiteVector(TFLiteObject):
     def __getitem__(self, index):
         return self.vector[index]
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int | None:
         """Generates TFLite code for the vector"""
         if (not self.gen_empty) and (len(self.vector) == 0):
             # Nothing to generate
@@ -122,7 +122,7 @@ class TFLiteAtomicVector(TFLiteVector):
     def __eq__(self, other):
         return self.vector == other.vector
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         """Generates TFLite code for the vector"""
         if (not self.gen_empty) and (len(self.vector) == 0):
             # Nothing to generate
@@ -194,8 +194,8 @@ class BuiltinOptions(TFLiteObject):
     """ The type of this operator. """
     operator_type: bOp.BuiltinOperator
 
-    def __init__(self, builtin_options_type: bOpt.BuiltinOptions,
-                 operator_type: bOp.BuiltinOperator) -> None:
+    def __init__(self, builtin_options_type: bOpt.BuiltinOptions | int,
+                 operator_type: bOp.BuiltinOperator | int) -> None:
         if builtin_options_type is None:
             logger.d("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'builtinOptionsType'!")
         if operator_type is None:
@@ -205,8 +205,9 @@ class BuiltinOptions(TFLiteObject):
 
     """ Function has to be overwritten """
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         logger.w(f"BuiltinOperator '{self.builtin_options_type}':genTFLite() is not defined!")
+        raise NotImplemented
 
 
 class CustomOptions(bytearray):
