@@ -99,7 +99,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         :param data_type: TFLite data type of the 'zero'.
         :return: A numpy array holding one 'zero' value.
         """
-        if type(zp) != int:
+        if type(zp) is not int:
             logger.e(logger.Code.INTERNAL_ERROR,
                      "convert_q_linear_average_pool._get_zero_for_quantization_parameters(): "
                      "Zero point must be a scalar.")

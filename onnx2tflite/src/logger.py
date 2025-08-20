@@ -287,12 +287,12 @@ def e(err_code: Code, msg: str, exception: Exception | None = None) -> NoReturn:
 
 
 def expect_type(obj, expected_type, msg: str = "") -> None:
-    if type(obj) != expected_type:
+    if type(obj) is not expected_type:
         w(msg + f":Object '{obj}' is of type '{type(obj)}' where '{expected_type}' was expected!")
 
 
 def require_type(obj, required_type, msg: str = "") -> None:
-    if type(obj) != required_type:
+    if type(obj) is not required_type:
         e(Code.INVALID_TYPE, msg + f":Object '{obj}' is of type '{type(obj)}' where '{required_type}' was required!")
 
 

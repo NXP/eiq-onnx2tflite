@@ -1112,7 +1112,7 @@ class ModelBuilder:
         return cast_op
 
     def create_slice_after(self, after_op: tflite_model.Operator, on_output_index: int, begin: list[int],
-                           size: list[int]) -> None:
+                           size: list[int]) -> tflite_model.Operator:
         """Create a TFLite 'Slice' operator after the 'after_op' operator. The output of 'after_op' on index
         'on_output_index' is where the 'Slice' operator will connect. This function will preserve output
         shape of 'after_op' operator on index 'on_output_index'.

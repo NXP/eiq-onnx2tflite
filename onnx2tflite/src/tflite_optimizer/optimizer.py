@@ -168,7 +168,7 @@ class Optimizer:
 
                 # Call the optimization
                 made_changes = self.optimization_map[optimization]()
-                logger.internal_assert(type(made_changes) == bool, f"Optimization `{optimization}` didn't return bool.")
+                logger.internal_assert(type(made_changes) is bool, f"Optimization `{optimization}` didn't return bool.")
                 run_again |= made_changes
 
             if not run_again:

@@ -247,7 +247,7 @@ class TensorsHaveSameShape(TensorRule):
     def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
                  output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
         mapped_tensors = [tensor_map[tensor] for tensor in self.tensors]
-        if any(type(t) != tflite_model.Tensor for t in mapped_tensors):
+        if any(type(t) is not tflite_model.Tensor for t in mapped_tensors):
             raise NotImplementedError("Tensor rule `TensorsHaveSameShape` is not implemented for sets of tensors.")
 
         if not all(t.shape.is_well_defined() for t in mapped_tensors):
@@ -274,7 +274,7 @@ class TensorsHaveSameType(TensorRule):
             return True
 
         mapped_tensors = [tensor_map[tensor] for tensor in self.tensors]
-        if any(type(t) != tflite_model.Tensor for t in mapped_tensors):
+        if any(type(t) is not tflite_model.Tensor for t in mapped_tensors):
             raise NotImplementedError("Tensor rule `TensorsHaveSameType` is not implemented for sets of tensors.")
 
         first_type = mapped_tensors[0].type

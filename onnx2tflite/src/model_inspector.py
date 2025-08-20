@@ -76,14 +76,14 @@ class ONNXModelInspector:
         """
         return [output for output in node.outputs if self.get_number_of_onnx_consumers_safe(output) != 0]
 
-    def get_ops_with_output_tensor(self, tensor_name: str) -> [onnx_model.NodeProto]:
+    def get_ops_with_output_tensor(self, tensor_name: str) -> list[onnx_model.NodeProto]:
         """Finds all ops in the model, whose tensor_name is in operators output
 
         :return: List of operators
         """
         return [node for node in self.model.graph.nodes if tensor_name in node.outputs]
 
-    def get_ops_with_input_tensor(self, tensor_name: str) -> [onnx_model.NodeProto]:
+    def get_ops_with_input_tensor(self, tensor_name: str) -> list[onnx_model.NodeProto]:
         """Finds ops in the model, where tensor with tensor_name is operator's input tensor.
 
         :return: List of operators

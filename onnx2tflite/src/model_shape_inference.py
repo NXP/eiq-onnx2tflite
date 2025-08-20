@@ -210,7 +210,7 @@ class ModelShapeInference(SymbolicShapeInference):
             deferred_dim_idx = -1
             non_deferred_size = 1
             for i, d in enumerate(shape_value):
-                if type(d) == sympy.Symbol:
+                if type(d) is sympy.Symbol:
                     new_sympy_shape.append(d)
                 elif d == 0:
                     new_sympy_shape.append(input_sympy_shape[i])
@@ -823,7 +823,7 @@ class ModelShapeInference(SymbolicShapeInference):
 
         vi = self.known_vi_[node.output[0]]
         if sympy_shape is not None:
-            if type(sympy_shape) != list:
+            if type(sympy_shape) is not list:
                 sympy_shape = [sympy_shape]
             self._update_computed_dims(sympy_shape)
         else:
@@ -926,7 +926,7 @@ class ModelShapeInference(SymbolicShapeInference):
             if all([d == dims[0] for d in dims]):
                 continue
             merged = self._merge_symbols(dims)
-            if type(merged) == str:
+            if type(merged) is str:
                 sympy_shape[d] = self.symbolic_dims_[merged] if merged else None
             else:
                 sympy_shape[d] = merged

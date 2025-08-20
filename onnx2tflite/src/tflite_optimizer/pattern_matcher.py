@@ -162,7 +162,7 @@ class Op(OpLikeBlock):
                 real_in = real_op.tmp_inputs[real_input_index]
                 if inpt in tensor_map:
                     # Tensor has already been mapped.
-                    logger.internal_assert(type(tensor_map[inpt]) == tflite_model.Tensor,
+                    logger.internal_assert(type(tensor_map[inpt]) is tflite_model.Tensor,
                                            f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.")
                     if tensor_map[inpt] != real_in:
                         # The tensor doesn't match the mapped one.
@@ -356,7 +356,7 @@ class MultipleSameOps(OpLikeBlock):
                     real_in = real_op.tmp_inputs[real_input_index]
                     if inpt in tensor_map:
                         # Tensor has already been mapped.
-                        logger.internal_assert(type(tensor_map[inpt]) == tflite_model.Tensor,
+                        logger.internal_assert(type(tensor_map[inpt]) is tflite_model.Tensor,
                                                f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.")
                         if tensor_map[inpt] != real_in:
                             # The tensor doesn't match the mapped one.
@@ -489,7 +489,7 @@ class PatternMatcher:
         if len(self.pattern) == 0:
             logger.e(logger.Code.INTERNAL_ERROR, "PatternMatcher: empty pattern.")
 
-        if type(self.pattern[0]) != Op:
+        if type(self.pattern[0]) is not Op:
             logger.e(logger.Code.INTERNAL_ERROR, "PatternMatcher: invalid pattern. The first block must be an `Op`.")
 
         for block in self.pattern:
@@ -546,7 +546,7 @@ class PatternMatcher:
 
             # Found connecting input.
             connecting_input = tensor_map_copy[inpt]
-            logger.internal_assert(type(connecting_input) == tflite_model.Tensor,
+            logger.internal_assert(type(connecting_input) is tflite_model.Tensor,
                                    f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.")
 
             following_ops = input_to_ops.get(connecting_input.name, [])
@@ -611,7 +611,7 @@ class PatternMatcher:
             # Found connecting input.
             connecting_input = tensor_map_copy[inpt]
             following_ops = input_to_ops.get(connecting_input.name, [])
-            logger.internal_assert(type(connecting_input) == tflite_model.Tensor,
+            logger.internal_assert(type(connecting_input) is tflite_model.Tensor,
                                    f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.")
 
             # All following ops have to match.
