@@ -67,11 +67,11 @@ class ModelBuilder:
         self._tfl_model = tflite_model.Model(model_version, model_description)
         self.conversion_config = conversion_config
 
-        self.op_code_type_index_map = dict()
-        self._tensor_name_map = dict()
-        self._nchw_tensor_version = dict()
-        self._skipped_output_map = dict()
-        self._zeros_tensor_map = dict()
+        self.op_code_type_index_map = {}
+        self._tensor_name_map = {}
+        self._nchw_tensor_version = {}
+        self._skipped_output_map = {}
+        self._zeros_tensor_map = {}
 
     def create_zeros_tensor(self, dims: list[int], name: str, dtype: np.dtype,
                             can_reuse: bool = False) -> tflite_model.Tensor:
@@ -639,7 +639,7 @@ class ModelBuilder:
             version_name = f"{custom_code}_{version}"
 
         if op_type not in self.op_code_type_index_map:
-            self.op_code_type_index_map[op_type] = dict()
+            self.op_code_type_index_map[op_type] = {}
 
         if version_name not in self.op_code_type_index_map[op_type]:
             self.op_code_type_index_map[op_type][version_name] = self.operator_codes_size()

@@ -714,7 +714,7 @@ class PatternMatcher:
         input_to_ops, output_to_op = create_tensor_to_operator_dictionaries(self.builder)
 
         real_pattern: list[tflite_model.Operator] = []  # List of matched TFLite operators in the TFLite model.
-        tensor_map: NameToTensorMap = dict()
+        tensor_map: NameToTensorMap = {}
 
         # The first block of a pattern is always an `Op`.
         first_pattern_op = cast(Op, self.pattern[0])
@@ -728,7 +728,7 @@ class PatternMatcher:
             else:
                 # Mismatch.
                 real_pattern = []
-                tensor_map = dict()
+                tensor_map = {}
                 continue
 
             # Matched the first `Op`. Now try to match the rest of the pattern.
@@ -741,4 +741,4 @@ class PatternMatcher:
                 input_to_ops, output_to_op = create_tensor_to_operator_dictionaries(self.builder)
 
             real_pattern = []
-            tensor_map = dict()
+            tensor_map = {}

@@ -63,7 +63,7 @@ class TensorConverter:
             logger.d("'Builder.buildOutputTensors()' should be called before any other Tensor building function!")
 
         outputs = tflite_model.SubGraphOutputs()
-        output_map = dict()
+        output_map = {}
 
         for o_output in o_outputs:
             if o_output.type.tensor_type is None:
@@ -87,7 +87,7 @@ class TensorConverter:
         Also create empty buffers in the 'buffers' vector of the model.
         """
         inputs = tflite_model.SubGraphInputs()
-        input_map = dict()
+        input_map = {}
 
         for o_input in o_inputs:
             if o_input.type.tensor_type is None:

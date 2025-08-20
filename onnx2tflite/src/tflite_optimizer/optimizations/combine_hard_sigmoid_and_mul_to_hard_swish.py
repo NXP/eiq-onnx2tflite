@@ -82,7 +82,7 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
         )
 
         # The mapped operator (value) will be inserted into the model later, at the position of the `key` operator.
-        to_add: dict[tflite_model.Operator, tflite_model.Operator] = dict()
+        to_add: dict[tflite_model.Operator, tflite_model.Operator] = {}
         to_remove = []
         for pattern_ops, tensor_map, _, _ in matcher.match_patterns():
             x, y = tensor_map["x"], tensor_map["y"]
@@ -193,7 +193,7 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
         )
 
         # The mapped operator (value) will be inserted into the model later, at the position of the `key` operator.
-        to_add: dict[tflite_model.Operator, tflite_model.Operator] = dict()
+        to_add: dict[tflite_model.Operator, tflite_model.Operator] = {}
         to_remove = []
         for pattern_ops, tensor_map, _, _ in matcher.match_patterns():
             x, y = tensor_map["x"], tensor_map["y"]

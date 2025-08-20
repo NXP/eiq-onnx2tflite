@@ -23,8 +23,8 @@ def create_tensor_to_operator_dictionaries(builder: "model_builder.ModelBuilder"
     :return: Dictionary mapping a tensor name to a list of operators that use it as an input,
              dictionary mapping a tensor name to the operator, which produces it as its output.
     """
-    input_tensor_to_operators: InputTensorToOpsMap = dict()
-    output_tensor_to_operator: OutputTensorToOpMap = dict()
+    input_tensor_to_operators: InputTensorToOpsMap = {}
+    output_tensor_to_operator: OutputTensorToOpMap = {}
 
     for op in builder.get_operators().vector:
         for input_tensor in op.tmp_inputs:

@@ -95,7 +95,7 @@ def _parse_calibration_dataset_mapping(mapped_calibration_dataset: list[str] | s
     :param mapped_calibration_dataset: Comma separated string or list of calibration dataset mapping.
     :return: Input name to calibration dataset dir mapping parsed as a dictionary.
     """
-    parsed_mapping = dict()
+    parsed_mapping = {}
 
     if isinstance(mapped_calibration_dataset, str):
         mapped_calibration_dataset = mapped_calibration_dataset.split(",")

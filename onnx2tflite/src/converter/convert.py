@@ -95,7 +95,7 @@ def parse_symbolic_dimensions_mapping(mapped_symbolic_dimensions: list[str] | st
     :param mapped_symbolic_dimensions: Comma separated string or list of symbolic dimensions mapping.
     :return: Symbolic dimensions mapping parsed as a dictionary.
     """
-    parsed_mapping = dict()
+    parsed_mapping = {}
 
     if isinstance(mapped_symbolic_dimensions, str):
         mapped_symbolic_dimensions = mapped_symbolic_dimensions.split(",")
@@ -119,7 +119,7 @@ def parse_input_shape_mapping(mapped_input_shapes: list[str] | str) -> dict[str,
     :param mapped_input_shapes: Semicolon separated string or list of shape mappings.
     :return: Input shapes mapping parsed as a dictionary.
     """
-    parsed_mapping = dict()
+    parsed_mapping = {}
 
     if isinstance(mapped_input_shapes, str):
         mapped_input_shapes = mapped_input_shapes.split(";")
@@ -194,7 +194,7 @@ def convert_model(
                          f"Expected type 'onnx.ModelProto' or 'string'.")
 
             # Dictionary mapping names of ONNX tensors to their data, inferred by the shape inference.
-            inferred_tensor_data = dict()
+            inferred_tensor_data = {}
 
             with loggingContext(BasicLoggingContext.SHAPE_INFERENCE):
                 # Infer the shapes of internal tensors

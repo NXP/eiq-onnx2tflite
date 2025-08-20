@@ -31,7 +31,7 @@ class ONNXModelInspector:
     def __init__(self, model: onnx_model.ModelProto, inferred_tensor_data: dict[str, np.ndarray] | None = None):
         self.model = model
         self._tensor_consumers_count = self._count_tensor_consumers()
-        self._inferred_tensor_data = inferred_tensor_data or dict()
+        self._inferred_tensor_data = inferred_tensor_data or {}
 
     def try_get_inferred_tensor_data(self, tensor_name: str) -> np.ndarray | None:
         """For the given tensor, return data which was inferred during shape inference of the ONNX model. May return

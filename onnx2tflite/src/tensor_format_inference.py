@@ -90,7 +90,7 @@ class TensorFormatInference:
         :param model: ONNX ModelProto containing the model, which will have the format of its tensors inferred.
         """
         self.model = model
-        self.inferred_tensor_formats = dict()
+        self.inferred_tensor_formats = {}
         self.operator_for_output_tensor = self._initialize_output_tensor_to_operator_dictionary()
         self._type_changed_during_last_run = False
 
@@ -386,7 +386,7 @@ class TensorFormatInference:
 
         :return: The initialized dictionary.
         """
-        output_tensor_to_operator = dict()
+        output_tensor_to_operator = {}
 
         for node in self.model.graph.nodes:
             for output_tensor_name in node.outputs:

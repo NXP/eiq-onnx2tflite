@@ -77,7 +77,7 @@ class ReplaceAveragePoolBeforeFullyConnectedWithSum(BaseOptimization):
             ])
 
         # The mapped operator (value) will later be added into the TFLite model, in front of the `key` operator.
-        to_add: dict[tflite_model.Operator, tflite_model.Operator] = dict()
+        to_add: dict[tflite_model.Operator, tflite_model.Operator] = {}
         to_remove = []
         for [ap, reshape, fc], tensor_map, _, _ in matcher.match_patterns():
             x, resh_out, w = tensor_map["x"], tensor_map["resh_out"], tensor_map["w"]
