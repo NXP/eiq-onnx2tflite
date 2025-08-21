@@ -207,7 +207,7 @@ class BuiltinOptions(TFLiteObject):
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         logger.w(f"BuiltinOperator '{self.builtin_options_type}':genTFLite() is not defined!")
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class CustomOptions(bytearray):
