@@ -17,7 +17,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class PowConverter(NodeConverter):
-    node = 'Pow'
+    node = "Pow"
 
     onnx_supported_types = FLOATS + [TensorType.INT32, TensorType.INT64]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/pow.cc#L131-L145
@@ -25,10 +25,9 @@ class PowConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32, TensorType.INT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `Pow` to TFLite `Pow`. """
-
+        """Convert ONNX `Pow` to TFLite `Pow`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `Pow` has invalid number of inputs.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Pow` has invalid number of inputs.")
 
         base = t_op.tmp_inputs[0]
         power = t_op.tmp_inputs[1]
@@ -37,7 +36,7 @@ class PowConverter(NodeConverter):
         if base.type != power.type:
             # If this is required, prepend a `Cast` operator. Not sure if it is a common use case.
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX `Pow` with non-matching input types is not supported.')
+                     "Conversion of ONNX `Pow` with non-matching input types is not supported.")
 
         self.assert_type_allowed(base.type)
 
@@ -45,8 +44,8 @@ class PowConverter(NodeConverter):
             # TFLite only supports positive powers when the `power` tensor is `int32`.
             # If needed, introduce a flag to guarantee positive power values.
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     'Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because '
-                     'the power values at runtime could be negative, which is not supported by TFLite.')
+                     "Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because "
+                     "the power values at runtime could be negative, which is not supported by TFLite.")
 
         ops = OpsList(middle_op=t_op)
 

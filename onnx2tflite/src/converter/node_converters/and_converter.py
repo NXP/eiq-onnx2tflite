@@ -5,7 +5,6 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
@@ -17,19 +16,18 @@ from onnx2tflite.src.tflite_generator.builtin_options.logical_and_options import
 
 
 class AndConverter(NodeConverter):
-    node = 'And'
+    node = "And"
 
     onnx_supported_types = [TensorType.BOOL]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/logical.cc#L70-L73
     tflite_supported_types = [TensorType.BOOL]
     verified_types = [TensorType.BOOL]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `And` operator to TFLite `LogicalAnd`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `And` operator to TFLite `LogicalAnd`."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `And` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.')
+                     f"ONNX `And` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]

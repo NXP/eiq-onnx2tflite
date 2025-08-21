@@ -29,12 +29,12 @@ logger.addHandler(syslog)
 
 
 def _get_preprocessing_parser():
-    """ Return a parser which handles options used by the pre-processing stage that comes before quantization. """
+    """Return a parser which handles options used by the pre-processing stage that comes before quantization."""
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--replace-div-with-mul', action=argparse.BooleanOptionalAction, default=True,
+    parser.add_argument("--replace-div-with-mul", action=argparse.BooleanOptionalAction, default=True,
                         help="Replace some `Div` operators with `Mul`. `Div` doesn't support int8 quantization in "
                              "TFLite so this is replacement can avoid having to compute `Div` in float32.")
-    parser.add_argument('--replace-constant-with-static-tensor', action=argparse.BooleanOptionalAction,
+    parser.add_argument("--replace-constant-with-static-tensor", action=argparse.BooleanOptionalAction,
                         default=False,
                         help="Remove `Constant` nodes and directly assign static data to their output tensors.")
 
@@ -65,18 +65,18 @@ def _parse_arguments():
                              "can produce invalid models because opset is forcefully updated to version 11. This applies "
                              "especially to models with operators: Clip, Dropout, BatchNormalization and Split.")
     parser.add_argument("-c", "--calibration-dataset-mapping", dest="calibration_dataset_mapping",
-                        type=str, action='extend', nargs='+', required=True,
+                        type=str, action="extend", nargs="+", required=True,
                         help="Mapping between model input and calibration dataset directory with *.npy files. Value must "
                              "be in format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument "
                              "can be used multiple times to specify multiple inputs for the model. In case model "
                              "has semicolon in input tensor's name, it has to be renamed.")
     parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
-                        type=str, action='extend', nargs='*',
+                        type=str, action="extend", nargs="*",
                         help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
                              "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
                              "can be used multiple times.")
     parser.add_argument("-m", "--set-input-shape", dest="input_shapes_mapping",
-                        type=str, action='extend', nargs='*',
+                        type=str, action="extend", nargs="*",
                         help="Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,"
                              "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
                              "times.")
@@ -89,8 +89,7 @@ def _parse_arguments():
 
 
 def _parse_calibration_dataset_mapping(mapped_calibration_dataset: list[str] | str) -> dict[str, str]:
-    """
-    Parse calibration dataset as comma separated string with mapping or list of mappings. For both applies
+    """Parse calibration dataset as comma separated string with mapping or list of mappings. For both applies
     that mapping must be in format '<input_name>;<path_to_dir>' for example 'input_1;data_3_224/'.
 
     :param mapped_calibration_dataset: Comma separated string or list of calibration dataset mapping.
@@ -114,14 +113,12 @@ def _parse_calibration_dataset_mapping(mapped_calibration_dataset: list[str] | s
 
 
 def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: dict):
-    """
-    Create QDQ quantized model based on data defined by calibration dataset.
+    """Create QDQ quantized model based on data defined by calibration dataset.
 
     :param onnx_model: ONNX model in ModelProto format.
     :param output_onnx_model_path: Path where final quantized model should be saved.
     :param args: Quantization arguments as dict provided via CLI.
     """
-
     calibration_data_reader = NpyCalibrationDataReader(args["calibration_dataset_mapping"])
     quantization_config = QuantizationConfig(calibration_data_reader, args)
     quantized_model = QDQQuantizer().quantize_model(onnx_model, quantization_config=quantization_config)
@@ -132,8 +129,7 @@ def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: d
 class NpyCalibrationDataReader(CalibrationDataReader):
 
     def __init__(self, calibration_dataset_mapping: dict[str, str]):
-        """
-        CalibrationDataReader for data saved as numpy arrays (*.npy files).
+        """CalibrationDataReader for data saved as numpy arrays (*.npy files).
 
         :param calibration_dataset_mapping: Mapping between model inputs and directories with npy files.
         """
@@ -160,8 +156,7 @@ class NpyCalibrationDataReader(CalibrationDataReader):
         self.dataset_length = input_lens[0]
 
     def _get_filepaths(self, dir_path) -> list[str]:
-        """
-        Find all *.npy files in directory and return full file paths as list.
+        """Find all *.npy files in directory and return full file paths as list.
 
         :param dir_path: Searched directory.
         :return: List of paths to *.npy files.
@@ -174,13 +169,11 @@ class NpyCalibrationDataReader(CalibrationDataReader):
     @staticmethod
     @cache
     def _load_file(npy_file_path) -> np.ndarray:
-        """
-        Load *.npy file and cache it till we use all the memory.
+        """Load *.npy file and cache it till we use all the memory.
 
         :param npy_file_path: Path to *.npy file.
         :return: Loaded file as numpy array.
         """
-
         return np.load(npy_file_path)
 
     def get_next(self) -> dict | None:
@@ -201,7 +194,7 @@ class NpyCalibrationDataReader(CalibrationDataReader):
 
 
 def run_quantization():
-    """ Create argument parser """
+    """Create argument parser"""
     args = _parse_arguments()
 
     output_onnx_model_path = args.output

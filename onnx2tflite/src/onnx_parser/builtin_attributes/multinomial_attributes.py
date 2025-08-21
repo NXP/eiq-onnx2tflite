@@ -24,11 +24,11 @@ class Multinomial(meta.ONNXOperatorAttributes):
     def _init_attributes(self):
         for attr in self._descriptor:
             match attr.name:
-                case 'dtype':
+                case "dtype":
                     self.dtype = attr.i
-                case 'sample_size':
+                case "sample_size":
                     self.sample_size = attr.i
-                case 'seed':
+                case "seed":
                     self.seed = attr.f
                 case _:
                     logger.w(f"ONNX `Multinomial` attribute '{attr.name}' is not supported!")

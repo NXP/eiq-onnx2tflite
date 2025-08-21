@@ -8,18 +8,18 @@
 import numpy as np
 
 import onnx2tflite.lib.tflite.Padding as tflPadding
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class GlobalAveragePoolConverter(NodeConverter):
-    node = 'GlobalAveragePool'
+    node = "GlobalAveragePool"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/pooling.cc#L390-L407
@@ -27,8 +27,7 @@ class GlobalAveragePoolConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def _convert_2d_global_average_pool(self, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the 2D ONNX GlobalAveragePool operator to TFLite AveragePool2D. """
-
+        """Convert the 2D ONNX GlobalAveragePool operator to TFLite AveragePool2D."""
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -60,7 +59,7 @@ class GlobalAveragePoolConverter(NodeConverter):
         return ops_list.flatten()
 
     def _convert_1d_global_average_pool(self, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX GlobalAveragePool operator with a 1D kernel, to TFLite. """
+        """Convert the ONNX GlobalAveragePool operator with a 1D kernel, to TFLite."""
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -83,8 +82,7 @@ class GlobalAveragePoolConverter(NodeConverter):
         return [reshape1] + average_pool + [reshape2]
 
     def _convert_more_than_2d_global_average_pool(self, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX GlobalAveragePool operator with a kernel of at least 3 dimensions, to TFLite. """
-
+        """Convert the ONNX GlobalAveragePool operator with a kernel of at least 3 dimensions, to TFLite."""
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -106,22 +104,20 @@ class GlobalAveragePoolConverter(NodeConverter):
         return [reshape1] + average_pool + [reshape2]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime GlobalAveragePool operator to TFLite. """
-
+        """Convert the ONNX Runtime GlobalAveragePool operator to TFLite."""
         rank = t_op.tmp_inputs[0].rank
 
         if rank == 3:
             # 1D kernel
             return self._convert_1d_global_average_pool(t_op)
 
-        elif rank == 4:
+        if rank == 4:
             # 2D kernel
             return self._convert_2d_global_average_pool(t_op)
 
-        elif rank >= 5:
+        if rank >= 5:
             # kernel with at least 3 dimensions
             return self._convert_more_than_2d_global_average_pool(t_op)
 
-        else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"ONNX GlobalAveragePool has unexpected number of dimensions ('{rank}').")
+        logger.e(logger.Code.INVALID_ONNX_OPERATOR,
+                 f"ONNX GlobalAveragePool has unexpected number of dimensions ('{rank}').")

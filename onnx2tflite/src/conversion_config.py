@@ -9,8 +9,7 @@
 class ConversionConfig:
 
     def __init__(self, args: dict | None = None):
-        """
-        Conversion configuration passed through command line arguments or gathered during
+        """Conversion configuration passed through command line arguments or gathered during
         the conversion process.
 
         :param args: Optional dictionary with conversion arguments. Unknown arguments are ignored.
@@ -51,8 +50,7 @@ class ConversionConfig:
 class SkipShapeInferenceConfig(ConversionConfig):
 
     def __init__(self):
-        """
-        Conversion config shortcut with disabled shape inference.
+        """Conversion config shortcut with disabled shape inference.
         """
         super().__init__({"skip_shape_inference": True})
 
@@ -60,7 +58,6 @@ class SkipShapeInferenceConfig(ConversionConfig):
 class QDQAwareConfig(ConversionConfig):
 
     def __init__(self):
-        """
-        Conversion config shortcut with QDQ aware conversion enabled.
+        """Conversion config shortcut with QDQ aware conversion enabled.
         """
         super().__init__({"qdq_aware_conversion": True})

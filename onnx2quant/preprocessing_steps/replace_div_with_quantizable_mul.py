@@ -13,18 +13,18 @@ from onnx2tflite.src import logger
 
 
 class ReplaceDivWithQuantizableMul(PreprocessingStep):
-    """ Replace `Div` nodes with `Mul` where possible. TFLite doesn't support int8 quantized `Div` so this preprocessing
-         steps can avoid the need to run TFLite `Div` in float32.
+    """Replace `Div` nodes with `Mul` where possible. TFLite doesn't support int8 quantized `Div` so this preprocessing
+    steps can avoid the need to run TFLite `Div` in float32.
     """
 
     def disabling_flag(self) -> str:
-        return '--no-replace-div-with-mul'
+        return "--no-replace-div-with-mul"
 
     def run(self):
         num_affected_nodes = 0
 
         for node in self.model.graph.node:
-            if node.op_type != 'Div':
+            if node.op_type != "Div":
                 continue
 
             if (data := self.try_get_tensor_data(node.input[1])) is None:
@@ -53,7 +53,7 @@ class ReplaceDivWithQuantizableMul(PreprocessingStep):
                 continue
 
             # The `Div` can be replaced by `Mul`.
-            node.op_type = 'Mul'
+            node.op_type = "Mul"
 
             # Create a new tensor in case it is used elsewhere.
             node.input[1] = self.create_tensor_for_data(reciprocal_data, static_tensor)

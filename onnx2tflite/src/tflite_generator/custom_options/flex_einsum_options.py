@@ -12,7 +12,7 @@ from onnx2tflite.src.tflite_generator.meta.meta import CustomOptions
 class Einsum(CustomOptions):
 
     def __init__(self, equation: str, num_operands: int, data_type: TensorType) -> None:
-        """ Custom options of the `FlexEinsum` operator.
+        """Custom options of the `FlexEinsum` operator.
 
             The operator attributes are specified in:
             https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/core/ops/compat/ops_history_v2/Einsum.pbtxt

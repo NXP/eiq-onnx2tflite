@@ -5,20 +5,19 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    LRN
+"""LRN
 
 Representation of an ONNX 'LRN' operator.
 Initialized from a protobuf descriptor object.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class LRN(meta.ONNXOperatorAttributes):

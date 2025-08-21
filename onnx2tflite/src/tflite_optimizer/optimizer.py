@@ -6,34 +6,47 @@
 # See the LICENSE_MIT for more details.
 #
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable
 
 from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
-from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul_to_hard_swish import \
-    CombineHardSigmoidAndMulIntoHardSwish
+from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul_to_hard_swish import (
+    CombineHardSigmoidAndMulIntoHardSwish,
+)
 from onnx2tflite.src.tflite_optimizer.optimizations.eliminate_dead_branches import EliminateDeadBranches
 from onnx2tflite.src.tflite_optimizer.optimizations.fuse_activation_functions import FuseActivationFunctions
-from onnx2tflite.src.tflite_optimizer.optimizations.fuse_fully_connected_and_add_operators import \
-    FuseFullyConnectedAndAddOperators
+from onnx2tflite.src.tflite_optimizer.optimizations.fuse_fully_connected_and_add_operators import (
+    FuseFullyConnectedAndAddOperators,
+)
 from onnx2tflite.src.tflite_optimizer.optimizations.fuse_quanitze_into_preceding_ops import FuseQuantizeIntoPrecedingOps
 from onnx2tflite.src.tflite_optimizer.optimizations.keep_one_empty_buffer import KeepOneEmptyBuffer
 from onnx2tflite.src.tflite_optimizer.optimizations.move_relu_before_concat import MoveActivationBeforeConcatenation
-from onnx2tflite.src.tflite_optimizer.optimizations.permute_fully_connected_weights_after_reshape import \
-    PermuteFullyConnectedWeightsAfterReshape
-from onnx2tflite.src.tflite_optimizer.optimizations.prune_cast_operators import FuseCastOperators, \
-    RemoveCastOperatorsWithNoEffect
-from onnx2tflite.src.tflite_optimizer.optimizations.prune_quantize_operators import FuseParallelQuantizeOperators, \
-    PruneQuantizeOperators
-from onnx2tflite.src.tflite_optimizer.optimizations.prune_reshape_operators import FuseReshapeOperators, \
-    RemoveReshapeOperatorsWithNoEffect
-from onnx2tflite.src.tflite_optimizer.optimizations.prune_transpose_operators import FuseTransposeOperators, \
-    RemoveIdentityTransposeOperators
-from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_buffers import \
-    RemoveUnusedTensorsAndBuffers
-from onnx2tflite.src.tflite_optimizer.optimizations.replace_average_pool_before_fully_connected_with_sum import \
-    ReplaceAveragePoolBeforeFullyConnectedWithSum
+from onnx2tflite.src.tflite_optimizer.optimizations.permute_fully_connected_weights_after_reshape import (
+    PermuteFullyConnectedWeightsAfterReshape,
+)
+from onnx2tflite.src.tflite_optimizer.optimizations.prune_cast_operators import (
+    FuseCastOperators,
+    RemoveCastOperatorsWithNoEffect,
+)
+from onnx2tflite.src.tflite_optimizer.optimizations.prune_quantize_operators import (
+    FuseParallelQuantizeOperators,
+    PruneQuantizeOperators,
+)
+from onnx2tflite.src.tflite_optimizer.optimizations.prune_reshape_operators import (
+    FuseReshapeOperators,
+    RemoveReshapeOperatorsWithNoEffect,
+)
+from onnx2tflite.src.tflite_optimizer.optimizations.prune_transpose_operators import (
+    FuseTransposeOperators,
+    RemoveIdentityTransposeOperators,
+)
+from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_buffers import (
+    RemoveUnusedTensorsAndBuffers,
+)
+from onnx2tflite.src.tflite_optimizer.optimizations.replace_average_pool_before_fully_connected_with_sum import (
+    ReplaceAveragePoolBeforeFullyConnectedWithSum,
+)
 
 
 class Optimization(Enum):
@@ -64,14 +77,14 @@ class Optimization(Enum):
 
 
 class Optimizer:
-    """
-        Class provides methods to optimize a TFLite model. To do so, it uses a ModelBuilder object, encapsulating
-         the TFLite model.
+    """Class provides methods to optimize a TFLite model. To do so, it uses a ModelBuilder object, encapsulating
+     the TFLite model.
 
-        A lot of these methods were implemented a while ago they are not very efficient. Some of them may also not cover
-         all edge cases.
+    A lot of these methods were implemented a while ago they are not very efficient. Some of them may also not cover
+     all edge cases.
     """
-    _builder: 'model_builder.ModelBuilder'
+
+    _builder: "model_builder.ModelBuilder"
 
     # Dictionary which maps optimizations to methods which implement them
     optimization_map: dict[Optimization, Callable]
@@ -80,7 +93,7 @@ class Optimizer:
     #  limit to the number of times any single optimization is applied.
     optimization_application_limit = 10  # Empirical value.
 
-    def __init__(self, builder: 'model_builder.ModelBuilder', conversion_config: ConversionConfig):
+    def __init__(self, builder: "model_builder.ModelBuilder", conversion_config: ConversionConfig):
         self._builder = builder
 
         self.optimization_map = {
@@ -118,16 +131,15 @@ class Optimizer:
 
     def optimize(self, optimization_whitelist: list[Optimization] | None = None,
                  optimization_blacklist: list[Optimization] | None = None):
-        """ Apply optimizations to the TFLite model encapsulated by 'self._builder'.
-            :param optimization_whitelist: A list of optimizations to apply to the model.
-            :param optimization_blacklist: A list of optimizations to NOT apply to the model.
+        """Apply optimizations to the TFLite model encapsulated by 'self._builder'.
+        :param optimization_whitelist: A list of optimizations to apply to the model.
+        :param optimization_blacklist: A list of optimizations to NOT apply to the model.
 
-            At least one of 'optimization_whitelist' and 'optimization_blacklist' must be 'None'.
-            If both are 'None', all optimizations are applied.
+        At least one of 'optimization_whitelist' and 'optimization_blacklist' must be 'None'.
+        If both are 'None', all optimizations are applied.
 
-            The optimizations will be applied multiple times in a loop, until the model is fully optimized.
+        The optimizations will be applied multiple times in a loop, until the model is fully optimized.
         """
-
         if optimization_whitelist is not None and optimization_blacklist is not None:
             logger.e(logger.Code.INVALID_OPTIMIZATION,
                      "Optimization whitelist and blacklist cannot both be specified.")

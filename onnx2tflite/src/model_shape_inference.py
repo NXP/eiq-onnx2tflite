@@ -14,10 +14,22 @@ import onnx
 import onnx.shape_inference
 import sympy
 from onnx import GraphProto, ModelProto, helper, numpy_helper
-from onnxruntime.tools.onnx_model_utils import iterate_graph_per_graph_func, make_dim_param_fixed, \
-    make_input_shape_fixed
-from onnxruntime.tools.symbolic_shape_infer import SymbolicShapeInference, as_list, as_scalar, get_attribute, get_opset, \
-    get_shape_from_sympy_shape, get_shape_from_value_info, handle_negative_axis, is_literal
+from onnxruntime.tools.onnx_model_utils import (
+    iterate_graph_per_graph_func,
+    make_dim_param_fixed,
+    make_input_shape_fixed,
+)
+from onnxruntime.tools.symbolic_shape_infer import (
+    SymbolicShapeInference,
+    as_list,
+    as_scalar,
+    get_attribute,
+    get_opset,
+    get_shape_from_sympy_shape,
+    get_shape_from_value_info,
+    handle_negative_axis,
+    is_literal,
+)
 
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
@@ -31,7 +43,7 @@ def shape_is_well_defined(shape: list) -> bool:
 
 # noinspection PyPep8Naming
 class ModelShapeInference(SymbolicShapeInference):
-    """ Model shape inference with extended support for quantized operators. """
+    """Model shape inference with extended support for quantized operators."""
 
     def __init__(self, int_max=2 ** 31 - 1, auto_merge=False, guess_output_rank=False, verbose=0):
         super().__init__(int_max, auto_merge, guess_output_rank, verbose)
@@ -93,19 +105,19 @@ class ModelShapeInference(SymbolicShapeInference):
         # Originally there was no dispatcher for this operator, and the inference only worked for v7.
 
         if get_opset(self.out_mp_) < 9:  # V7
-            scales = get_attribute(node, 'scales', None)
+            scales = get_attribute(node, "scales", None)
             if scales is None:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'ONNX `Resize` v7 is missing the required `scales` attribute.')
+                         "ONNX `Resize` v7 is missing the required `scales` attribute.")
         else:  # V9
             scales = self._try_get_value(node, 1)
             if scales is None:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'Cannot infer the output shape of ONNX `Resize` with a dynamic `scales` input.')
+                         "Cannot infer the output shape of ONNX `Resize` with a dynamic `scales` input.")
 
         input_shape = np.array(self._get_sympy_shape(node, 0), np.float32)
         # noinspection PyUnboundLocalVariable
-        output_shape = [sympy.simplify(sympy.floor(d * s)) for d, s in zip(input_shape, scales)]
+        output_shape = [sympy.simplify(sympy.floor(d * s)) for d, s in zip(input_shape, scales, strict=False)]
         self._update_computed_dims(output_shape)
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(
@@ -122,8 +134,8 @@ class ModelShapeInference(SymbolicShapeInference):
 
         shape = self._get_shape(node, 0)
 
-        if (to_type := get_attribute(node, 'to', None)) is None:
-            logger.e(logger.Code.SHAPE_INFERENCE_ERROR, 'ONNX `Cast` is missing the required attribute `to`.')
+        if (to_type := get_attribute(node, "to", None)) is None:
+            logger.e(logger.Code.SHAPE_INFERENCE_ERROR, "ONNX `Cast` is missing the required attribute `to`.")
 
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(helper.make_tensor_value_info(node.output[0], to_type, shape))
@@ -149,7 +161,7 @@ class ModelShapeInference(SymbolicShapeInference):
         if depth is None:
             # The output shape depends on the value of `depth`. Since the value is not known, shape inference failed.
             logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                     'Failed to infer the output shape of ONNX `OneHot` with a dynamic `depth` input.')
+                     "Failed to infer the output shape of ONNX `OneHot` with a dynamic `depth` input.")
 
         if isinstance(depth, np.ndarray):
             depth = depth.item()
@@ -425,7 +437,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 return all(bool(d >= 0) for d in flatten_min(y - x))
 
         def handle_negative_index(index, bound):
-            """normalizes a negative index to be in [0, bound)"""
+            """Normalizes a negative index to be in [0, bound)"""
             try:
                 if not less_equal(0, index):
                     if is_literal(index) and index <= -self.int_max_:
@@ -435,7 +447,7 @@ class ModelShapeInference(SymbolicShapeInference):
             except TypeError:
                 # MODIFIED PART START
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'Shape inference of `Slice` failed unexpectedly.')
+                         "Shape inference of `Slice` failed unexpectedly.")
                 # MODIFIED PART END
             return index
 
@@ -452,7 +464,7 @@ class ModelShapeInference(SymbolicShapeInference):
             axes = self._try_get_value(node, 3)
             steps = self._try_get_value(node, 4)
             if axes is None and not (starts is None and ends is None):
-                axes = list(range(0, len(starts if starts is not None else ends)))
+                axes = list(range(len(starts if starts is not None else ends)))
             if steps is None and not (starts is None and ends is None):
                 steps = [1] * len(starts if starts is not None else ends)
             axes = as_list(axes, keep_none=True)
@@ -468,7 +480,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 for i in axes:
                     new_sympy_shape[i] = self._new_symbolic_dim_from_output(node, 0, i)
         else:
-            for i, s, e, t in zip(axes, starts, ends, steps):
+            for i, s, e, t in zip(axes, starts, ends, steps, strict=False):
                 e = handle_negative_index(e, new_sympy_shape[i])  # noqa: PLW2901
 
                 if is_literal(e):
@@ -483,22 +495,20 @@ class ModelShapeInference(SymbolicShapeInference):
                         else:
                             e = common.clamp(e, -1, new_sympy_shape[i] - 1)
                         # MODIFIED PART END
-                    else:
-                        if e > 0:
-                            e = (  # noqa: PLW2901
-                                sympy.Min(e, new_sympy_shape[i]) if e > 1 else e
-                            )  # special case for slicing first to make computation easier
+                    elif e > 0:
+                        e = (  # noqa: PLW2901
+                            sympy.Min(e, new_sympy_shape[i]) if e > 1 else e
+                        )  # special case for slicing first to make computation easier
+                elif is_literal(new_sympy_shape[i]):
+                    e = sympy.Min(e, new_sympy_shape[i])  # noqa: PLW2901
                 else:
-                    if is_literal(new_sympy_shape[i]):
-                        e = sympy.Min(e, new_sympy_shape[i])  # noqa: PLW2901
-                    else:
-                        try:
-                            if not less_equal(e, new_sympy_shape[i]):
-                                e = new_sympy_shape[i]  # noqa: PLW2901
-                        except Exception:
-                            # MODIFIED PART START
-                            logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                                     'Shape inference of `Slice` failed due to the use of symbolic shapes.')
+                    try:
+                        if not less_equal(e, new_sympy_shape[i]):
+                            e = new_sympy_shape[i]  # noqa: PLW2901
+                    except Exception:
+                        # MODIFIED PART START
+                        logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
+                                 "Shape inference of `Slice` failed due to the use of symbolic shapes.")
                             # MODIFIED PART END
 
                 s = handle_negative_index(s, new_sympy_shape[i])  # noqa: PLW2901
@@ -536,7 +546,7 @@ class ModelShapeInference(SymbolicShapeInference):
         # handle sympy_data if needed, for slice in shape computation
         if (
                 node.input[0] in self.sympy_data_
-                and [0] == axes
+                and axes == [0]
                 and starts is not None
                 and len(starts) == 1
                 and ends is not None
@@ -573,7 +583,7 @@ class ModelShapeInference(SymbolicShapeInference):
         if get_opset(self.out_mp_) <= 10:  # V10
             scales = self._try_get_value(node, 1)
             if scales is not None:
-                new_sympy_shape = [sympy.simplify(sympy.floor(d * s)) for d, s in zip(input_sympy_shape, scales)]
+                new_sympy_shape = [sympy.simplify(sympy.floor(d * s)) for d, s in zip(input_sympy_shape, scales, strict=False)]
                 self._update_computed_dims(new_sympy_shape)
                 vi.CopyFrom(
                     helper.make_tensor_value_info(
@@ -584,10 +594,10 @@ class ModelShapeInference(SymbolicShapeInference):
                 )
             else:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'Cannot infer the output shape of ONNX `Resize` with a dynamic `scales` input.')
+                         "Cannot infer the output shape of ONNX `Resize` with a dynamic `scales` input.")
 
         else:  # V11+
-            uses_roi_tensor = len(node.input) >= 2 and node.input[1] != ''
+            uses_roi_tensor = len(node.input) >= 2 and node.input[1] != ""
             scales = self._try_get_value(node, 2)
             sizes = self._try_get_value(node, 3)
 
@@ -596,43 +606,43 @@ class ModelShapeInference(SymbolicShapeInference):
                 # Shape inference is not implemented for these cases. The conversion to TFLite would be currently
                 #  impossible anyway.
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'The inference of the output shape of ONNX `Resize` with rank != 4 is not implemented.')
+                         "The inference of the output shape of ONNX `Resize` with rank != 4 is not implemented.")
 
-            axes = get_attribute(node, 'axes', list(range(rank)))  # Axes specify which dimensions are effected.
+            axes = get_attribute(node, "axes", list(range(rank)))  # Axes specify which dimensions are effected.
 
             if sizes is not None:
                 # The code below does not consider the `roi` input, because the conversion doesn't currently support it.
                 if uses_roi_tensor and \
-                        get_attribute(node, 'coordinate_transformation_mode', 'half_pixel') == 'tf_crop_and_resize':
+                        get_attribute(node, "coordinate_transformation_mode", "half_pixel") == "tf_crop_and_resize":
                     logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                             'The inference of the output shape of ONNX `Resize` is not implemented when the `roi` '
-                             'input is specified.')
+                             "The inference of the output shape of ONNX `Resize` is not implemented when the `roi` "
+                             "input is specified.")
 
                 output_shape = list(self._get_sympy_shape(node, 0))  # Copy the input shape.
 
                 # Modify the input shape, where `axes` specify.
-                for axis, size in zip(axes, sizes):
+                for axis, size in zip(axes, sizes, strict=False):
                     output_shape[axis] = sympy.simplify(size)
                 self._update_computed_dims(output_shape)
 
             elif scales is not None:
                 if uses_roi_tensor and \
-                        get_attribute(node, 'coordinate_transformation_mode', 'half_pixel') == 'tf_crop_and_resize':
+                        get_attribute(node, "coordinate_transformation_mode", "half_pixel") == "tf_crop_and_resize":
                     # The conversion doesn't support `roi` input, so it is not implemented for shape inference either.
                     logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                             'The inference of the output shape of ONNX `Resize` is not implemented when the `roi` '
-                             'input is specified.')
+                             "The inference of the output shape of ONNX `Resize` is not implemented when the `roi` "
+                             "input is specified.")
 
                 output_shape = list(self._get_sympy_shape(node, 0))  # Copy the input shape.
 
                 # Modify the input shape, where `axes` specify.
-                for axis, scale in zip(axes, scales):
+                for axis, scale in zip(axes, scales, strict=False):
                     output_shape[axis] = sympy.simplify(round(output_shape[axis] * scale))
                 self._update_computed_dims(output_shape)
 
             else:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'Cannot infer the output shape of ONNX `Resize` with dynamic inputs.')
+                         "Cannot infer the output shape of ONNX `Resize` with dynamic inputs.")
 
             # noinspection PyUnboundLocalVariable
             vi.CopyFrom(
@@ -648,16 +658,16 @@ class ModelShapeInference(SymbolicShapeInference):
         input_data = self._get_int_or_float_values(node, allow_float_values=True)
         if any([i is None for i in input_data]):
             # Dynamic inputs with no inferred data. Shape inference is not possible.
-            logger.e(logger.Code.SHAPE_INFERENCE_ERROR, 'Failed to infer output shape of `Range` with dynamic inputs.')
+            logger.e(logger.Code.SHAPE_INFERENCE_ERROR, "Failed to infer output shape of `Range` with dynamic inputs.")
 
         start = as_scalar(input_data[0])
         limit = as_scalar(input_data[1])
         delta = as_scalar(input_data[2])
         if delta == 0:
             # https://github.com/microsoft/onnxruntime/blob/d30c81d270894f41ccce7b102b1d4aedd9e628b1/onnxruntime/core/providers/cpu/generator/range.cc#L65
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `Range` has `delta` = 0, which is not allowed.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has `delta` = 0, which is not allowed.")
 
-        if type(0.1) in {type(start), type(limit), type(delta)}:
+        if float in {type(start), type(limit), type(delta)}:
             # The `Range` uses float parameters. Computation of the output shape can be incorrect, because of float
             #  errors. For example if start=0.1, limit=12.3 and delta=0.1, '(limit - start) / delta' should be 122, but
             #  because of float errors, it is 122.0000000745058. `sympy.ceiling()` then turns it into 123, which is not
@@ -693,16 +703,16 @@ class ModelShapeInference(SymbolicShapeInference):
             pass
 
     def _infer_ReduceX(self, node):  # noqa: N802
-        """ Infer the output shape for `Reduce*` operators, which used an `axes` attribute up-to version 18 (excluding),
-             and then switched to an `axes` input.
-            This includes `ReduceL2`, `ReduceMax`, `ReduceMean`, `ReduceProd` and potentially others.
+        """Infer the output shape for `Reduce*` operators, which used an `axes` attribute up-to version 18 (excluding),
+         and then switched to an `axes` input.
+        This includes `ReduceL2`, `ReduceMax`, `ReduceMean`, `ReduceProd` and potentially others.
         """
-        keep_dims = get_attribute(node, 'keepdims', 1)
+        keep_dims = get_attribute(node, "keepdims", 1)
         if get_opset(self.out_mp_) >= 18:
             # ReduceMean/ReduceL2 v18+ uses 'axes' as input.
             axes = self._try_get_value(node, 1)
             if axes is None:
-                if len(node.input) <= 1 or self.tensor_is_static(node.input[1]) or node.input[1] == '':
+                if len(node.input) <= 1 or self.tensor_is_static(node.input[1]) or node.input[1] == "":
                     # The `axes` is omitted. The default value will be used.
                     pass
 
@@ -710,11 +720,11 @@ class ModelShapeInference(SymbolicShapeInference):
                     # The `axes` is a dynamic tensor and there is no inferred data for it.
                     #  It is impossible to correctly infer the output shape.
                     logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                             f'Failed to infer output shape of `{node.op_type}` with a dynamic `axes` input tensor.')
+                             f"Failed to infer output shape of `{node.op_type}` with a dynamic `axes` input tensor.")
 
         else:
             # 'axes' is an attribute of the operator.
-            axes = get_attribute(node, 'axes')
+            axes = get_attribute(node, "axes")
 
         shape = self._get_shape(node, 0)
         if axes is None:
@@ -742,12 +752,12 @@ class ModelShapeInference(SymbolicShapeInference):
         )
 
     def _infer_ReduceSum(self, node):  # noqa: N802
-        keep_dims = get_attribute(node, 'keepdims', 1)
+        keep_dims = get_attribute(node, "keepdims", 1)
         if get_opset(self.out_mp_) >= 13:
             # ReduceSum v13+ uses 'axes' as input.
             axes = self._try_get_value(node, 1)
             if axes is None:
-                if len(node.input) <= 1 or self.tensor_is_static(node.input[1]) or node.input[1] == '':
+                if len(node.input) <= 1 or self.tensor_is_static(node.input[1]) or node.input[1] == "":
                     # The `axes` is omitted. The default value will be used.
                     pass
 
@@ -755,11 +765,11 @@ class ModelShapeInference(SymbolicShapeInference):
                     # The `axes` is a dynamic tensor and there is no inferred data for it.
                     #  It is impossible to correctly infer the output shape.
                     logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                             f'Failed to infer output shape of `{node.op_type}` with a dynamic `axes` input tensor.')
+                             f"Failed to infer output shape of `{node.op_type}` with a dynamic `axes` input tensor.")
 
         else:
             # 'axes' is an attribute of the operator.
-            axes = get_attribute(node, 'axes')
+            axes = get_attribute(node, "axes")
 
         shape = self._get_shape(node, 0)
         if axes is None:
@@ -792,7 +802,7 @@ class ModelShapeInference(SymbolicShapeInference):
         try:
             shape = self._try_get_value(node, 0)
             if shape is not None:
-                value_tensor: onnx.TensorProto = get_attribute(node, 'value')
+                value_tensor: onnx.TensorProto = get_attribute(node, "value")
                 if value_tensor is not None:
                     value = numpy_helper.to_array(value_tensor)
                     assert value.size == 1
@@ -808,8 +818,8 @@ class ModelShapeInference(SymbolicShapeInference):
 
         sympy_shape = self._get_int_or_float_values(node)[0]
         if sympy_shape is None:
-            logger.e(logger.Code.SHAPE_INFERENCE_ERROR, 'Inference of the output shape of `ConstantOfShape` with a '
-                                                        'dynamic input is not possible.')
+            logger.e(logger.Code.SHAPE_INFERENCE_ERROR, "Inference of the output shape of `ConstantOfShape` with a "
+                                                        "dynamic input is not possible.")
 
         vi = self.known_vi_[node.output[0]]
         if sympy_shape is not None:
@@ -821,7 +831,7 @@ class ModelShapeInference(SymbolicShapeInference):
             # note input0 is a 1D vector of shape, the new symbolic shape has the rank of the shape vector length
             sympy_shape = self._new_symbolic_shape(self._get_shape(node, 0)[0], node)
 
-        if val := get_attribute(node, 'value'):
+        if val := get_attribute(node, "value"):
             data_type = val.data_type
         else:
             # By default, the `ConstantOfShape` has a float32 value (0.0).
@@ -1024,7 +1034,7 @@ class ModelShapeInference(SymbolicShapeInference):
             logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
                      "Couldn't infer output shape of 'Constant' operator with a sparse value.")
 
-        simple_values = ['value_int', 'value_float', 'value_string', 'value_ints', 'value_floats', 'value_strings']
+        simple_values = ["value_int", "value_float", "value_string", "value_ints", "value_floats", "value_strings"]
         for value in simple_values:
             attr = get_attribute(node, value)
             if attr is not None:
@@ -1076,8 +1086,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi.CopyFrom(onnx.helper.make_tensor_value_info(node.output[1], onnx.TensorProto.BOOL, mask_shape))
 
     def _infer_Flatten(self, node):
-        """ Ensure that flatten resolves dynamic shapes """
-
+        """Ensure that flatten resolves dynamic shapes"""
         input_shape = self._get_shape(node, 0)
         dynamic_dim_index = None
         for idx, dim in enumerate(input_shape):
@@ -1139,7 +1148,7 @@ class ModelShapeInference(SymbolicShapeInference):
 
         if len(sympy_shape) != rank + 2:
             logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                     'Unexpected error occurred during shape inference of ONNX `AveragePool`.')
+                     "Unexpected error occurred during shape inference of ONNX `AveragePool`.")
 
         # only need to symbolic shape inference if input has symbolic dims in spatial axes
         spatial_shape = sympy_shape[-rank:]
@@ -1150,26 +1159,26 @@ class ModelShapeInference(SymbolicShapeInference):
             if shape is not None and len(shape) > 0:
                 if len(sympy_shape) != len(shape):
                     logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                             'Unexpected error occurred during shape inference of ONNX `AveragePool`.')
+                             "Unexpected error occurred during shape inference of ONNX `AveragePool`.")
                 sympy_shape[-rank:] = [sympy.Integer(d) for d in shape[-rank:]]
                 return sympy_shape
 
         dilations = get_attribute(node, "dilations", [1] * rank)
         strides = get_attribute(node, "strides", [1] * rank)
-        effective_kernel_shape = [(k - 1) * d + 1 for k, d in zip(kernel_shape, dilations)]
+        effective_kernel_shape = [(k - 1) * d + 1 for k, d in zip(kernel_shape, dilations, strict=False)]
         pads = get_attribute(node, "pads")
         if pads is None:
             auto_pad = get_attribute(node, "auto_pad", b"NOTSET").decode("utf-8")
             if auto_pad != "VALID" and auto_pad != "NOTSET":
                 try:
-                    residual = [sympy.Mod(d, s) for d, s in zip(sympy_shape[-rank:], strides)]
+                    residual = [sympy.Mod(d, s) for d, s in zip(sympy_shape[-rank:], strides, strict=False)]
                     total_pads = [
                         max(0, (k - s) if r == 0 else (k - r))
-                        for k, s, r in zip(effective_kernel_shape, strides, residual)
+                        for k, s, r in zip(effective_kernel_shape, strides, residual, strict=False)
                     ]
                 except TypeError:  # sympy may throw TypeError: cannot determine truth value of Relational
                     total_pads = [
-                        max(0, (k - s)) for k, s in zip(effective_kernel_shape, strides)
+                        max(0, (k - s)) for k, s in zip(effective_kernel_shape, strides, strict=False)
                     ]  # assuming no residual if sympy throws error
             elif auto_pad == "VALID":
                 total_pads = []
@@ -1178,9 +1187,9 @@ class ModelShapeInference(SymbolicShapeInference):
         else:
             if len(pads) != 2 * rank:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'ONNX `AveragePool` has mismatched `kernel_shape` and `pads` attributes.')
+                         "ONNX `AveragePool` has mismatched `kernel_shape` and `pads` attributes.")
 
-            total_pads = [p1 + p2 for p1, p2 in zip(pads[:rank], pads[rank:])]
+            total_pads = [p1 + p2 for p1, p2 in zip(pads[:rank], pads[rank:], strict=False)]
 
         ceil_mode = get_attribute(node, "ceil_mode", 0)
         for i in range(rank):
@@ -1197,13 +1206,11 @@ class ModelShapeInference(SymbolicShapeInference):
         return sympy_shape
 
     def _find_undefined_dimensions(self, graph: GraphProto):
-        """
-        Look for dynamic and symbolic dimensions in model inputs and raise error when
+        """Look for dynamic and symbolic dimensions in model inputs and raise error when
         there are any.
 
         :param graph: Searched graph.
         """
-
         symbolic_shapes = set()
         dynamic_inputs = set()
 
@@ -1242,8 +1249,7 @@ class ModelShapeInference(SymbolicShapeInference):
                      f"static using argument '--set-input-shape'.")
 
     def _get_symbolic_batch_dim_name_for_single_input_graph(self, graph: GraphProto) -> str | None:
-        """
-        Get name of symbolic batch dimension if it is present in the graph
+        """Get name of symbolic batch dimension if it is present in the graph
         and graph has exactly one input tensor.
 
         :param graph: Searched graph.
@@ -1286,22 +1292,21 @@ class ModelShapeInference(SymbolicShapeInference):
         super()._preprocess(in_mp)
 
     def tensor_is_static(self, tensor_name: str) -> bool:
-        if not hasattr(super(), 'initializers_'):
+        if not hasattr(super(), "initializers_"):
             return False
 
         return tensor_name in super().initializers_
 
     # noinspection PyMethodMayBeStatic
     def optional_input_not_given(self, node: onnx.NodeProto, input_index: int):
-        """ Return `True` if `node` doesn't have and optional input tensor on index `input_index` specified. """
-
-        return (len(node.input) <= input_index) or (node.input[input_index] == '')
+        """Return `True` if `node` doesn't have and optional input tensor on index `input_index` specified."""
+        return (len(node.input) <= input_index) or (node.input[input_index] == "")
 
     def get_shapes_of_all_node_tensors(self, node: onnx.NodeProto) -> list[list | None]:
         shapes = []
 
         for tensor_name in chain(node.input, node.output):
-            if tensor_name == '':
+            if tensor_name == "":
                 continue
 
             if tensor_name in self.known_vi_:
@@ -1318,23 +1323,23 @@ class ModelShapeInference(SymbolicShapeInference):
 
     # noinspection PyMethodMayBeStatic
     def check_for_problematic_nodes(self, model: onnx.ModelProto):
-        """ Check if the model contains nodes which can never have their shapes statically inferred. If it does, raise
-             an error with a corresponding message.
+        """Check if the model contains nodes which can never have their shapes statically inferred. If it does, raise
+        an error with a corresponding message.
         """
-        problematic_op_types = ['NonZero', 'NonMaxSuppression', 'Unique']
+        problematic_op_types = ["NonZero", "NonMaxSuppression", "Unique"]
         problematic_nodes = [node.op_type for node in model.graph.node if node.op_type in problematic_op_types]
 
         if len(problematic_nodes) != 0:
             problematic_nodes = set(problematic_nodes)  # Remove duplicates.
 
             logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                     f'The ONNX model contains the nodes `{problematic_nodes}`. It is impossible to statically '
-                     'infer their output shapes, because they depend on runtime data.')
+                     f"The ONNX model contains the nodes `{problematic_nodes}`. It is impossible to statically "
+                     "infer their output shapes, because they depend on runtime data.")
 
     def try_get_first_node_without_inferred_shapes(self, model: onnx.ModelProto) -> onnx.NodeProto | None:
-        """ Return the first node in the model, which doesn't have all its shapes inferred. If a shape is symbolic, it
-             is considered as inferred by this function. Only completely missing shapes count as not inferred.
-            If all shapes are inferred, return `None`.
+        """Return the first node in the model, which doesn't have all its shapes inferred. If a shape is symbolic, it
+         is considered as inferred by this function. Only completely missing shapes count as not inferred.
+        If all shapes are inferred, return `None`.
         """
         for node in model.graph.node:
             shapes = self.get_shapes_of_all_node_tensors(node)
@@ -1350,7 +1355,7 @@ class ModelShapeInference(SymbolicShapeInference):
                      input_shapes_mapping: dict[str, tuple] | None = None,
                      inferred_tensor_data: dict[str, np.ndarray] | None = None,
                      generate_artifacts_after_failed_shape_inference: bool = True) -> onnx.ModelProto:
-        """ Infer the shapes of all tensor in the provided model.
+        """Infer the shapes of all tensor in the provided model.
 
         :param in_mp: ONNX ModelProto for which the shapes wil be inferred.
         :param int_max: Maximum int32 value.
@@ -1365,7 +1370,6 @@ class ModelShapeInference(SymbolicShapeInference):
                                                                 partly inferred ONNX model as sym_shape_infer_temp.onnx.
         :return: ONNX ModelProto, equivalent to `in_mp`, but with defined tensor shapes.
         """
-
         # noinspection PyBroadException
         try:
             symbolic_shape_inference = ModelShapeInference(int_max, auto_merge, guess_output_rank, verbose)
@@ -1414,10 +1418,10 @@ class ModelShapeInference(SymbolicShapeInference):
             node = symbolic_shape_inference.try_get_first_node_without_inferred_shapes(symbolic_shape_inference.out_mp_)
             if node is not None:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         'Unexpected internal error occurred during shape inference. A possible cause might be the'
-                         f' `{node.op_type}` operator with input tensors {node.input} and output tensors '
-                         f'{node.output}. Please report this issue.')
+                         "Unexpected internal error occurred during shape inference. A possible cause might be the"
+                         f" `{node.op_type}` operator with input tensors {node.input} and output tensors "
+                         f"{node.output}. Please report this issue.")
 
             else:
                 logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                         f"Unexpected internal error during shape inference. Please report this issue.")
+                         "Unexpected internal error during shape inference. Please report this issue.")

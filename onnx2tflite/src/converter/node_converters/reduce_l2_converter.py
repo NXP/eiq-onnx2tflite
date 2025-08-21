@@ -12,9 +12,9 @@ import numpy as np
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.node_converters.shared import reduce_utils
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared import reduce_utils
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_l2_attributes import ReduceL2
@@ -24,7 +24,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
 
 
 class ReduceL2Converter(NodeConverter):
-    node = 'ReduceL2'
+    node = "ReduceL2"
 
     onnx_supported_types = FLOATS + [TensorType.INT32, TensorType.INT64, TensorType.UINT32, TensorType.UINT64]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L353-L374
@@ -33,11 +33,10 @@ class ReduceL2Converter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def _convert_v_13(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceL2 version 1 / 11 / 13 to TFLites `Square` + `Sum` + `Sqrt`.
+        """Convert ONNX ReduceL2 version 1 / 11 / 13 to TFLites `Square` + `Sum` + `Sqrt`.
 
-            The `axes` is in the form of an attribute.
+        The `axes` is in the form of an attribute.
         """
-
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
         rank = x.rank
@@ -48,7 +47,7 @@ class ReduceL2Converter(NodeConverter):
             # Default axes -> reduce over all dimensions.
 
             # TFLite has `axes` as input tensor -> create it.
-            axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), 'axes')
+            axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
             t_op.tmp_inputs.append(axes_tensor)
 
         else:
@@ -56,7 +55,7 @@ class ReduceL2Converter(NodeConverter):
             axes = reduce_l2_attributes.axes
 
             # TFLite requires an `axes` tensor -> create it.
-            axes_tensor = self.builder.create_tensor_for_data(np.asarray(axes, np.int32), 'axes')
+            axes_tensor = self.builder.create_tensor_for_data(np.asarray(axes, np.int32), "axes")
             t_op.tmp_inputs.append(axes_tensor)
 
         square_out = self.builder.duplicate_tensor(x, name_suffix="_squared")
@@ -82,9 +81,9 @@ class ReduceL2Converter(NodeConverter):
         return ops.flatten()
 
     def _convert_v_18(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceL2 version 18+ to TFLite's `Square` + `Sum` + `Sqrt`.
+        """Convert ONNX ReduceL2 version 18+ to TFLite's `Square` + `Sum` + `Sqrt`.
 
-            The `axes` is an optional input tensor.
+        The `axes` is an optional input tensor.
         """
         reduce_l2_attributes = cast(ReduceL2, node.attributes)
 
@@ -99,15 +98,15 @@ class ReduceL2Converter(NodeConverter):
             # ONNX uses int64, while TFLite requires int32 for the `axes` tensor.
             if axes_tensor.type != TensorType.INT64:
                 logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         f'ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.')
+                         f"ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.")
 
             # Try to get the inferred data for the `axes` input.
             if (axes_data := self.inspector.try_get_inferred_tensor_data(axes_tensor.name)) is not None:
                 # The `axes` were inferred during shape inference.
-                logger.d('Using inferred data for the `axes` input tensor of ONNX `ReduceL2`.')
+                logger.d("Using inferred data for the `axes` input tensor of ONNX `ReduceL2`.")
 
                 # Create a new tensor, in case the original `axes` tensor is used by multiple ops.
-                axes_tensor = self.builder.create_tensor_for_data(axes_data.astype(np.int32), 'axes')
+                axes_tensor = self.builder.create_tensor_for_data(axes_data.astype(np.int32), "axes")
 
             # Make sure the `axes` are int32.
             if tensor_has_data(axes_tensor):
@@ -122,8 +121,8 @@ class ReduceL2Converter(NodeConverter):
                 # I don't thing that completely prohibiting the conversion here is ideal, since the issue arises only in
                 #  an edge case, which is hopefully not very common. Just print a warning message for now.
                 logger.w(
-                    f'Conversion of ONNX `ReduceL2` with a dynamic `axes` input will not be correct, if the `axes`'
-                    'are empty at runtime!')
+                    "Conversion of ONNX `ReduceL2` with a dynamic `axes` input will not be correct, if the `axes`"
+                    "are empty at runtime!")
 
                 # Create a `Cast` op, to make the `axes` int32.
                 cast_op = tflite_model.Operator(
@@ -137,34 +136,33 @@ class ReduceL2Converter(NodeConverter):
 
                 axes_cast_ops.append(cast_op)
 
+        # No axes specified.
+
+        elif reduce_l2_attributes.noop_with_empty_axes == 1:
+            # ONNXRT: According to the documentation, the operator should do nothing in this situation. But that's not
+            #  what happens in ONNX Runtime. ORT seems to simply ignore the `noop_with_empty_axes` attribute.
+            # For now, exit with error. If later ORT adds support for this attribute, simply uncomment the
+            #  following code.
+            # TODO https://github.com/microsoft/onnxruntime/issues/19147
+
+            # if self.builder.operator_can_be_skipped(t_op, self.inspector):
+            #     # Skip the operator.
+            #     self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
+            #     return []
+            #
+            # else:
+            #     # Return an operator which does nothing.
+            #     self.builder.turn_operator_to_identity(t_op)
+            #     return [t_op]
+
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
+                     "ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
+                     " indicates that the operator should do nothing. This is however not supported by ONNX"
+                     " Runtime, and therefore the conversion is also not supported.")
+
         else:
-            # No axes specified.
-
-            if reduce_l2_attributes.noop_with_empty_axes == 1:
-                # ONNXRT: According to the documentation, the operator should do nothing in this situation. But that's not
-                #  what happens in ONNX Runtime. ORT seems to simply ignore the `noop_with_empty_axes` attribute.
-                # For now, exit with error. If later ORT adds support for this attribute, simply uncomment the
-                #  following code.
-                # TODO https://github.com/microsoft/onnxruntime/issues/19147
-
-                # if self.builder.operator_can_be_skipped(t_op, self.inspector):
-                #     # Skip the operator.
-                #     self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
-                #     return []
-                #
-                # else:
-                #     # Return an operator which does nothing.
-                #     self.builder.turn_operator_to_identity(t_op)
-                #     return [t_op]
-
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         'ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which'
-                         ' indicates that the operator should do nothing. This is however not supported by ONNX'
-                         ' Runtime, and therefore the conversion is also not supported.')
-
-            else:
-                # Default is to reduce all axes.
-                axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), 'axes')
+            # Default is to reduce all axes.
+            axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
 
         square_output = self.builder.duplicate_tensor(x, name_suffix="_squared")
 
@@ -191,10 +189,9 @@ class ReduceL2Converter(NodeConverter):
         return ops.flatten()
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `ReduceL2` operator into TFLite's `Square` + `Sum` + `Sqrt`. """
-
+        """Convert ONNX `ReduceL2` operator into TFLite's `Square` + `Sum` + `Sqrt`."""
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `ReduceL2` has unexpected number of inputs.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceL2` has unexpected number of inputs.")
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
@@ -202,6 +199,5 @@ class ReduceL2Converter(NodeConverter):
             # Version 1 / 11 / 13 -> axes are passed as attribute.
             return self._convert_v_13(node, t_op)
 
-        else:
-            # Version 18+ -> axes are an optional input tensor.
-            return self._convert_v_18(node, t_op)
+        # Version 18+ -> axes are an optional input tensor.
+        return self._convert_v_18(node, t_op)

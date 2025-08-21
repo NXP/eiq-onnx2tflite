@@ -6,12 +6,12 @@
 #
 
 
-from typing import Optional, Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class QLinearAveragePool(meta.ONNXOperatorAttributes):
@@ -19,9 +19,9 @@ class QLinearAveragePool(meta.ONNXOperatorAttributes):
     ceil_mode: int
     channels_last: int
     count_include_pad: int
-    kernel_shape: Optional[meta.ONNXIntListAttribute]
-    pads: Optional[meta.ONNXIntListAttribute]
-    strides: Optional[meta.ONNXIntListAttribute]
+    kernel_shape: meta.ONNXIntListAttribute | None
+    pads: meta.ONNXIntListAttribute | None
+    strides: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

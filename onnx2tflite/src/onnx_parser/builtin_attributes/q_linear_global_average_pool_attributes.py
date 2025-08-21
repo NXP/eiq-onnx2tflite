@@ -4,18 +4,17 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    q_linear_global_average_pool
+"""q_linear_global_average_pool
 
-    Representation of an ONNX Runtime 'QLinearGlobalAveragePool' operator.
+Representation of an ONNX Runtime 'QLinearGlobalAveragePool' operator.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
 from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class QLinearGlobalAveragePool(meta.ONNXOperatorAttributes):

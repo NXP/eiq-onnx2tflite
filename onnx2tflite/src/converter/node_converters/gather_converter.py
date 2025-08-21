@@ -10,10 +10,10 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import gather_attributes
@@ -24,7 +24,7 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
 
 # noinspection PyMethodMayBeStatic
 class GatherConverter(NodeConverter):
-    node = 'Gather'
+    node = "Gather"
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/gather.cc#L81-L99
@@ -32,16 +32,15 @@ class GatherConverter(NodeConverter):
     verified_types = tflite_supported_types
 
     def _is_an_array_of_ints(self, array: Any) -> bool:
-        """ Determine if given 'array' is a numpy ndarray of integers.
+        """Determine if given 'array' is a numpy ndarray of integers.
 
         :param array: Object to check.
         :return: True, if 'array' is a numpy array with integer elements. False, otherwise.
         """
-
         return isinstance(array, np.ndarray) and array.dtype in {np.dtype(np.int32), np.dtype(np.int64)}
 
     def _validate_indices(self, indices: Any, dimension_size: int) -> np.ndarray:
-        """ Check the 'indices' of ONNX Gather and return corresponding indices validated and prepared for TFLite Gather.
+        """Check the 'indices' of ONNX Gather and return corresponding indices validated and prepared for TFLite Gather.
 
         :param indices: A numpy array representing the 'indices' operand of the ONNX Gather operator.
         :param dimension_size: The size of the dimension, the Gather is applied to.
@@ -67,7 +66,7 @@ class GatherConverter(NodeConverter):
         return new_indices
 
     def _validate_axis(self, o_gather_attributes: gather_attributes.Gather, input_rank: int) -> int:
-        """ Make sure the 'axis' is valid for TFLite gather and return it.
+        """Make sure the 'axis' is valid for TFLite gather and return it.
 
         :param o_gather_attributes: Attributes of the ONNX Gather operator.
         :param input_rank: The rank of the input tensor of the Gather operator.
@@ -86,7 +85,7 @@ class GatherConverter(NodeConverter):
         return axis
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Gather operator to TFLite.
+        """Convert the ONNX Gather operator to TFLite.
 
         :param node: ONNX Gather operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator

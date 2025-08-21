@@ -8,11 +8,11 @@
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.Conv3DOptions as libConv3DOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.Padding import Padding
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Conv3D(meta.BuiltinOptions):

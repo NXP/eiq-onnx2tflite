@@ -4,8 +4,7 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    Transpose
+"""Transpose
 
 Representation of the TFLite operator 'Transpose'.
 """
@@ -15,7 +14,7 @@ import flatbuffers as fb
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
 import onnx2tflite.lib.tflite.BuiltinOptions as libBuiltinOptions
 import onnx2tflite.lib.tflite.TransposeOptions as libTransposeOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Transpose(meta.BuiltinOptions):

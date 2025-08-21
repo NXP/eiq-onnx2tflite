@@ -18,7 +18,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class ReciprocalConverter(NodeConverter):
-    node = 'Reciprocal'
+    node = "Reciprocal"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/div.cc#L279-L298
@@ -26,17 +26,16 @@ class ReciprocalConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `Reciprocal` to TFLite `Div` with an extra tensor. """
-
+        """Convert ONNX `Reciprocal` to TFLite `Div` with an extra tensor."""
         if not (len(t_op.tmp_inputs) == len(t_op.tmp_outputs) == 1):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `Reciprocal` has unexpected number of IO tensors.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Reciprocal` has unexpected number of IO tensors.")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)
 
         # Create a tensor with a single `1`, and use it as the first input of the `Div` operator.
         np_type = tf_lite_type_to_numpy(x.type)
-        one_tensor = self.builder.create_tensor_for_data(np.ones([1], np_type), 'one')
+        one_tensor = self.builder.create_tensor_for_data(np.ones([1], np_type), "one")
         t_op.tmp_inputs.insert(0, one_tensor)
 
         t_op.builtin_options = Div()

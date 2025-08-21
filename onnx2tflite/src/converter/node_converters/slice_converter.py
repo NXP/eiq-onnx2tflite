@@ -5,16 +5,16 @@
 # See the LICENSE for more details.
 #
 
-from typing import Tuple, cast
+from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import slice_attributes
@@ -25,7 +25,7 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
 
 # noinspection PyMethodMayBeStatic
 class SliceConverter(NodeConverter):
-    node = 'Slice'
+    node = "Slice"
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/slice.cc#L229-L261
@@ -35,8 +35,8 @@ class SliceConverter(NodeConverter):
                              TensorType.STRING]
 
     def _load_v_1_attributes(self, o_slice_attributes: slice_attributes.Slice, input_rank: int) -> \
-            Tuple[list[int], list[int], list[int], list[int]]:
-        """ Load the starts, ends, axes and steps attributes from the ONNX Slice attributes version 1.
+            tuple[list[int], list[int], list[int], list[int]]:
+        """Load the starts, ends, axes and steps attributes from the ONNX Slice attributes version 1.
     
         :param o_slice_attributes: ONNX Slice attributes v1.
         :return: starts, ends, axes and steps
@@ -61,7 +61,7 @@ class SliceConverter(NodeConverter):
 
     def _clamp_starts_and_ends(self, starts: list[int], ends: list[int], axes: list[int], steps: list[int],
                                input_shape: list[int]):
-        """ Clamp the ONNX Slice attributes 'starts' and 'ends' according to the documentation.
+        """Clamp the ONNX Slice attributes 'starts' and 'ends' according to the documentation.
     
         :param starts: ONNX Slice attribute 'starts'
         :param ends: ONNX Slice attribute 'ends'
@@ -69,7 +69,6 @@ class SliceConverter(NodeConverter):
         :param steps: ONNX Slice attribute 'steps'
         :param input_shape: Shape of the main input tensor of the ONNX Slice
         """
-
         for i, step in enumerate(steps):
             if step < 0:
                 # Negative direction
@@ -82,7 +81,7 @@ class SliceConverter(NodeConverter):
                 ends[i] = common.clamp(ends[i], 0, input_shape[axes[i]])
 
     def _validate_axes(self, axes: list[int], input_rank: int) -> list[int]:
-        """ Make sure the ONNX Sice 'axes' operand is valid and return the corresponding TFLite slice 'axes' operand.
+        """Make sure the ONNX Sice 'axes' operand is valid and return the corresponding TFLite slice 'axes' operand.
     
         :param axes: ONNX Slice operand axes.
         :param input_rank: The rank of the main input tensor of the Slice operator.
@@ -121,7 +120,7 @@ class SliceConverter(NodeConverter):
         return input_tensor
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX 'Slice' to TFLite `Slice`. """
+        """Convert ONNX 'Slice' to TFLite `Slice`."""
         main_input = t_op.tmp_inputs[0]
         main_input_shape = main_input.shape.vector
         input_rank = len(main_input_shape)
@@ -154,7 +153,7 @@ class SliceConverter(NodeConverter):
                    [starts_tensor, ends_tensor, axes_tensor, steps_tensor]):
                 # Some inputs are dynamic.
                 # Conversion might be possible via combination with other operators. But that could be difficult.
-                logger.e(logger.Code.NOT_IMPLEMENTED, f"Conversion of ONNX Slice is only supported when"
+                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX Slice is only supported when"
                                                       " the starts, ends, axes and steps input tensors are static!")
 
             starts = list(starts_tensor.tmp_buffer.data)
@@ -186,7 +185,7 @@ class SliceConverter(NodeConverter):
 
         if t_op.is_quantized_without_qdq():
             propagate_quantization(main_input, y)
-            
+
         elif t_op.is_qdq_quantized():
             if main_input.quantization != y.quantization:
                 logger.w(
@@ -208,8 +207,7 @@ class SliceConverter(NodeConverter):
             begin[axis] = starts[i]
             size[axis] = ends[i] - starts[i]
 
-            if size[axis] < 0:
-                size[axis] = 0
+            size[axis] = max(size[axis], 0)
 
         # Create the TFLite tensors
         begin_tensor = self.builder.create_tensor_for_data(np.asarray(begin, np.int32), "begin")

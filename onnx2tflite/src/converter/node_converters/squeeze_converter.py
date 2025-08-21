@@ -7,21 +7,21 @@
 
 from typing import cast
 
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
-from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import squeeze_attributes
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
 
 
 class SqueezeConverter(NodeConverter):
-    node = 'Squeeze'
+    node = "Squeeze"
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES

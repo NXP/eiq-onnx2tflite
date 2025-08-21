@@ -7,27 +7,26 @@
 #
 
 import math
-from typing import Tuple, Union
 
-import onnx2tflite.src.logger as logger
 import onnx2tflite.src.onnx_parser.builtin_attributes.log_softmax_attributes as onnx_log_softmax_attributes
 import onnx2tflite.src.onnx_parser.builtin_attributes.softmax_attributes as onnx_softmax_attributes
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
-from onnx2tflite.src.tflite_generator.builtin_options import (log_softmax_options as log_softmax_options,
-                                                              reshape_options as tfl_reshape_options,
-                                                              softmax_options as tfl_softmax_options)
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import log_softmax_options as log_softmax_options
+from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
+from onnx2tflite.src.tflite_generator.builtin_options import softmax_options as tfl_softmax_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 # noinspection PyMethodMayBeStatic
 class SoftmaxConverter(NodeConverter):
-    node = 'Softmax'
+    node = "Softmax"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/activations.cc#L1329-L1376
@@ -54,7 +53,7 @@ class SoftmaxConverter(NodeConverter):
             axis += rank
         return axis
 
-    def _convert_v13(self, o_softmax: Union[onnx_softmax_attributes.Softmax, onnx_log_softmax_attributes.LogSoftmax],
+    def _convert_v13(self, o_softmax: onnx_softmax_attributes.Softmax | onnx_log_softmax_attributes.LogSoftmax,
                      t_op: tflite_model.Operator) -> OpsList:
         x = t_op.tmp_inputs[0]
         rank = len(x.shape.vector)
@@ -114,9 +113,8 @@ class SoftmaxConverter(NodeConverter):
 
     def _wrap_in_reshape(self, op_softmax: tflite_model.Operator,
                          reshape_inner_shape, reshape_outer_shape
-                         ) -> Tuple[tflite_model.Operator, tflite_model.Operator]:
-        """
-        Surround passed Softmax operator by Reshape operators.
+                         ) -> tuple[tflite_model.Operator, tflite_model.Operator]:
+        """Surround passed Softmax operator by Reshape operators.
     
         (reshape_outer_shape)
                   ↓
@@ -168,7 +166,7 @@ class SoftmaxConverter(NodeConverter):
 
         return reshape_pre, reshape_post
 
-    def _convert_v1(self, o_softmax: Union[onnx_softmax_attributes.Softmax, onnx_log_softmax_attributes.LogSoftmax],
+    def _convert_v1(self, o_softmax: onnx_softmax_attributes.Softmax | onnx_log_softmax_attributes.LogSoftmax,
                     t_op: tflite_model.Operator) -> OpsList:
         x = t_op.tmp_inputs[0]
         rank = len(x.shape.vector)
@@ -180,14 +178,13 @@ class SoftmaxConverter(NodeConverter):
         if x.tensor_format == TensorFormat.FORMATLESS and axis == rank - 1:
             # We don't need to reshape/transpose input when we compute over last dimension with format-less.
             return OpsList(middle_op=t_op)
-        elif x.tensor_format.is_channels_last() and axis == 1:
+        if x.tensor_format.is_channels_last() and axis == 1:
             # Input internally in ONNX reshaped to [d0, d1-dn] -> shape is the same also for TFLite.
             return self._convert_v1_reshaped(t_op, axis)
-        elif x.tensor_format.is_channels_last():
+        if x.tensor_format.is_channels_last():
             # We have to reshape and also transpose because channel dimension is not represented by same axis.
             return self._convert_v1_transposed_and_reshaped(t_op, axis)
-        else:
-            return self._convert_v1_reshaped(t_op, axis)
+        return self._convert_v1_reshaped(t_op, axis)
 
     def _handle_logsoftmax_quantization(self, ops, t_op):
         x = t_op.tmp_inputs[0]
@@ -226,8 +223,7 @@ class SoftmaxConverter(NodeConverter):
                 ops.post_ops.insert(0, quantize_op)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime (Log)Softmax operator to TFLite (Log)Softmax. """
-
+        """Convert the ONNX Runtime (Log)Softmax operator to TFLite (Log)Softmax."""
         assert (isinstance(node.attributes, onnx_softmax_attributes.Softmax) or
                 isinstance(node.attributes, onnx_log_softmax_attributes.LogSoftmax))
 

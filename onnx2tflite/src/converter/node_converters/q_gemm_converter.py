@@ -4,32 +4,33 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import get_symmetric_zero_point_for_type, \
-    quantize_static_float_tensor
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
-from onnx2tflite.src.converter.conversion.common import try_get_input, OpsList, exactly_one_is_none
+from onnx2tflite.src.converter.conversion.common import OpsList, exactly_one_is_none, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
-from onnx2tflite.src.converter.tensor_utils import tensor_has_data, all_tensors_are_static
+from onnx2tflite.src.converter.quantization_utils import (
+    get_symmetric_zero_point_for_type,
+    quantize_static_float_tensor,
+    set_quantization_parameters_to_tensor,
+)
+from onnx2tflite.src.converter.tensor_utils import all_tensors_are_static, tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import q_gemm_attributes
-from onnx2tflite.src.tflite_generator.builtin_options import fully_connected_options
-from onnx2tflite.src.tflite_generator.builtin_options import mul_options
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import fully_connected_options, mul_options
 
 
 # noinspection PyMethodMayBeStatic
 class QGemmConverter(NodeConverter):
-    node = 'QGemm'
+    node = "QGemm"
 
     def _parse_quantization_parameters(self, q_gemm_attrs: q_gemm_attributes.QGemm,
                                        t_op: tflite_model.Operator) -> list[np.ndarray | None]:
-        """ Parse the quantization parameters of the 't_op', which represents a QGemm operator. Make sure the parameters
+        """Parse the quantization parameters of the 't_op', which represents a QGemm operator. Make sure the parameters
              are valid and convertible. Return a list containing exactly 6 values, representing the quantization
              parameters.
             The Y parameters may be None, if they were omitted in the model. Otherwise, they are all numpy arrays.
@@ -58,7 +59,7 @@ class QGemmConverter(NodeConverter):
 
         if not all_tensors_are_static(*parameter_tensors):
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     'Conversion of ONNX Runtime QGemm with dynamic quantization parameters is not possible.')
+                     "Conversion of ONNX Runtime QGemm with dynamic quantization parameters is not possible.")
 
         params = [param_tensor.tmp_buffer.data for param_tensor in parameter_tensors]
         if not all(param.size == 1 for param in params):
@@ -85,7 +86,7 @@ class QGemmConverter(NodeConverter):
 
         if t.rank != 2:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f'ONNX Runtime QGemm has a main intput with {t.rank} dimensions instead of 2.')
+                     f"ONNX Runtime QGemm has a main intput with {t.rank} dimensions instead of 2.")
 
         if tensor_has_data(t):
             # Transpose statically.
@@ -131,7 +132,7 @@ class QGemmConverter(NodeConverter):
                  "Make sure bias tensor has shape [N] or [1, N].")
 
     def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList):
-        """ Handle the conversion of the 'alpha' attribute of the ORT QGemm operator.
+        """Handle the conversion of the 'alpha' attribute of the ORT QGemm operator.
 
             QGemm carries out the following operation:
                 Y = alpha * A * B + C
@@ -152,7 +153,7 @@ class QGemmConverter(NodeConverter):
         if alpha < 0:
             # Rare scenario -> For negative alpha, a Mul op must be added, or dequantize the static data,
             #  multiply by alpha and quantize it back.
-            logger.e(logger.Code.NOT_IMPLEMENTED, 'Conversion of QGemm with negative alpha is not supported.')
+            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of QGemm with negative alpha is not supported.")
 
         # Find if the QGemm has a static input.
         static_input = None
@@ -173,11 +174,11 @@ class QGemmConverter(NodeConverter):
 
             # Create an alpha tensor and quantize it based on alpha value -> it will result in scale value
             #  being quantized to 1, and no loss of information.
-            alpha_tensor = self.context.tflite_builder.create_tensor_for_data(np.array([alpha], np.float32), 'alpha')
+            alpha_tensor = self.context.tflite_builder.create_tensor_for_data(np.array([alpha], np.float32), "alpha")
             zp = [get_symmetric_zero_point_for_type(x.type)]
             alpha_tensor = quantize_static_float_tensor(self.builder, alpha_tensor, x.type, [alpha], zp)
 
-            mul_output = self.context.tflite_builder.duplicate_tensor(x, name_suffix='_scaled')
+            mul_output = self.context.tflite_builder.duplicate_tensor(x, name_suffix="_scaled")
 
             # Mul output tensor is quantized as 'alpha * input_scale'. This means that the literal 8bit values
             #  at the output of `Mul` will be exactly the same as the input values. Just their corresponding
@@ -193,8 +194,8 @@ class QGemmConverter(NodeConverter):
 
             ops.add_pre(mul_op)
 
-    def convert(self, q_gemm_node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ORT QGemm operator to TFLite FullyConnected.
+    def convert(self, q_gemm_node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ORT QGemm operator to TFLite FullyConnected.
 
         :param q_gemm_node: ORT QGemm operator node.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
@@ -204,7 +205,7 @@ class QGemmConverter(NodeConverter):
 
         if not (6 <= len(t_op.tmp_inputs) <= 9):
             logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f'ONNX QGemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 6 - 9.')
+                     f"ONNX QGemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 6 - 9.")
 
         ops = OpsList(middle_op=t_op)
 
@@ -214,7 +215,7 @@ class QGemmConverter(NodeConverter):
         y = t_op.tmp_outputs[0]
 
         if a.type != b.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX Runtime QGemm has mismatched input types.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Runtime QGemm has mismatched input types.")
 
         # Quantization parameters (numpy arrays or None). y_s and y_zp may be None (together), which means that the
         #  output of the QGemm should be float32.
@@ -229,7 +230,7 @@ class QGemmConverter(NodeConverter):
         else:
             if y.type != TensorType.FLOAT32:
                 logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         'ONNX Runtime QGemm has no output quantization parameters, but its output is not float32.')
+                         "ONNX Runtime QGemm has no output quantization parameters, but its output is not float32.")
 
             # The output is FLOAT32. I believe ONNX Runtime does not do the computation in 8bits. I somehow couldn't
             #  find where this is handled within ONNX Runtime. In my tests, the ONNX output had a resolution of
@@ -239,7 +240,7 @@ class QGemmConverter(NodeConverter):
 
             # Probably convert into float FullyConnected if necessary.
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX Runtime QGemm with a float32 output is not yet supported.')
+                     "Conversion of ONNX Runtime QGemm with a float32 output is not yet supported.")
 
         # Assign the operator its TFLite inputs.
         t_op.tmp_inputs = [a, b]

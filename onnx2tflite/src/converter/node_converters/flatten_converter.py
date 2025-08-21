@@ -7,13 +7,13 @@
 
 from typing import cast
 
-import onnx2tflite.src.converter.conversion.translator as translator
 import onnx2tflite.src.tflite_generator.builtin_options.reshape_options as tfl_reshape_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
+from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.flatten_attributes import Flatten
 from onnx2tflite.src.tensor_formatting import TensorFormat
@@ -22,7 +22,7 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
 
 
 class FlattenConverter(NodeConverter):
-    node = 'Flatten'
+    node = "Flatten"
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
@@ -30,8 +30,7 @@ class FlattenConverter(NodeConverter):
                                       TensorType.STRING]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert: Flatten -> Reshape | Transpose + Reshape """
-
+        """Convert: Flatten -> Reshape | Transpose + Reshape"""
         attrs = cast(Flatten, node.attributes)
 
         x = t_op.tmp_inputs[0]

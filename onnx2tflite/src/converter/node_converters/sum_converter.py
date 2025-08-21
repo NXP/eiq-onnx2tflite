@@ -8,19 +8,19 @@
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import uses_multiple_input_types, uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_n_options, add_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class SumConverter(NodeConverter):
-    node = 'Sum'
+    node = "Sum"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/add_n.cc#L132-L140
@@ -28,7 +28,7 @@ class SumConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX operator 'Sum' to TFLite 'Add' or 'AddN'. """
+        """Convert ONNX operator 'Sum' to TFLite 'Add' or 'AddN'."""
         num_inputs = len(t_op.tmp_inputs)
 
         if num_inputs == 0:
@@ -44,14 +44,13 @@ class SumConverter(NodeConverter):
                 self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
                 return []
 
-            else:
-                t_op.builtin_options = add_options.Add()
+            t_op.builtin_options = add_options.Add()
 
-                # TFLite sum must have 2 inputs -> add 0 for no effect
-                input_type = translator.tf_lite_type_to_numpy(t_op.tmp_inputs[0].type)
-                t_op.tmp_inputs.append(self.builder.create_tensor_for_data(np.asarray([0], input_type), "zero"))
+            # TFLite sum must have 2 inputs -> add 0 for no effect
+            input_type = translator.tf_lite_type_to_numpy(t_op.tmp_inputs[0].type)
+            t_op.tmp_inputs.append(self.builder.create_tensor_for_data(np.asarray([0], input_type), "zero"))
 
-                return [t_op]
+            return [t_op]
 
         if uses_multiple_input_types(t_op):
             # Inputs have different data types

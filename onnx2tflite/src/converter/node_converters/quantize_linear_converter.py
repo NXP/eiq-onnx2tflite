@@ -9,13 +9,13 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter import quantization_utils
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import quantize_linear_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -27,7 +27,7 @@ QuantizeLinearAttrs = quantize_linear_attributes.QuantizeLinear
 
 # noinspection PyMethodMayBeStatic
 class QuantizeLinearConverter(NodeConverter):
-    node = 'QuantizeLinear'
+    node = "QuantizeLinear"
 
     onnx_supported_types = FLOATS + [TensorType.INT32]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/quantize.cc#L167-L341
@@ -82,8 +82,7 @@ class QuantizeLinearConverter(NodeConverter):
 
     def convert_into_tensor(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator
                             ) -> list[tflite_model.Operator]:
-        """
-        Convert quantization parameters (scale & zero point) of ONNX operator 'QuantizeLinear'
+        """Convert quantization parameters (scale & zero point) of ONNX operator 'QuantizeLinear'
         into its input tensor and skip the operator. Operators converted by this function are part
         of QDQ cluster of some float operator.
 
@@ -92,9 +91,9 @@ class QuantizeLinearConverter(NodeConverter):
         :return: Empty list of new operators added to the graph.
         """
         if len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.NOT_IMPLEMENTED, f"'QuantizeLinear' operators that are part of QDQ cluster can "
-                                                  f"currently have only one output. Use extra option 'DedicatedQDQPair'"
-                                                  f" when quantizing the model with ONNX quantizer.")
+            logger.e(logger.Code.NOT_IMPLEMENTED, "'QuantizeLinear' operators that are part of QDQ cluster can "
+                                                  "currently have only one output. Use extra option 'DedicatedQDQPair'"
+                                                  " when quantizing the model with ONNX quantizer.")
 
         ql_attributes = cast(QuantizeLinearAttrs, node.attributes)
 
@@ -111,13 +110,12 @@ class QuantizeLinearConverter(NodeConverter):
         return []
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'QuantizeLinear' to TFLite 'Quantize'.
+        """Convert the ONNX 'QuantizeLinear' to TFLite 'Quantize'.
 
-            :param node: ONNX QuantizeLinear operator.
-            :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
-            :return: A list of TFLite operators, to add to the model.
+        :param node: ONNX QuantizeLinear operator.
+        :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
+        :return: A list of TFLite operators, to add to the model.
         """
-
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
         output_type = t_op.tmp_outputs[0].type
@@ -129,15 +127,15 @@ class QuantizeLinearConverter(NodeConverter):
 
         if ql_attributes.block_size != 0:
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Attribute 'block_size' of ONNX operator 'QuantizeLinear' is not supported yet.")
+                     "Attribute 'block_size' of ONNX operator 'QuantizeLinear' is not supported yet.")
 
         if ql_attributes.output_dtype != 0:
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Attribute 'output_dtype' of ONNX operator 'QuantizeLinear' is not supported yet.")
+                     "Attribute 'output_dtype' of ONNX operator 'QuantizeLinear' is not supported yet.")
 
         if ql_attributes.precision != 0:
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Attribute 'precision' of ONNX operator 'QuantizeLinear' is not supported yet.")
+                     "Attribute 'precision' of ONNX operator 'QuantizeLinear' is not supported yet.")
 
         if ql_attributes.saturate != 1:
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX operator 'QuantizeLinear' with attribute "

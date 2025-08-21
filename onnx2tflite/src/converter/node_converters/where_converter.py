@@ -5,14 +5,12 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization, \
-    re_quantize_static_tensor
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization, re_quantize_static_tensor
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -21,16 +19,15 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
 
 
 class WhereConverter(NodeConverter):
-    node = 'Where'
+    node = "Where"
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/select.cc#L151-L183
     tflite_supported_types = INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.BOOL, TensorType.FLOAT32]
     verified_types = [TensorType.INT32, TensorType.INT64, TensorType.UINT8, TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert ONNX 'Where' operator into TFLite 'SelectV2'. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert ONNX 'Where' operator into TFLite 'SelectV2'."""
         if len(t_op.tmp_inputs) != 3:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'Where' has unexpected number of inputs. "
                                                      f"Got '{len(t_op.tmp_inputs)}', expected '3'.")
@@ -52,10 +49,10 @@ class WhereConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, f"ONNX operator 'Where' has inputs with different data types!")
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'Where' has inputs with different data types!")
 
         if condition.type != TensorType.BOOL:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, f"Type of condition tensor in 'Where' operator is not bool!")
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "Type of condition tensor in 'Where' operator is not bool!")
 
         ops.pre_ops.extend(self.builder.ensure_correct_broadcasting(t_op, out))
 

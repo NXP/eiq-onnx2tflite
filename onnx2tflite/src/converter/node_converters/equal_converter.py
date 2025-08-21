@@ -11,11 +11,11 @@ from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import equal_options
-from onnx2tflite.src.tflite_generator.meta.types import name_for_type, FLOATS, INTS, UINTS
+from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS, name_for_type
 
 
 class EqualConverter(NodeConverter):
-    node = 'Equal'
+    node = "Equal"
 
     onnx_supported_types = FLOATS + INTS + UINTS + [TensorType.BOOL, TensorType.STRING]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/comparisons.cc#L173-L212
@@ -23,8 +23,7 @@ class EqualConverter(NodeConverter):
     verified_types = [TensorType.INT32, TensorType.INT64, TensorType.BOOL, TensorType.FLOAT32, TensorType.STRING]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'Equal' operator to TFLite 'Equal'. """
-
+        """Convert the ONNX 'Equal' operator to TFLite 'Equal'."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'Equal' has unexpected number of inputs. "
                                                      f"Got '{len(t_op.tmp_inputs)}', expected '2'.")
@@ -42,7 +41,7 @@ class EqualConverter(NodeConverter):
             # ONNXRT: Not supported by ONNX/ORT.
             if x.quantization is None:
                 logger.e(logger.Code.NOT_IMPLEMENTED,
-                         f'Conversion of ONNX `Equal` with input type `{name_for_type(x.type)}` is not supported.')
+                         f"Conversion of ONNX `Equal` with input type `{name_for_type(x.type)}` is not supported.")
             else:
                 # The input is quantized. ONNX Runtime doesn't support int8/uint8 regardless of quantization.
                 # Using the QDQ quantizer will result in an intentionally invalid ONNX model, which can be converted to

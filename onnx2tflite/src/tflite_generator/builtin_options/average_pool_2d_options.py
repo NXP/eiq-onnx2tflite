@@ -4,8 +4,7 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    AveragePool2D
+"""AveragePool2D
 
 Representation of the TFLite operator 'AveragePool2D'.
 """
@@ -17,7 +16,7 @@ import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
 import onnx2tflite.lib.tflite.BuiltinOptions as libBuiltinOptions
 import onnx2tflite.lib.tflite.Padding as libPadding
 import onnx2tflite.lib.tflite.Pool2DOptions as libPool2DOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class AveragePool2D(meta.BuiltinOptions):

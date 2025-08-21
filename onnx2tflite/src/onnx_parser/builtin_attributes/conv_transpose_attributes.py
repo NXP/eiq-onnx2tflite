@@ -5,23 +5,23 @@
 # See the LICENSE for more details.
 #
 
-from typing import Optional, Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class ConvTranspose(meta.ONNXOperatorAttributes):
     auto_pad: str
-    dilations: Optional[meta.ONNXIntListAttribute]
+    dilations: meta.ONNXIntListAttribute | None
     group: int
-    kernel_shape: Optional[meta.ONNXIntListAttribute]
-    output_padding: Optional[meta.ONNXIntListAttribute]
-    output_shape: Optional[meta.ONNXIntListAttribute]
-    pads: Optional[meta.ONNXIntListAttribute]
-    strides: Optional[meta.ONNXIntListAttribute]
+    kernel_shape: meta.ONNXIntListAttribute | None
+    output_padding: meta.ONNXIntListAttribute | None
+    output_shape: meta.ONNXIntListAttribute | None
+    pads: meta.ONNXIntListAttribute | None
+    strides: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

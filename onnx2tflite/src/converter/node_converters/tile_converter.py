@@ -5,16 +5,15 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -23,7 +22,7 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, name_for_type
 
 
 class TileConverter(NodeConverter):
-    node = 'Tile'
+    node = "Tile"
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/tile.cc#L235-L260
@@ -39,14 +38,13 @@ class TileConverter(NodeConverter):
 
         if repeats.type != TensorType.INT64:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Tile` has unexpected `repeats` type {name_for_type(repeats.type)}.')
+                     f"ONNX `Tile` has unexpected `repeats` type {name_for_type(repeats.type)}.")
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `Tile` operator to TFLite `Tile`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `Tile` operator to TFLite `Tile`."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Tile` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.')
+                     f"ONNX `Tile` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         self._check_input_types(t_op)
 
@@ -66,7 +64,7 @@ class TileConverter(NodeConverter):
                 repeats_data = translator.apply_permutation_to(repeats_data, perm)
 
                 # Create a new `repeats` tensor, in case it is also used by some other operator.
-                new_repeats = self.builder.create_tensor_for_data(np.array(repeats_data, np.int64), 'repeats')
+                new_repeats = self.builder.create_tensor_for_data(np.array(repeats_data, np.int64), "repeats")
                 t_op.tmp_inputs[1] = new_repeats
 
             else:

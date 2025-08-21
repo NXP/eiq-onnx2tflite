@@ -5,7 +5,6 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
@@ -17,7 +16,7 @@ from onnx2tflite.src.tflite_generator.builtin_options.not_equal_options import N
 
 
 class XorConverter(NodeConverter):
-    node = 'Xor'
+    node = "Xor"
 
     onnx_supported_types = [TensorType.BOOL]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/comparisons.cc#L227-L262
@@ -25,19 +24,18 @@ class XorConverter(NodeConverter):
                               TensorType.UINT8, TensorType.STRING]
     verified_types = [TensorType.BOOL]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `Xor` operator to TFLite `NotEqual`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `Xor` operator to TFLite `NotEqual`."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Xor` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.')
+                     f"ONNX `Xor` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         x1 = t_op.tmp_inputs[0]
         x2 = t_op.tmp_inputs[1]
         y = t_op.tmp_outputs[0]
 
         if x1.type != x2.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `Xor` has inputs with different types.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Xor` has inputs with different types.")
 
         self.assert_type_allowed(x1.type)
 

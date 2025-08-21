@@ -21,7 +21,7 @@ class Split(meta.BuiltinOptions):
 
     def gen_tflite(self, builder: fb.Builder):
         libSplitOptions.Start(builder)
-        
+
         libSplitOptions.AddNumSplits(builder, self.num_splits)
 
         return libSplitOptions.End(builder)

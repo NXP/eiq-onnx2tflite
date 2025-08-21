@@ -4,37 +4,38 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    convert_q_linear_mat_mul.
+"""convert_q_linear_mat_mul.
 
 Convert ONNX operator QLinearMatMul to TFLite.
 """
 
-from typing import List
 
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.meta.types as tfl_types
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
-from onnx2tflite.src.converter.quantization_utils import \
-    calculate_uint_to_int_re_quantization_zero_point, re_quantize_static_tensor, set_quantization_parameters_to_tensor
+from onnx2tflite.src.converter.quantization_utils import (
+    calculate_uint_to_int_re_quantization_zero_point,
+    re_quantize_static_tensor,
+    set_quantization_parameters_to_tensor,
+)
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import batch_mat_mul_options, fully_connected_options
 
 
 # noinspection PyMethodMayBeStatic
 class QLinearMatMulConverter(NodeConverter):
-    node = 'QLinearMatMul'
+    node = "QLinearMatMul"
 
     def _is_unsupported_type(self, data_type: TensorType) -> bool:
-        """ Determine if given TensorType is unsupported by the ONNX QLinearMatMul. """
+        """Determine if given TensorType is unsupported by the ONNX QLinearMatMul."""
         return data_type not in {
             TensorType.UINT8,
             TensorType.INT8
@@ -44,7 +45,7 @@ class QLinearMatMulConverter(NodeConverter):
         if data_type == TensorType.INT8:
             return all(zp == 0 for zp in zero_point)
 
-        elif data_type == TensorType.UINT8:
+        if data_type == TensorType.UINT8:
             return all(zp == 128 for zp in zero_point)
 
         return False
@@ -71,25 +72,23 @@ class QLinearMatMulConverter(NodeConverter):
                 ops.add_pre(quantize_op)
 
     def _at_least_1_is_none(self, *args) -> bool:
-        """ Determine if at least 1 of provided arguments is 'None'.
+        """Determine if at least 1 of provided arguments is 'None'.
 
         :param args: Arguments to check for 'None'.
         :return: True or False
         """
-
         for arg in args:
             if arg is None:
                 return True
 
         return False
 
-    def _convert_per_channel_q_linear_mat_mul(self, node, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert an ONNX QLinearMatMul with per-channel quantized second input, to TFLite.
+    def _convert_per_channel_q_linear_mat_mul(self, node, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert an ONNX QLinearMatMul with per-channel quantized second input, to TFLite.
 
         :param t_op: TFLite operator with the same inputs and outputs as the ONNX QLinearMatMul operator,
         :return: A list of TFLite operators to be added to the TFLite model.
         """
-
         # BatchMatMul silently doesn't support per-channel quantization. The only option is to convert to
         # FullyConnected, which supports only 2D inputs and requires the second input to be transposed.
 
@@ -111,8 +110,8 @@ class QLinearMatMulConverter(NodeConverter):
         if any(t.tensor_format.is_channels_last() for t in [a, b]):
             # This should be an extremely rare case since the inputs are almost always 2D (formatless).
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX `QLinearMatMul` or quantized `MatMul` with per-channel quantization and '
-                     'channels first input is not yet supported.')
+                     "Conversion of ONNX `QLinearMatMul` or quantized `MatMul` with per-channel quantization and "
+                     "channels first input is not yet supported.")
 
         # FullyConnected silently only supports 0 zero points for int8 per-channel quantization
         if not self._per_channel_zero_points_are_supported(b.type, b_zp):
@@ -220,7 +219,7 @@ class QLinearMatMulConverter(NodeConverter):
             ops.add_post(post_transpose)
 
     def _convert_per_tensor_q_linear_mat_mul(self, node, t_op):
-        """ Convert the ONNX QLinearMatMul operator to TFLite BatchMatMul.
+        """Convert the ONNX QLinearMatMul operator to TFLite BatchMatMul.
 
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
         :return: A list of TFLite operators, to add to the model.
@@ -289,8 +288,7 @@ class QLinearMatMulConverter(NodeConverter):
         return ops.flatten()
 
     def _get_input_with_quant_params(self, node: onnx_model.NodeProto, t_op, input_idx):
-        """
-        Get input tensor and corresponding q-params from other inputs (QLinearMatMul) or
+        """Get input tensor and corresponding q-params from other inputs (QLinearMatMul) or
         directly from tensor's quantization property.
 
         :param t_op: QLinearMatMul or (U)INT8 MatMul NodeProto.
@@ -316,8 +314,7 @@ class QLinearMatMulConverter(NodeConverter):
         return x, x_scale, x_zero_point
 
     def _get_output_quant_params(self, t_op):
-        """
-        Get output tensor and corresponding q-params from other inputs (QLinearMatMul) or
+        """Get output tensor and corresponding q-params from other inputs (QLinearMatMul) or
         directly from tensor's quantization property.
 
         :param t_op: QLinearMatMul or (U)INT8 MatMul NodeProto.
@@ -334,14 +331,13 @@ class QLinearMatMulConverter(NodeConverter):
 
         return y, y_scale, y_zero_point
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX QLinearMatMul or (U)INT8 MatMul operator to TFLite FullyConnected|BatchMatMul.
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX QLinearMatMul or (U)INT8 MatMul operator to TFLite FullyConnected|BatchMatMul.
 
         :param node: QLinearMatMul or (U)INT8 MatMul NodeProto.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
         :return: A list of TFLite operators, to add to the model.
         """
-
         # Prepare the input and output tensors.
         a, a_scale, a_zp = self._get_input_with_quant_params(node, t_op, 0)
         b, b_scale, b_zp = self._get_input_with_quant_params(node, t_op, 1)
@@ -368,8 +364,7 @@ class QLinearMatMulConverter(NodeConverter):
         # (onnxruntime/core/providers/cpu/quantization/quantize_linear_matmul.cc Line ~55)
         if b_scale.size == 1:
             return self._convert_per_tensor_q_linear_mat_mul(node, t_op)
-        elif b_scale.size > 1:
+        if b_scale.size > 1:
             # Per channel quantization
             return self._convert_per_channel_q_linear_mat_mul(node, t_op)
-        else:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX QLinearMatMul has no quantization parameters!")
+        logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX QLinearMatMul has no quantization parameters!")

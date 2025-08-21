@@ -6,14 +6,15 @@
 #
 
 
-from typing import Iterable, Any
+from collections.abc import Iterable
+from typing import Any
 
 import onnx
 from onnx import AttributeProto, TensorProto
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
 from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_tensor
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class ConstantOfShape(meta.ONNXOperatorAttributes):

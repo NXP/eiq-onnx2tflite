@@ -9,17 +9,17 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.onnx_model as onnx_model
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.conversion import translator, common
+from onnx2tflite.src import logger
+from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import convert_padding
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_transpose_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_conv_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
 
@@ -28,7 +28,7 @@ ConvAttributes = conv_transpose_attributes.ConvTranspose
 
 # noinspection PyMethodMayBeStatic
 class ConvTransposeConverter(NodeConverter):
-    node = 'ConvTranspose'
+    node = "ConvTranspose"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/transpose_conv.cc#L274-L276
@@ -52,11 +52,11 @@ class ConvTransposeConverter(NodeConverter):
 
         if o_conv_attributes.dilations is not None and any(dilation != 1 for dilation in o_conv_attributes.dilations):
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"ONNX ConvTranspose with 'dilations' other than '1' cannot be converted to TFLite.")
+                     "ONNX ConvTranspose with 'dilations' other than '1' cannot be converted to TFLite.")
 
         if o_conv_attributes.group is not None and o_conv_attributes.group != 1:
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"ONNX ConvTranspose with 'group' other than '1' cannot be converted to TFLite.")
+                     "ONNX ConvTranspose with 'group' other than '1' cannot be converted to TFLite.")
 
         # Prepare the input and output tensors. To replace them, assign to t_op.tmp_inputs/tmp_outputs directly.
         input_tensor = t_op.tmp_inputs[0]
@@ -134,15 +134,15 @@ class ConvTransposeConverter(NodeConverter):
 
         if t_op.is_quantized_without_qdq():
             # This isn't supported by ONNX. Keep this check just in case.
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `ConvTranspose` with a quantized input is not supported.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `ConvTranspose` with a quantized input is not supported.")
 
         x = t_op.tmp_inputs[0]
         if x.quantization is None:
             self.assert_type_allowed(x.type)
 
         elif x.type not in [TensorType.INT8]:
-            logger.e(logger.Code.NOT_IMPLEMENTED, 'Conversion of ONNX `ConvTranspose` with quantized input of '
-                                                  f'type {name_for_type(x.type)} is not supported.')
+            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `ConvTranspose` with quantized input of "
+                                                  f"type {name_for_type(x.type)} is not supported.")
 
         self._verify_kernel_shape_attribute(o_conv_attributes, t_op)
         kernel_rank = len(o_conv_attributes.kernel_shape)

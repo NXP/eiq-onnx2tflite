@@ -10,7 +10,7 @@ import flatbuffers as fb
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
 import onnx2tflite.lib.tflite.BuiltinOptions as libBuiltinOptions
 import onnx2tflite.lib.tflite.QuantizeOptions as libQuantizeOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Dequantize(meta.BuiltinOptions):

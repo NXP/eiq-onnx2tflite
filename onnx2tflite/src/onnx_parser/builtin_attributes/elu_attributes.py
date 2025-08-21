@@ -17,7 +17,7 @@ class Elu(meta.ONNXOperatorAttributes):
 
     def _init_attributes(self):
         for attr in self._descriptor:
-            if attr.name == 'alpha':
+            if attr.name == "alpha":
                 self.alpha = attr.f
             else:
-                logger.w(f'ONNX `Elu` attribute `{attr.name}` is not supported!')
+                logger.w(f"ONNX `Elu` attribute `{attr.name}` is not supported!")

@@ -8,14 +8,13 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter import quantization_utils
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor, \
-    dequantize
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import dequantize, set_quantization_parameters_to_tensor
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import dequantize_linear_attributes
@@ -26,7 +25,7 @@ DequantizeLinearAttrs = dequantize_linear_attributes.DequantizeLinear
 
 
 class DequantizeLinearConverter(NodeConverter):
-    node = 'DequantizeLinear'
+    node = "DequantizeLinear"
 
     def _extract_quant_params(self, o_dequantize_linear: DequantizeLinearAttrs, t_op, allow_int32_input):
         if not (2 <= len(t_op.tmp_inputs) <= 3):
@@ -96,8 +95,7 @@ class DequantizeLinearConverter(NodeConverter):
 
     def convert_into_tensor(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[
         tflite_model.Operator]:
-        """
-        Convert quantization parameters (scale & zero point) of ONNX operator 'DequantizeLinear'
+        """Convert quantization parameters (scale & zero point) of ONNX operator 'DequantizeLinear'
         into its input tensor and skip the operator. Operators converted by this function are part
         of QDQ cluster of some float operator.
 
@@ -129,7 +127,7 @@ class DequantizeLinearConverter(NodeConverter):
         return []
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX operator 'DequantizeLinear' to TFLite 'Dequantize'.
+        """Convert the ONNX operator 'DequantizeLinear' to TFLite 'Dequantize'.
 
         :param node: ONNX DequantizeLinear operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
@@ -139,11 +137,11 @@ class DequantizeLinearConverter(NodeConverter):
 
         if dql_attributes.output_dtype != 0:
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Attribute 'output_dtype' of ONNX operator 'DequantizeLinear' is not supported yet.")
+                     "Attribute 'output_dtype' of ONNX operator 'DequantizeLinear' is not supported yet.")
 
         if dql_attributes.block_size != 0:
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Attribute 'block_size' of ONNX operator 'DequantizeLinear' is not supported yet.")
+                     "Attribute 'block_size' of ONNX operator 'DequantizeLinear' is not supported yet.")
 
         if t_op.tmp_inputs[0].type == TensorType.INT32:
             # Quantized bias tensor but corresponding operator (Conv, Gemm) not run as quantized (running

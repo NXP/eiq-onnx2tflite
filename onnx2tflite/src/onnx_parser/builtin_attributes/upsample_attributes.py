@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
@@ -25,13 +25,13 @@ class Upsample(meta.ONNXOperatorAttributes):
         super().__init__(descriptor)
 
     def _default_values(self):
-        self.mode = 'nearest'
+        self.mode = "nearest"
         self.scales = None
 
     def _init_attributes(self):
         for attr in self._descriptor:
             if attr.name == "mode":
-                self.mode = attr.s.decode('utf-8')
+                self.mode = attr.s.decode("utf-8")
             elif attr.name == "scales":
                 self.scales = ONNXFloatListAttribute(attr)
             else:

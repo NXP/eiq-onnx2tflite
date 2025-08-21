@@ -9,12 +9,14 @@ from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.node_converters.shared import reduce_utils
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
-from onnx2tflite.src.converter.node_converters.shared.reduce_utils import convert_axes_from_attribute, \
-    convert_axes_from_input_tensor
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared import reduce_utils
+from onnx2tflite.src.converter.node_converters.shared.reduce_utils import (
+    convert_axes_from_attribute,
+    convert_axes_from_input_tensor,
+)
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_max_attributes import ReduceMax
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -23,7 +25,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 
 class ReduceMaxConverter(NodeConverter):
-    node = 'ReduceMax'
+    node = "ReduceMax"
     onnx_supported_types = FLOATS + [TensorType.INT8, TensorType.INT32, TensorType.INT64,
                                      TensorType.UINT8, TensorType.UINT32, TensorType.UINT64,
                                      TensorType.BOOL]
@@ -32,9 +34,9 @@ class ReduceMaxConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32, TensorType.INT8, TensorType.INT32, TensorType.INT64, TensorType.UINT8]
 
     def _convert_v_13(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceMax version 1 / 11 / 12 / 13 to TFLite ReduceMax.
+        """Convert ONNX ReduceMax version 1 / 11 / 12 / 13 to TFLite ReduceMax.
 
-            The `axes` is in the form of an attribute.
+        The `axes` is in the form of an attribute.
         """
         attrs = cast(ReduceMax, node.attributes)
 
@@ -48,9 +50,9 @@ class ReduceMaxConverter(NodeConverter):
         return ops.flatten()
 
     def _convert_v_18(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceMax version 18+ to TFLite ReduceMax.
+        """Convert ONNX ReduceMax version 18+ to TFLite ReduceMax.
 
-            The `axes` are an optional input tensor.
+        The `axes` are an optional input tensor.
         """
         attrs = cast(ReduceMax, node.attributes)
 
@@ -65,10 +67,9 @@ class ReduceMaxConverter(NodeConverter):
         return ops.flatten()
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceMax operator to TFLite ReduceMax. """
-
+        """Convert ONNX ReduceMax operator to TFLite ReduceMax."""
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `ReduceMax` has unexpected number of inputs.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceMax` has unexpected number of inputs.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -76,7 +77,7 @@ class ReduceMaxConverter(NodeConverter):
         if x.type == TensorType.BOOL:
             # The TFLite inference crashes when trying to run the operator, without any useful error message.
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     'Conversion of ONNX `ReduceMax` with type BOOL is not possible.')
+                     "Conversion of ONNX `ReduceMax` with type BOOL is not possible.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
@@ -88,6 +89,5 @@ class ReduceMaxConverter(NodeConverter):
             # Version 1 / 11 / 12 / 13 -> axes are passed as attribute.
             return self._convert_v_13(node, t_op)
 
-        else:
-            # Version 18+ -> axes are an optional input tensor.
-            return self._convert_v_18(node, t_op)
+        # Version 18+ -> axes are an optional input tensor.
+        return self._convert_v_18(node, t_op)

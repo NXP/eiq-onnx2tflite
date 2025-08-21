@@ -7,22 +7,22 @@
 #
 
 
-from typing import Optional, Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class AveragePool(meta.ONNXOperatorAttributes):
     auto_pad: str
     ceil_mode: int
     count_include_pad: int
-    dilations: Optional[meta.ONNXIntListAttribute]
-    kernel_shape: Optional[meta.ONNXIntListAttribute]
-    pads: Optional[meta.ONNXIntListAttribute]
-    strides: Optional[meta.ONNXIntListAttribute]
+    dilations: meta.ONNXIntListAttribute | None
+    kernel_shape: meta.ONNXIntListAttribute | None
+    pads: meta.ONNXIntListAttribute | None
+    strides: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

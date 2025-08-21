@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
@@ -26,6 +26,6 @@ class SpaceToDepth(meta.ONNXOperatorAttributes):
             else:
                 logger.w(f"ONNX `SpaceToDepth` attribute `{attr.name}` is not supported!")
 
-        if not hasattr(self, 'block_size'):
+        if not hasattr(self, "block_size"):
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     'ONNX `SpaceToDepth` is missing the required `blocksize` attribute.')
+                     "ONNX `SpaceToDepth` is missing the required `blocksize` attribute.")

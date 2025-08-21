@@ -7,34 +7,39 @@
 
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import MultipleSameOps, Op, PatternMatcher
-from onnx2tflite.src.tflite_optimizer.tensor_rules import RuleOr, TensorIsNotModelOutput, TensorIsNotQuantized, \
-    TensorsAreNotQuantized, TensorsHaveSameType
+from onnx2tflite.src.tflite_optimizer.tensor_rules import (
+    RuleOr,
+    TensorIsNotModelOutput,
+    TensorIsNotQuantized,
+    TensorsAreNotQuantized,
+    TensorsHaveSameType,
+)
 
 
 class FuseCastOperators(BaseOptimization):
-    """ Remove some `Cast` operators in the following pattern.
+    """Remove some `Cast` operators in the following pattern.
 
-            │  'x'
-         ┌──▼───┐
-         │ Cast │
-         └──┬───┘                                           │  'x'
-          ┌─┴─── ... ──────┐  'y'        ─────►          ┌──┴── ... ─────┐   ('y' is not in the model anymore)
-       ┌──▼───┐         ┌──▼───┐                      ┌──▼───┐        ┌──▼───┐
-       │ Cast │  ...    │ Cast │                      │ Cast │  ...   │ Cast │
-       └──┬───┘         └──┬───┘                      └──┬───┘        └──┬───┘
-          │                │  'z'                        │               │  'z'
-     """
+         │  'x'
+      ┌──▼───┐
+      │ Cast │
+      └──┬───┘                                           │  'x'
+       ┌─┴─── ... ──────┐  'y'        ─────►          ┌──┴── ... ─────┐   ('y' is not in the model anymore)
+    ┌──▼───┐         ┌──▼───┐                      ┌──▼───┐        ┌──▼───┐
+    │ Cast │  ...    │ Cast │                      │ Cast │  ...   │ Cast │
+    └──┬───┘         └──┬───┘                      └──┬───┘        └──┬───┘
+       │                │  'z'                        │               │  'z'
+    """
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Cast'], outputs=['y']),
-                MultipleSameOps(['Cast'], ['y', ...])  # Only `Cast` ops can use `y`.
+                Op(["Cast"], outputs=["y"]),
+                MultipleSameOps(["Cast"], ["y", ...])  # Only `Cast` ops can use `y`.
             ],
             [
-                TensorIsNotModelOutput('y'),
-                TensorIsNotQuantized('y')
+                TensorIsNotModelOutput("y"),
+                TensorIsNotQuantized("y")
             ]
         )
 
@@ -53,27 +58,27 @@ class FuseCastOperators(BaseOptimization):
 
 
 class RemoveCastOperatorsWithNoEffect(BaseOptimization):
-    """ Remove operators that match the following pattern.
+    """Remove operators that match the following pattern.
 
-                  │  'x'
-               ┌──▼───┐
-               │ Cast │
-               └──┬───┘
-                  │  'y'  (same type as 'x')
+       │  'x'
+    ┌──▼───┐
+    │ Cast │
+    └──┬───┘
+       │  'y'  (same type as 'x')
     """
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Cast'], ['x', ...], ['y'])
+                Op(["Cast"], ["x", ...], ["y"])
             ],
             [
-                TensorsHaveSameType(['x', 'y']),
-                TensorsAreNotQuantized(['x', 'y']),
+                TensorsHaveSameType(["x", "y"]),
+                TensorsAreNotQuantized(["x", "y"]),
                 RuleOr(
-                    TensorIsNotModelOutput('x'),
-                    TensorIsNotModelOutput('y')
+                    TensorIsNotModelOutput("x"),
+                    TensorIsNotModelOutput("y")
                     # If both 'x' and 'y' are model outputs, the `Cast` cannot be removed. If the op was removed, its
                     #  input and output would be combined into 1 tensor, which would have to represent 2 model outputs
                     #  with 2 different names, which is not possible.
@@ -85,8 +90,8 @@ class RemoveCastOperatorsWithNoEffect(BaseOptimization):
             if not self._builder.operator_can_be_skipped(cast):
                 continue
 
-            x = tensor_map['x']
-            y = tensor_map['y']
+            x = tensor_map["x"]
+            y = tensor_map["y"]
             model_outputs = self._builder.get_sub_graph().outputs.tmp_outputs
 
             # Replace `y` with `x` in the inputs of all following operators.

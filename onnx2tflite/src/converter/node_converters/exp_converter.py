@@ -14,7 +14,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class ExpConverter(NodeConverter):
-    node = 'Exp'
+    node = "Exp"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/exp.cc#L96-L119

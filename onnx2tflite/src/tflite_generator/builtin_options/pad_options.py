@@ -7,7 +7,7 @@
 
 import flatbuffers
 
-from onnx2tflite.lib.tflite import BuiltinOptions, BuiltinOperator, PadOptions
+from onnx2tflite.lib.tflite import BuiltinOperator, BuiltinOptions, PadOptions
 from onnx2tflite.src.tflite_generator.meta import meta
 
 

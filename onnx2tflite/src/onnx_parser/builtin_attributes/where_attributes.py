@@ -5,11 +5,11 @@
 # See the LICENSE for more details.
 #
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Where(meta.ONNXOperatorAttributes):

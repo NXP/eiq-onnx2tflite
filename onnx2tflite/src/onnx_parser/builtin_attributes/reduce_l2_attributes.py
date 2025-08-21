@@ -5,12 +5,12 @@
 # See the LICENSE for more details.
 #
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class ReduceL2(meta.ONNXOperatorAttributes):

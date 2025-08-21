@@ -5,15 +5,13 @@
 # See the LICENSE for more details.
 #
 
-"""
-    tensor_format_inference
+"""tensor_format_inference
 
-    This module contains a class, which can infer the format of all tensors in a given ONNX model.
-    It stores this format in the tensors '.tensor_format' attribute.
+This module contains a class, which can infer the format of all tensors in a given ONNX model.
+It stores this format in the tensors '.tensor_format' attribute.
 """
 
 import itertools
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -77,19 +75,19 @@ class TensorFormatInference:
     }
 
     # A dictionary mapping a tensor name to an operator, which has the tensor among its outputs
-    operator_for_output_tensor: Dict[str, onnx_model.NodeProto]
+    operator_for_output_tensor: dict[str, onnx_model.NodeProto]
 
     # A dictionary mapping a tensor name to the inferred tensor format
-    inferred_tensor_formats: Dict[str, TensorFormat]
+    inferred_tensor_formats: dict[str, TensorFormat]
 
     # Whether at least one tensor type was changed during last iteration of type inference
     _type_changed_during_last_run: bool
 
     def __init__(self, model: onnx_model.ModelProto):
-        """ 'TensorFormatInference' can identify the formats of all tensors in an ONNX model with the
-            'identify_tensor_formats()' method.
+        """'TensorFormatInference' can identify the formats of all tensors in an ONNX model with the
+        'identify_tensor_formats()' method.
 
-            :param model: ONNX ModelProto containing the model, which will have the format of its tensors inferred.
+        :param model: ONNX ModelProto containing the model, which will have the format of its tensors inferred.
         """
         self.model = model
         self.inferred_tensor_formats = dict()
@@ -97,8 +95,8 @@ class TensorFormatInference:
         self._type_changed_during_last_run = False
 
     def identify_tensor_formats(self):
-        """ Identify the format of all tensors in the ONNX model.
-            Store the format in their '.tensor_format' attribute.
+        """Identify the format of all tensors in the ONNX model.
+        Store the format in their '.tensor_format' attribute.
         """
         self._type_changed_during_last_run = True
 
@@ -114,9 +112,9 @@ class TensorFormatInference:
         self._commit_inferred_formats_to_tensors()
 
     def _infer_formats_of_node_tensors(self, node: onnx_model.NodeProto):
-        """ Identify the formats of all tensors used by 'node'.
+        """Identify the formats of all tensors used by 'node'.
 
-            :param node: The ONNX NodeProto object, that will have the format of its tensors inferred.
+        :param node: The ONNX NodeProto object, that will have the format of its tensors inferred.
         """
         if node.op_type in self.onnx_ops_with_channels_first_tensors.keys():
             # Node uses channels first tensors
@@ -129,7 +127,7 @@ class TensorFormatInference:
                 self._assign_format_to_tensor(node.inputs[1], TensorFormat.FORMATLESS)
                 self._infer_format_based_on_io_ranks(node)
 
-            elif node.op_type in ["Flatten", "Transpose", "Shape", 'Unsqueeze', 'OneHot', 'Squeeze', 'Einsum']:
+            elif node.op_type in ["Flatten", "Transpose", "Shape", "Unsqueeze", "OneHot", "Squeeze", "Einsum"]:
                 self._assign_format_to_tensor(node.outputs[0], TensorFormat.FORMATLESS)
 
             elif node.op_type == "Gather":
@@ -149,17 +147,17 @@ class TensorFormatInference:
                     # The 'indices' tensor is dynamic -> the formats will have to be inferred later
                     self._assign_format_to_tensors([node.inputs[0], node.outputs[0]], TensorFormat.FORMATLESS)
 
-            elif node.op_type == 'GatherND':
+            elif node.op_type == "GatherND":
                 # Any `channels_last` tensors just require extra `Transpose` ops to be added. Prefer `FORMATLESS` if
                 #  possible.
                 self._assign_format_to_tensors([node.inputs[0], node.inputs[1], node.outputs[0]],
                                                TensorFormat.FORMATLESS)
 
 
-            elif node.op_type in ('LSTM', 'RNN'):
+            elif node.op_type in ("LSTM", "RNN"):
                 self._assign_format_to_tensors(list(node.outputs), TensorFormat.FORMATLESS)
 
-            elif node.op_type in ['ReduceMean', 'ReduceL2', 'ReduceMax', "ReduceMin", "ReduceProd", "ReduceSum"]:
+            elif node.op_type in ["ReduceMean", "ReduceL2", "ReduceMax", "ReduceMin", "ReduceProd", "ReduceSum"]:
                 if len(node.inputs) > 1:
                     self._assign_format_to_tensor(node.inputs[1], TensorFormat.FORMATLESS)
                 self._infer_format_based_on_io_ranks(node)
@@ -174,9 +172,9 @@ class TensorFormatInference:
             self._handle_operator_which_can_use_any_tensor_format(node)
 
     def _handle_operator_which_uses_channels_first_tensors(self, node: onnx_model.NodeProto):
-        """ Identify the formats of tensors used by an operator, which always uses channels first tensors.
+        """Identify the formats of tensors used by an operator, which always uses channels first tensors.
 
-            :param node: The operator with channels first tensors, represented by an ONNX NodeProto object.
+        :param node: The operator with channels first tensors, represented by an ONNX NodeProto object.
         """
         if node.op_type == "BatchNormalization":
             # BatchNorm can use 2D inputs, which are formatless
@@ -205,9 +203,9 @@ class TensorFormatInference:
                 self._assign_format_to_tensor(tensor_name, TensorFormat.FORMATLESS)
 
     def _handle_operator_which_can_use_any_tensor_format(self, node: onnx_model.NodeProto):
-        """ Identify the formats of tensors used by an operator, which can use tensors in any format.
+        """Identify the formats of tensors used by an operator, which can use tensors in any format.
 
-            :param node: The operator, represented by an ONNX NodeProto object.
+        :param node: The operator, represented by an ONNX NodeProto object.
         """
         if not self._node_uses_at_least_one_channels_first_tensor(node):
             # Nothing important is known about this node. Mark every tensor as formatless for now
@@ -224,7 +222,7 @@ class TensorFormatInference:
                     # Tensor is already channels first
                     continue
 
-                elif (is_0d_to_2d is not None) and is_0d_to_2d:
+                if (is_0d_to_2d is not None) and is_0d_to_2d:
                     # 0D, 1D and 2D tensors are formatless
                     self._assign_format_to_tensor(tensor_name, TensorFormat.FORMATLESS)
 
@@ -236,12 +234,12 @@ class TensorFormatInference:
                     self._back_propagate_channels_first_format(tensor_name)
 
     def _back_propagate_channels_first_format(self, start_tensor_name: str):
-        """ Recursively call 'self.__infer_formats_of_node_tensors()' on previous operators. Starting with the
-            operator, that has 'start_tensor_name' as its output.
+        """Recursively call 'self.__infer_formats_of_node_tensors()' on previous operators. Starting with the
+        operator, that has 'start_tensor_name' as its output.
 
-            After a channels first format has been assigned to 'start_tensor_name', this change must be propagated
-            to the operator, which produces this tensor. The formats of all tensors the operator uses will be
-            recalculated, which can cause this function to be called again, with the other tensors as arguments.
+        After a channels first format has been assigned to 'start_tensor_name', this change must be propagated
+        to the operator, which produces this tensor. The formats of all tensors the operator uses will be
+        recalculated, which can cause this function to be called again, with the other tensors as arguments.
         """
         if self._is_static_tensor(start_tensor_name):
             # Nowhere to propagate to
@@ -261,9 +259,9 @@ class TensorFormatInference:
         self._infer_formats_of_node_tensors(previous_op)
 
     def _infer_format_based_on_io_ranks(self, node: onnx_model.NodeProto):
-        """ Determine the format of the output tensor of given operator.
+        """Determine the format of the output tensor of given operator.
 
-            :param node: The Reshape/ReduceX operator represented as an ONNX NodeProto object.
+        :param node: The Reshape/ReduceX operator represented as an ONNX NodeProto object.
         """
         main_input_rank = self._get_tensor_rank_from_name(node.inputs[0])
         main_output_rank = self._get_tensor_rank_from_name(node.outputs[0])
@@ -284,17 +282,16 @@ class TensorFormatInference:
             self._assign_format_to_tensor(node.outputs[0], TensorFormat.FORMATLESS)
 
     def _get_tensor_format_for_name(self, tensor_name: str) -> TensorFormat:
-        """ Return the inferred tensor format for a tensor with given name. """
+        """Return the inferred tensor format for a tensor with given name."""
         return self.inferred_tensor_formats.get(tensor_name, TensorFormat.NONE)
 
-    def _get_tensor_rank_from_name(self, tensor_name: str) -> Optional[int]:
-        """ Get the number of dimensions of a tensor with given name.
+    def _get_tensor_rank_from_name(self, tensor_name: str) -> int | None:
+        """Get the number of dimensions of a tensor with given name.
 
-            :param tensor_name: Name of the tensor, to find the number of dimensions for.
-            :return: The number of dimensions of the given tensor, or
-                     None, if the tensor is not defined in the model.
+        :param tensor_name: Name of the tensor, to find the number of dimensions for.
+        :return: The number of dimensions of the given tensor, or
+                 None, if the tensor is not defined in the model.
         """
-
         # Search for the tensor in 'value_info', 'inputs' and 'outputs'
         for value_info in itertools.chain(self.model.graph.value_info, self.model.graph.inputs,
                                           self.model.graph.outputs):
@@ -309,12 +306,12 @@ class TensorFormatInference:
 
         return None
 
-    def _tensor_has_0_to_2_dimensions(self, tensor_name: str) -> Optional[bool]:
-        """ Determine if tensor 'tensor_name' has 0, 1 or 2 dimensions, or not.
+    def _tensor_has_0_to_2_dimensions(self, tensor_name: str) -> bool | None:
+        """Determine if tensor 'tensor_name' has 0, 1 or 2 dimensions, or not.
 
-            :return: True, if 'tensor_name' has 0, 1 or 2 dimensions.
-                     None, if tensor doesn't have its shape specified in the model.
-                     False, otherwise.
+        :return: True, if 'tensor_name' has 0, 1 or 2 dimensions.
+                 None, if tensor doesn't have its shape specified in the model.
+                 False, otherwise.
         """
         rank = self._get_tensor_rank_from_name(tensor_name)
 
@@ -324,11 +321,11 @@ class TensorFormatInference:
         return 0 <= rank <= 2
 
     def _assign_format_to_tensor(self, tensor_name: str, tensor_format: TensorFormat):
-        """ Map 'tensor_format' to tensor with given name. If the tensor already had a channels first format, it will
-             not be overwritten.
+        """Map 'tensor_format' to tensor with given name. If the tensor already had a channels first format, it will
+         not be overwritten.
 
-            :param tensor_name: Name of the tensor, to assign the tensor format to.
-            :param tensor_format: The TensorFormat to assign to the given tensor.
+        :param tensor_name: Name of the tensor, to assign the tensor format to.
+        :param tensor_format: The TensorFormat to assign to the given tensor.
         """
         previous_format = self.inferred_tensor_formats.get(tensor_name, tensor_format)
         if previous_format is not tensor_format:
@@ -341,18 +338,19 @@ class TensorFormatInference:
 
         self.inferred_tensor_formats[tensor_name] = tensor_format
 
-    def _assign_format_to_tensors(self, tensor_names: List[str], tensor_format: TensorFormat):
-        """ Map given 'tensor_format' to tensors with their names in 'tensor_names'.
+    def _assign_format_to_tensors(self, tensor_names: list[str], tensor_format: TensorFormat):
+        """Map given 'tensor_format' to tensors with their names in 'tensor_names'.
 
-            :param tensor_names: A list of names of tensors, to assign the 'tensor_format' to.
-            :param tensor_format: The TensorFormat, to assign to all tensors in 'tensor_names'.
+        :param tensor_names: A list of names of tensors, to assign the 'tensor_format' to.
+        :param tensor_format: The TensorFormat, to assign to all tensors in 'tensor_names'.
         """
         for tensor_name in tensor_names:
             self._assign_format_to_tensor(tensor_name, tensor_format)
 
     def _match_formats_of_tensors(self, tensor_1: str, tensor_2: str):
-        """ If one of 'tensor_1' or 'tensor_2' is channels first, make the other channels first as well.
-            If neither is channels first, make them both formatless."""
+        """If one of 'tensor_1' or 'tensor_2' is channels first, make the other channels first as well.
+        If neither is channels first, make them both formatless.
+        """
         format_1 = self._get_tensor_format_for_name(tensor_1)
         format_2 = self._get_tensor_format_for_name(tensor_2)
 
@@ -368,14 +366,14 @@ class TensorFormatInference:
             self._assign_format_to_tensor(tensor_2, TensorFormat.FORMATLESS)
 
     def _is_static_tensor(self, tensor_name: str):
-        """ Determine if tensor with given name is static or not. """
+        """Determine if tensor with given name is static or not."""
         for static_tensor in self.model.graph.initializers:
             if static_tensor.name == tensor_name:
                 return True
 
         return False
 
-    def _get_tensor_data(self, tensor_name: str) -> Optional[np.ndarray]:
+    def _get_tensor_data(self, tensor_name: str) -> np.ndarray | None:
         for tensor in self.model.graph.initializers:
             if tensor.name == tensor_name:
                 # Found the tensor
@@ -383,10 +381,10 @@ class TensorFormatInference:
 
         return None
 
-    def _initialize_output_tensor_to_operator_dictionary(self) -> Dict[str, onnx_model.NodeProto]:
-        """ Initialize the dictionary, which maps tensor names to operators, which have this tensor as an output.
+    def _initialize_output_tensor_to_operator_dictionary(self) -> dict[str, onnx_model.NodeProto]:
+        """Initialize the dictionary, which maps tensor names to operators, which have this tensor as an output.
 
-            :return: The initialized dictionary.
+        :return: The initialized dictionary.
         """
         output_tensor_to_operator = dict()
 
@@ -397,7 +395,7 @@ class TensorFormatInference:
         return output_tensor_to_operator
 
     def _node_uses_at_least_one_channels_first_tensor(self, node: onnx_model.NodeProto) -> bool:
-        """ Determine if given 'node' uses at least 1 tensor, which has been assigned a channels first format. """
+        """Determine if given 'node' uses at least 1 tensor, which has been assigned a channels first format."""
         for tensor_name in itertools.chain(node.inputs, node.outputs):
             if self._get_tensor_format_for_name(tensor_name).is_channels_first():
                 return True
@@ -405,8 +403,8 @@ class TensorFormatInference:
         return False
 
     def _commit_inferred_formats_to_tensors(self):
-        """ Assign tensor formats in 'self.inferred_tensor_formats' to corresponding ONNX ValueInfoProto and TensorProto
-            objects in the ONNX model.
+        """Assign tensor formats in 'self.inferred_tensor_formats' to corresponding ONNX ValueInfoProto and TensorProto
+        objects in the ONNX model.
         """
         tensors_without_inferred_format = set()
 

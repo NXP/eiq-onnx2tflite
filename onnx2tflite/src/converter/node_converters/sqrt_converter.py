@@ -15,7 +15,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class SqrtConverter(NodeConverter):
-    node = 'Sqrt'
+    node = "Sqrt"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L374
@@ -24,12 +24,11 @@ class SqrtConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `Sqrt` to TFLite `Sqrt`.
+        """Convert ONNX `Sqrt` to TFLite `Sqrt`.
 
-            The TFLite variant has no builtin options in the library, just set it to `None` and use the opcode_index
-             directly.
+        The TFLite variant has no builtin options in the library, just set it to `None` and use the opcode_index
+         directly.
         """
-
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
         t_op.builtin_options = None

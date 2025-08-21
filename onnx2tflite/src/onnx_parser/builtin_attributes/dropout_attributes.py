@@ -6,16 +6,16 @@
 # See the LICENSE_MIT for more details.
 #
 
-from typing import Optional, Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Dropout(meta.ONNXOperatorAttributes):
-    seed: Optional[int]
+    seed: int | None
     ratio: float
     is_test: int
 
@@ -31,9 +31,9 @@ class Dropout(meta.ONNXOperatorAttributes):
         for attr in self._descriptor:
             if attr.name == "seed":
                 self.seed = attr.i
-            elif attr.name == 'ratio':
+            elif attr.name == "ratio":
                 self.ratio = attr.f
-            elif attr.name == 'is_test':
+            elif attr.name == "is_test":
                 self.is_test = attr.i
             else:
                 logger.w(f"ONNX Dropout attribute '{attr.name}' is not supported!")

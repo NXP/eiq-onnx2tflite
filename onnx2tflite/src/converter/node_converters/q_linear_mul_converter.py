@@ -7,28 +7,27 @@
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.mul_options as tflite_mul_options
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 
 
 class QLinearMulConverter(NodeConverter):
-    node = 'QLinearMul'
+    node = "QLinearMul"
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime 'QLinearMul' operator to TFLite 'Mul'.
+        """Convert the ONNX Runtime 'QLinearMul' operator to TFLite 'Mul'.
 
-            :param node: ONNX Runtime `QLinearMul` operator.
-            :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
-            :return: A list of TFLite operators, to add to the model.
+        :param node: ONNX Runtime `QLinearMul` operator.
+        :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
+        :return: A list of TFLite operators, to add to the model.
         """
-
         t_op.builtin_options = tflite_mul_options.Mul()
 
         # Prepare the input and output tensors.
@@ -59,7 +58,7 @@ class QLinearMulConverter(NodeConverter):
         for param_tensor in [a_scale_tensor, b_scale_tensor, y_scale_tensor, a_zp_tensor, b_zp_tensor, y_zp_tensor]:
             if param_tensor is not None and not tensor_has_data(param_tensor):
                 logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         'Conversion of ONNX QLinearMul with dynamic quantization parameters is not possible.')
+                         "Conversion of ONNX QLinearMul with dynamic quantization parameters is not possible.")
 
         numpy_zp_type = tf_lite_type_to_numpy(a.type)
 

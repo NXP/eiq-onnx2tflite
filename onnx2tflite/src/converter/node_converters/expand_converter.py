@@ -5,14 +5,10 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 import numpy as np
 
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
-from onnx2tflite.lib.tflite import (
-    BuiltinOperator as tflBuiltinOperator
-)
+from onnx2tflite.lib.tflite import BuiltinOperator as tflBuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
@@ -20,12 +16,13 @@ from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import broadcast_to_options
-from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS, FLOATS
+from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
 
 
 class ExpandConverter(NodeConverter):
-    node = 'Expand'
+    node = "Expand"
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/broadcast_to.cc#L102
@@ -33,13 +30,11 @@ class ExpandConverter(NodeConverter):
     tflite_supported_types.remove(TensorType.STRING)
     verified_types = INTS + FLOATS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.BOOL]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert 'Expand' operator into TFLite 'BroadcastArgs' and 'BroadcastTo'. 'BroadcastArgs' is added
+        because 'BroadcastTo' expects 'output shape after broadcasting' as an input parameter, whereas 'Expand'
+        expects 'broadcasted shape' and output shape is computed internally.
         """
-            Convert 'Expand' operator into TFLite 'BroadcastArgs' and 'BroadcastTo'. 'BroadcastArgs' is added
-            because 'BroadcastTo' expects 'output shape after broadcasting' as an input parameter, whereas 'Expand'
-            expects 'broadcasted shape' and output shape is computed internally.
-        """
-
         x = t_op.tmp_inputs[0]
         new_shape = t_op.tmp_inputs[1]
         output = t_op.tmp_outputs[0]

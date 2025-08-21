@@ -22,11 +22,11 @@ class ArgMin(meta.ONNXOperatorAttributes):
     def _init_attributes(self):
         for attr in self._descriptor:
             match attr.name:
-                case 'axis':
+                case "axis":
                     self.axis = attr.i
-                case 'keepdims':
+                case "keepdims":
                     self.keepdims = attr.i
-                case 'select_last_index':
+                case "select_last_index":
                     self.select_last_index = attr.i
                 case _:
                     logger.w(f"ONNX `ArgMin` attribute '{attr.name}' is not supported!")

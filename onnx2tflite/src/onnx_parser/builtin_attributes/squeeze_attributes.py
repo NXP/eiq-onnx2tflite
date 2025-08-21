@@ -6,17 +6,17 @@
 #
 
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Squeeze(meta.ONNXOperatorAttributes):
     # Unused since version 13
-    axes: Optional[meta.ONNXIntListAttribute]
+    axes: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

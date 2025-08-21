@@ -4,23 +4,22 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    Transpose
+"""Transpose
 
 Representation of an ONNX 'Transpose' operator.
 Initialized from a protobuf descriptor object.
 """
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Transpose(meta.ONNXOperatorAttributes):
-    perm: Optional[meta.ONNXIntListAttribute]
+    perm: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

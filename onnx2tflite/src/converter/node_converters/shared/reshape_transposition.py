@@ -20,8 +20,7 @@ class SingleUnitaryDimensionChangeType(Enum):
 
 
 def _single_unitary_dimension_change(from_shape, to_shape) -> tuple[int, SingleUnitaryDimensionChangeType] | None:
-    """
-    Get change details (index of change and type of change) if there's only single unitary change
+    """Get change details (index of change and type of change) if there's only single unitary change
     between input shapes. If there is no such a change, None is returned otherwise.
 
     :param from_shape: First compared shape.
@@ -32,7 +31,7 @@ def _single_unitary_dimension_change(from_shape, to_shape) -> tuple[int, SingleU
 
     if abs(len(from_shape) - len(to_shape)) != 1:  # More than one added/removed dimension
         return None
-    elif len(from_shape) > len(to_shape):  # Make sure 'from_shape' is a shorter one
+    if len(from_shape) > len(to_shape):  # Make sure 'from_shape' is a shorter one
         from_shape, to_shape = to_shape, from_shape
         change_type = SingleUnitaryDimensionChangeType.SQUEEZE
 
@@ -79,8 +78,7 @@ def _single_unitary_dimension_change(from_shape, to_shape) -> tuple[int, SingleU
 
 def _get_permutation_for_single_unitary_change_in_NC_dims(shape_from: list[int], to_shape: list[int]) \
         -> list[int] | None:
-    """
-    Get permutation used by prepended 'Transpose' operator if there's only single unitary
+    """Get permutation used by prepended 'Transpose' operator if there's only single unitary
     dimension change (single added/removed dimension with value 1) in batch or channel dimension
     done by 'Reshape' operator.
 
@@ -88,7 +86,6 @@ def _get_permutation_for_single_unitary_change_in_NC_dims(shape_from: list[int],
     :param to_shape: Output shape of 'Reshape' operator.
     :return: Permutation as list of ints, or None if there is no single unitary change in NC dimensions.
     """
-
     old_shape_channel_first = translator.dims_to_channels_first(shape_from)
     new_shape_channel_first = translator.dims_to_channels_first(to_shape)
 
@@ -130,8 +127,7 @@ def _get_permutation_for_single_unitary_change_in_NC_dims(shape_from: list[int],
 
 
 def ensure_reshape_transposition(builder, ops: OpsList) -> list[int]:
-    """
-    Ensure transposition of Reshape operator is defined correctly based on tensor format.
+    """Ensure transposition of Reshape operator is defined correctly based on tensor format.
     New operators (Transpose) are added into "ops" collection when necessary.
 
     :param builder: ModelBuilder instance.

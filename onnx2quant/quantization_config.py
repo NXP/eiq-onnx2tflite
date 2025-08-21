@@ -15,8 +15,7 @@ PER_CHANNEL_DEFAULT = False
 class QuantizationConfig:
 
     def __init__(self, calibration_data_reader: CalibrationDataReader, args: dict | None = None):
-        """
-        Quantization configuration passed through command line arguments or gathered during
+        """Quantization configuration passed through command line arguments or gathered during
         the quantization process.
 
         :param calibration_data_reader: Calibration dataset reader. This must not be None.

@@ -13,11 +13,11 @@ class ScatterND(meta.ONNXOperatorAttributes):
     reduction: str
 
     def _default_values(self):
-        self.reduction = 'none'
+        self.reduction = "none"
 
     def _init_attributes(self):
         for attr in self._descriptor:
-            if attr.name == 'reduction':
-                self.reduction = attr.s.decode('utf-8')
+            if attr.name == "reduction":
+                self.reduction = attr.s.decode("utf-8")
             else:
                 logger.w(f"ONNX `ScatterND` attribute '{attr.name}' is not supported.")

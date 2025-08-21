@@ -66,4 +66,5 @@ ignore = [
     "D213",    # Incompatible with D212 rule
     "COM812",  # Conflicts with "ruff format" command
     "ISC001",  # Conflicts with "ruff format" command
+    "TC006", # Add quotes to type expression in `typing.cast()` - conflict with IDE imports
 ]

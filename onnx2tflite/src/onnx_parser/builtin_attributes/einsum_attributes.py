@@ -17,7 +17,7 @@ class Einsum(meta.ONNXOperatorAttributes):
 
     def _init_attributes(self):
         for attr in self._descriptor:
-            if attr.name == 'equation':
-                self.equation = attr.s.decode('utf-8')
+            if attr.name == "equation":
+                self.equation = attr.s.decode("utf-8")
             else:
                 logger.w(f"ONNX `Einsum` attribute '{attr.name}' is not supported!")

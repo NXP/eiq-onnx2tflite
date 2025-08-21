@@ -6,7 +6,6 @@
 #
 
 import math
-from typing import List
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
@@ -19,30 +18,29 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class TanhConverter(NodeConverter):
-    node = 'Tanh'
+    node = "Tanh"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/activations.cc#L1023-L1112
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT8, TensorType.INT16]
     verified_types = [TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `Tanh` operator to TFLite `Tanh`.
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `Tanh` operator to TFLite `Tanh`.
 
         :param node: ONNX `Tanh` operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
         :return: A list of TFLite operators, to add to the model.
         """
-
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Tanh` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.')
+                     f"ONNX `Tanh` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `Tanh` has different input and output type.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Tanh` has different input and output type.")
 
         ops = OpsList(middle_op=t_op)
 

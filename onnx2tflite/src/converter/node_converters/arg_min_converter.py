@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
@@ -19,25 +19,24 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import arg_min_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import arg_min_options
-from onnx2tflite.src.tflite_generator.meta.types import name_for_type, FLOATS, INTS, UINTS
+from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS, name_for_type
 
 
 class ArgMinConverter(NodeConverter):
-    node = 'ArgMin'
+    node = "ArgMin"
 
     onnx_supported_types = FLOATS + INTS + UINTS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/arg_min_max.cc#L100-L114
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT8, TensorType.INT32, TensorType.BOOL]
     verified_types = [TensorType.FLOAT32, TensorType.INT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert ONNX `ArgMin` operator into TFLite `ArgMin` + potential `Reshape` and `Transpose` operators. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert ONNX `ArgMin` operator into TFLite `ArgMin` + potential `Reshape` and `Transpose` operators."""
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `ArgMin` has unexpected number of inputs ({len(t_op.tmp_inputs)}).')
+                     f"ONNX `ArgMin` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -48,13 +47,13 @@ class ArgMinConverter(NodeConverter):
         if y.type != TensorType.INT64:
             # ONNX only allows `int64` output.
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `ArgMin` has output type `{name_for_type(y.type)}` instead of `INT64`.')
+                     f"ONNX `ArgMin` has output type `{name_for_type(y.type)}` instead of `INT64`.")
 
         attrs = cast(arg_min_attributes.ArgMin, node.attributes)
 
         if attrs.select_last_index != 0:
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f'Conversion of ONNX `ArgMin` with `select_last_index={attrs.select_last_index}` is not possible.')
+                     f"Conversion of ONNX `ArgMin` with `select_last_index={attrs.select_last_index}` is not possible.")
 
         if attrs.keepdims == 1:
             # TFLite always removes the reduced dimension. When `keepdims == 1`, ONNX leaves the dimension with size 1.
@@ -103,7 +102,7 @@ class ArgMinConverter(NodeConverter):
                 axis = perm[axis]
 
         # TFLite uses a `dim` input tensor, which can represent the ONNX attribute `axis`. Create the tensor.
-        dim_tensor = self.builder.create_tensor_for_data(np.array([axis], np.int32), 'axis')
+        dim_tensor = self.builder.create_tensor_for_data(np.array([axis], np.int32), "axis")
         t_op.tmp_inputs.append(dim_tensor)
 
         t_op.builtin_options = arg_min_options.ArgMin(TensorType.INT64)  # ONNX always has `int64` output.

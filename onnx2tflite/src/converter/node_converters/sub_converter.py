@@ -8,18 +8,18 @@
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.sub_options as tflite_sub_options
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 
 
 class SubConverter(NodeConverter):
-    node = 'Sub'
+    node = "Sub"
 
     onnx_supported_types = FLOATS + INTS + UINTS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/sub.cc#L453-L456
@@ -50,7 +50,7 @@ class SubConverter(NodeConverter):
             # ONNX Runtime currently doesn't support `(u)int8` inputs, so this case cannot be tested.
             # If support is added in the future, propagate the quantization parameters.
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX `Sub` with quantized inputs is not yet supported.')
+                     "Conversion of ONNX `Sub` with quantized inputs is not yet supported.")
 
         elif not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)

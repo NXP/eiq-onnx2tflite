@@ -22,7 +22,7 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
 
 
 class ShapeConverter(NodeConverter):
-    node = 'Shape'
+    node = "Shape"
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
@@ -30,7 +30,7 @@ class ShapeConverter(NodeConverter):
                                       TensorType.STRING]
 
     def _append_gather_operator(self, shape_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]):
-        """ Append a 'Gather' operator after the 'shape_op' and add it to the 'ops_to_add'. The 'Gather' op will permute
+        """Append a 'Gather' operator after the 'shape_op' and add it to the 'ops_to_add'. The 'Gather' op will permute
              the output of 'shape_op' to a channels first shape.
 
         :param shape_op: A 'Shape' operator after which the 'Gather' operator will be created.
@@ -52,7 +52,7 @@ class ShapeConverter(NodeConverter):
 
     def _append_slice_operator(self, ops_to_add: list[tflite_model.Operator], begin_tensor: tflite_model.Tensor,
                                size_tensor: tflite_model.Tensor):
-        """ Create a 'Slice' operator after the last operator in 'ops_to_add' and add it to the list.
+        """Create a 'Slice' operator after the last operator in 'ops_to_add' and add it to the list.
 
         :param ops_to_add: A list of operators that will be added to the model later.
         :param begin_tensor: The 'begin' operand of the TFLite Slice operator.
@@ -79,8 +79,7 @@ class ShapeConverter(NodeConverter):
         return common.clamp(index, 0, rank)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'Shape' operator to TFLite. """
-
+        """Convert the ONNX 'Shape' operator to TFLite."""
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
                      f"ONNX 'Shape' operator has unexpected number of inputs! Got'{len(t_op.tmp_inputs)}', expected '1'.")

@@ -4,27 +4,26 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    q_linear_conv
+"""q_linear_conv
 
-    Representation of an ONNX 'QLinearConv' operator.
+Representation of an ONNX 'QLinearConv' operator.
 """
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
 from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class QLinearConv(meta.ONNXOperatorAttributes):
     auto_pad: str
-    dilations: Optional[meta.ONNXIntListAttribute]
+    dilations: meta.ONNXIntListAttribute | None
     group: int
-    kernel_shape: Optional[meta.ONNXIntListAttribute]
-    pads: Optional[meta.ONNXIntListAttribute]
-    strides: Optional[meta.ONNXIntListAttribute]
+    kernel_shape: meta.ONNXIntListAttribute | None
+    pads: meta.ONNXIntListAttribute | None
+    strides: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

@@ -16,7 +16,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 
 
 class GreaterConverter(NodeConverter):
-    node = 'Greater'
+    node = "Greater"
 
     onnx_supported_types = FLOATS + INTS + UINTS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/comparisons.cc#L277-L303
@@ -24,21 +24,20 @@ class GreaterConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.INT64]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `Greater` to TFLite `Greater`. """
-
+        """Convert ONNX `Greater` to TFLite `Greater`."""
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `Greater` has invalid number of inputs.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Greater` has invalid number of inputs.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `Greater` has input tensors with different data types.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Greater` has input tensors with different data types.")
 
         if exactly_one_is_none(x.quantization, y.quantization):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `Greater` has only 1 input quantized.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Greater` has only 1 input quantized.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)

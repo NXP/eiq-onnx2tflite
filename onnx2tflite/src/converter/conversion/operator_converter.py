@@ -6,28 +6,26 @@
 # See the LICENSE_MIT for more details.
 #
 
-"""
-    OperatorConverter
+"""OperatorConverter
 
 Module contains high level functions to convert ONNX operators to TFLite.
 """
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.onnx_model as onnx_model
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2quant.qdq_quantization import RecognizedQDQOps
-from onnx2tflite.src import conversion_context
+from onnx2tflite.src import conversion_context, logger
 from onnx2tflite.src.converter import node_converters
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
+from onnx2tflite.src.tflite_generator import tflite_model
 
 
 class OperatorConverter:
-    """ This class provides methods to convert ONNX operators to TFLite and
-        create them using the provided 'ModelBuilder'.
+    """This class provides methods to convert ONNX operators to TFLite and
+    create them using the provided 'ModelBuilder'.
     """
 
     _context: conversion_context.ConversionContext
@@ -150,9 +148,9 @@ class OperatorConverter:
         self._recognized_qdq_ops = recognized_qdq_ops
 
     def _convert_node(self, o_node: onnx_model.NodeProto) -> tflite_model.Operator:
-        """ Create a TFLite 'Operator' from the ONNX 'Node' with corresponding
-            'inputs' and 'outputs'. """
-
+        """Create a TFLite 'Operator' from the ONNX 'Node' with corresponding
+        'inputs' and 'outputs'.
+        """
         t_operator = tflite_model.Operator()
 
         # Initialize operator inputs
@@ -175,8 +173,7 @@ class OperatorConverter:
 
     # noinspection PyTypeChecker,SpellCheckingInspection
     def _convert_operator(self, node: onnx_model.NodeProto):
-        """ Convert an ONNX operator (node) to 1 or multiple TFLite operators and add them to the model. """
-
+        """Convert an ONNX operator (node) to 1 or multiple TFLite operators and add them to the model."""
         t_op = self._convert_node(node)  # Operator in the TFLite model. Carries info about input and output tensors.
 
         # Identify ONNX operator and convert it.
@@ -210,8 +207,7 @@ class OperatorConverter:
             self._context.tflite_builder.check_and_append_operator(op)
 
     def convert_operators(self, o_nodes: onnx_model.RepeatedNodeProto):
-        """ Find the best way to convert all operators in the ONNX model and convert them to TFLite. """
-
+        """Find the best way to convert all operators in the ONNX model and convert them to TFLite."""
         # A list of operators (op_type, name), that have been skipped because their output data was inferred during
         #  shape inference.
         skipped_ops: list[(str, str)] = []
@@ -232,7 +228,7 @@ class OperatorConverter:
 
         def convert_all_ops(node: onnx_model.NodeProto):
             def _tensors_are_formatless(onnx_tensors: list[str]) -> bool:
-                """ Return `True` if all ONNX tensors with given names are formatless. """
+                """Return `True` if all ONNX tensors with given names are formatless."""
                 tflite_tensors = [self._context.tflite_builder.tensor_for_name(t) for t in onnx_tensors]
                 return all(t.tensor_format is TensorFormat.FORMATLESS for t in tflite_tensors)
 
@@ -288,8 +284,8 @@ class OperatorConverter:
         run_conversion_safe(convert_all_ops)
 
         if len(skipped_ops) != 0:
-            ops_as_str = '\n'.join(f'\t{op_type}({name})' for op_type, name in skipped_ops)
-            logger.i('The output data of the following nodes has been statically inferred, so they will not be present '
-                     'in the output model.\n' + ops_as_str + '\n' +
-                     'If you wish to prohibit this and convert all operators, run the conversion again with the flag '
-                     f'{logger.Style.bold + logger.Style.cyan}--dont-skip-nodes-with-known-outputs{logger.Style.end}.')
+            ops_as_str = "\n".join(f"\t{op_type}({name})" for op_type, name in skipped_ops)
+            logger.i("The output data of the following nodes has been statically inferred, so they will not be present "
+                     "in the output model.\n" + ops_as_str + "\n" +
+                     "If you wish to prohibit this and convert all operators, run the conversion again with the flag "
+                     f"{logger.Style.bold + logger.Style.cyan}--dont-skip-nodes-with-known-outputs{logger.Style.end}.")

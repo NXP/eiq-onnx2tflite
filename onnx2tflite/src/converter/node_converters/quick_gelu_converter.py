@@ -20,7 +20,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class QuickGeluConverter(NodeConverter):
-    node = 'QuickGelu'
+    node = "QuickGelu"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/activations.cc#L1123-L1213
@@ -29,19 +29,18 @@ class QuickGeluConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX Runtime `QuickGelu` operator into TFLite.
+        """Convert ONNX Runtime `QuickGelu` operator into TFLite.
 
-            There is no 'QuickGelu' in TFLite. It carries out the operation
+        There is no 'QuickGelu' in TFLite. It carries out the operation
 
-                y = x * Sigmoid(alpha * x)
+            y = x * Sigmoid(alpha * x)
 
-            This can be represented in TFLite as
+        This can be represented in TFLite as
 
-               x -> Mul(alpha) -> Logistic -> Mul(x) -> y
+           x -> Mul(alpha) -> Logistic -> Mul(x) -> y
 
-            The first `Mul` can be omitted, if alpha == 1.0
+        The first `Mul` can be omitted, if alpha == 1.0
         """
-
         qg_attributes = cast(quick_gelu_attributes.QuickGelu, node.attributes)
 
         x = t_op.tmp_inputs[0]
@@ -57,8 +56,8 @@ class QuickGeluConverter(NodeConverter):
             mul_1_output = x
         else:
             # Create a `Mul` operator.
-            mul_1_output = self.builder.duplicate_tensor(x, name_suffix='_scaled')
-            alpha = self.builder.create_tensor_for_data(np.array([qg_attributes.alpha], np.float32), 'alpha')
+            mul_1_output = self.builder.duplicate_tensor(x, name_suffix="_scaled")
+            alpha = self.builder.create_tensor_for_data(np.array([qg_attributes.alpha], np.float32), "alpha")
 
             mul_1_op = tflite_model.Operator(builtin_options=Mul())
             mul_1_op.tmp_inputs = [x, alpha]

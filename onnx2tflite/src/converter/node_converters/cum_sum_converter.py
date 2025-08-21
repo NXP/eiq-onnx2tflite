@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
@@ -19,11 +19,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import cum_sum_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import cum_sum_options
-from onnx2tflite.src.tflite_generator.meta.types import name_for_type, FLOATS
+from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
 
 
 class CumSumConverter(NodeConverter):
-    node = 'CumSum'
+    node = "CumSum"
 
     onnx_supported_types = FLOATS + [TensorType.INT32, TensorType.INT64, TensorType.UINT32, TensorType.UINT64]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/cumsum.cc#L71-L88
@@ -42,26 +42,25 @@ class CumSumConverter(NodeConverter):
             if tensor_has_data(axis):
                 # Static re-cast. Create a new tensor with the re-cast data, in case it was used by some other operator.
                 int32_axis = axis.tmp_buffer.data.astype(np.int32)
-                new_axis_tensor = self.builder.create_tensor_for_data(int32_axis, 'axis')
+                new_axis_tensor = self.builder.create_tensor_for_data(int32_axis, "axis")
                 t_op.tmp_inputs[1] = new_axis_tensor
 
             else:
                 # Prepend a `Cast` operator.
                 logger.e(logger.Code.NOT_IMPLEMENTED,
-                         'Conversion of ONNX `CumSum` with a dynamic INT64 `axis` is not yet supported.')
+                         "Conversion of ONNX `CumSum` with a dynamic INT64 `axis` is not yet supported.")
 
         else:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `CumSum` has unexpected `axis` type ({name_for_type(axis.type)}).')
+                     f"ONNX `CumSum` has unexpected `axis` type ({name_for_type(axis.type)}).")
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert ONNX `CumSum`` operator into TFLite `CumSum`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert ONNX `CumSum`` operator into TFLite `CumSum`."""
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `CumSum` has unexpected number of inputs ({len(t_op.tmp_inputs)}).')
+                     f"ONNX `CumSum` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)
@@ -77,12 +76,12 @@ class CumSumConverter(NodeConverter):
                 axis = perm[axis]
 
                 # Create a new `axis` tensor, in case it is used by some other operator as well.
-                new_axis = self.builder.create_tensor_for_data(np.array([axis], np.int32), 'axis')
+                new_axis = self.builder.create_tensor_for_data(np.array([axis], np.int32), "axis")
                 t_op.tmp_inputs[1] = new_axis
 
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, 'Conversion of ONNX `CumSum` with a channels first input and a '
-                                                      'dynamic `axis` is not supported.')
+                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `CumSum` with a channels first input and a "
+                                                      "dynamic `axis` is not supported.")
 
         attrs = cast(cum_sum_attributes.CumSum, node.attributes)
         t_op.builtin_options = cum_sum_options.CumSum(bool(attrs.exclusive), bool(attrs.reverse))

@@ -5,8 +5,7 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    types
+"""types
 
 Module contains helper functions that work with TFLite data types.
 """
@@ -14,8 +13,8 @@ from enum import Enum
 
 import flatbuffers as fb
 
-import onnx2tflite.src.logger as logger
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 
 # Lists of types. Used to simplify specification of supported types in conversion modules.
 FLOATS = [TensorType.FLOAT16, TensorType.FLOAT32, TensorType.FLOAT64]
@@ -99,58 +98,58 @@ def is_signed(data_type: TensorType) -> bool:
 
 
 def name_for_type(data_type: TensorType) -> str:
-    """ Return the name of given TFLite data type. """
+    """Return the name of given TFLite data type."""
     names = ["FLOAT32", "FLOAT16", "INT32", "UINT8", "INT64", "STRING", "BOOL", "INT16", "COMPLEX64", "INT8", "FLOAT64",
-             "COMPLEX128", "UINT64", "RESOURCE", "VARIANT", "UINT32", "UINT16", "INT4", ]
+             "COMPLEX128", "UINT64", "RESOURCE", "VARIANT", "UINT32", "UINT16", "INT4" ]
 
     return names[data_type]
 
 
 def type_size(data_type: TensorType):
-    """ Return the memory size in bytes of given TFLite data type. """
+    """Return the memory size in bytes of given TFLite data type."""
     if data_type in {TensorType.UINT8, TensorType.INT8}:
         return 1
-    elif data_type in {TensorType.UINT16, TensorType.INT16, TensorType.FLOAT16}:
+    if data_type in {TensorType.UINT16, TensorType.INT16, TensorType.FLOAT16}:
         return 2
-    elif data_type in {TensorType.UINT32, TensorType.INT32, TensorType.FLOAT32}:
+    if data_type in {TensorType.UINT32, TensorType.INT32, TensorType.FLOAT32}:
         return 4
-    elif data_type in {TensorType.UINT64, TensorType.INT64, TensorType.FLOAT64, TensorType.COMPLEX64}:
+    if data_type in {TensorType.UINT64, TensorType.INT64, TensorType.FLOAT64, TensorType.COMPLEX64}:
         return 8
-    elif data_type in {TensorType.COMPLEX128}:
+    if data_type in {TensorType.COMPLEX128}:
         return 16
 
     logger.e(logger.Code.INTERNAL_ERROR, f"Unexpected type '{data_type}' in types.type_size().")
 
 
 def prepend_function(builder: fb.Builder, data_type: TensorType):
-    """ Return the flatbuffer 'Prepend<type>()' function for given type. """
+    """Return the flatbuffer 'Prepend<type>()' function for given type."""
     if data_type == TensorType.UINT8:
         return builder.PrependUint8
-    elif data_type == TensorType.UINT16:
+    if data_type == TensorType.UINT16:
         return builder.PrependUint16
-    elif data_type == TensorType.UINT32:
+    if data_type == TensorType.UINT32:
         return builder.PrependUint32
-    elif data_type == TensorType.UINT64:
+    if data_type == TensorType.UINT64:
         return builder.PrependUint64
 
-    elif data_type == TensorType.INT8:
+    if data_type == TensorType.INT8:
         return builder.PrependInt8
-    elif data_type == TensorType.INT16:
+    if data_type == TensorType.INT16:
         return builder.PrependInt16
-    elif data_type == TensorType.INT32:
+    if data_type == TensorType.INT32:
         return builder.PrependInt32
-    elif data_type == TensorType.INT64:
+    if data_type == TensorType.INT64:
         return builder.PrependInt64
 
-    elif data_type == TensorType.FLOAT16:
+    if data_type == TensorType.FLOAT16:
         logger.w("Flatbuffer prepend function for FLOAT16 datatype is not supported! Using default 16b alternative.")
         return builder.PrependInt16  # Might not work
-    elif data_type == TensorType.FLOAT32:
+    if data_type == TensorType.FLOAT32:
         return builder.PrependFloat32
-    elif data_type == TensorType.FLOAT64:
+    if data_type == TensorType.FLOAT64:
         return builder.PrependFloat64
 
-    elif data_type == TensorType.BOOL:
+    if data_type == TensorType.BOOL:
         return builder.PrependBool
 
     logger.e(logger.Code.NOT_IMPLEMENTED, f"Unsupported flatbuffer prepend function for type '{data_type}'!")

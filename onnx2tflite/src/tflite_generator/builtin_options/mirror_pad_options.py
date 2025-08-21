@@ -7,10 +7,9 @@
 
 import flatbuffers
 
-from onnx2tflite.lib.tflite import BuiltinOptions, BuiltinOperator, MirrorPadOptions
+from onnx2tflite.lib.tflite import BuiltinOperator, BuiltinOptions, MirrorPadOptions
 from onnx2tflite.lib.tflite.MirrorPadMode import MirrorPadMode
 from onnx2tflite.src.tflite_generator.meta import meta
-
 
 # SYMMETRIC pads = [2, 2, 2, 2]
 # input:

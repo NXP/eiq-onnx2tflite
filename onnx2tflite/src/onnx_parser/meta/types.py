@@ -4,8 +4,7 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    types
+"""types
 
 Module implements functions that work with ONNX data types.
 """
@@ -13,7 +12,7 @@ Module implements functions that work with ONNX data types.
 import numpy as np
 import onnx
 
-import onnx2tflite.src.logger as logger
+from onnx2tflite.src import logger
 
 
 def name_for_onnx_type(o_type: onnx.TensorProto.DataType) -> str:
@@ -21,7 +20,7 @@ def name_for_onnx_type(o_type: onnx.TensorProto.DataType) -> str:
 
 
 def to_numpy_type(o_type: onnx.TensorProto.DataType) -> np.ScalarType:
-    """ Convert ONNX DataType to numpy dtype """
+    """Convert ONNX DataType to numpy dtype"""
     if o_type == onnx.TensorProto.UNDEFINED:
         logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "ONNX DataType 'UNDEFINED' is not supported.")
 

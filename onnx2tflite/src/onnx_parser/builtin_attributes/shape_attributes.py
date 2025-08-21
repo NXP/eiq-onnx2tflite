@@ -4,23 +4,22 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    shape_attributes
+"""shape_attributes
 
-    Representation of an ONNX 'Shape' operator.
+Representation of an ONNX 'Shape' operator.
 """
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
 from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Shape(meta.ONNXOperatorAttributes):
-    start: Optional[int]
-    end: Optional[int]
+    start: int | None
+    end: int | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)

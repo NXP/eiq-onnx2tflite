@@ -19,9 +19,9 @@ class CumSum(meta.ONNXOperatorAttributes):
 
     def _init_attributes(self):
         for attr in self._descriptor:
-            if attr.name == 'exclusive':
+            if attr.name == "exclusive":
                 self.exclusive = attr.i
-            if attr.name == 'reverse':
+            if attr.name == "reverse":
                 self.reverse = attr.i
             else:
                 logger.w(f"ONNX `CumSum` attribute '{attr.name}' is not supported!")

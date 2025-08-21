@@ -8,8 +8,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-import onnx2tflite.src.converter.builder.model_builder as model_builder
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
+from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_optimizer.graph_utils import NameToTensorMap, operator_is_type
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import InputTensorToOpsMap, OutputTensorToOpMap
@@ -18,18 +18,18 @@ from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import Inp
 class OpRule(ABC):
     @abstractmethod
     def __call__(self, op: tflite_model.Operator, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                 output_to_op_map: OutputTensorToOpMap, builder: 'model_builder.ModelBuilder') -> bool:
+                 output_to_op_map: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
         pass
 
 
 class NoFusedActivationFunction(OpRule):
 
     def __call__(self, op: tflite_model.Operator, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                 output_to_op_map: OutputTensorToOpMap, builder: 'model_builder.ModelBuilder') -> bool:
-        if not hasattr(op, 'builtin_options'):
+                 output_to_op_map: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+        if not hasattr(op, "builtin_options"):
             return False
 
-        if not hasattr(op.builtin_options, 'fused_activation_function'):
+        if not hasattr(op.builtin_options, "fused_activation_function"):
             return False
 
         # noinspection PyUnresolvedReferences
@@ -39,11 +39,11 @@ class NoFusedActivationFunction(OpRule):
 class HasFusedActivationFunction(OpRule):
 
     def __call__(self, op: tflite_model.Operator, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                 output_to_op_map: OutputTensorToOpMap, builder: 'model_builder.ModelBuilder') -> bool:
-        if not hasattr(op, 'builtin_options'):
+                 output_to_op_map: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+        if not hasattr(op, "builtin_options"):
             return True
 
-        if not hasattr(op.builtin_options, 'fused_activation_function'):
+        if not hasattr(op.builtin_options, "fused_activation_function"):
             return True
 
         # noinspection PyUnresolvedReferences
@@ -52,13 +52,14 @@ class HasFusedActivationFunction(OpRule):
 
 @dataclass
 class AllInputsComeFrom(OpRule):
-    """ Assures that all input tensors of this operator are produced by operators with op type
-         `single_preceding_op_type`.
+    """Assures that all input tensors of this operator are produced by operators with op type
+    `single_preceding_op_type`.
     """
+
     single_preceding_op_type: str
 
     def __call__(self, op: tflite_model.Operator, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                 output_to_op_map: OutputTensorToOpMap, builder: 'model_builder.ModelBuilder') -> bool:
+                 output_to_op_map: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
         preceding_ops = [output_to_op_map[inpt.name] for inpt in op.tmp_inputs]
 
         return all(operator_is_type(preceding_op, self.single_preceding_op_type, builder)
@@ -67,13 +68,13 @@ class AllInputsComeFrom(OpRule):
 
 @dataclass
 class WasNotInTheOriginalONNXModel(OpRule):
-    """ Assures that this operator wasn't created by converting an ONNX operator from the original model, but instead
-         was added extra in order to convert a different operator.
+    """Assures that this operator wasn't created by converting an ONNX operator from the original model, but instead
+     was added extra in order to convert a different operator.
 
-        This rule is currently only satisfied for operators added by ModelBuilder methods `create_..._before()` and
-         `create_..._after()`.
+    This rule is currently only satisfied for operators added by ModelBuilder methods `create_..._before()` and
+     `create_..._after()`.
     """
 
     def __call__(self, op: tflite_model.Operator, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                 output_to_op_map: OutputTensorToOpMap, builder: 'model_builder.ModelBuilder') -> bool:
+                 output_to_op_map: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
         return op.tmp_added_extra

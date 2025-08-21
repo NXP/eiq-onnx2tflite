@@ -11,7 +11,7 @@ import onnx2tflite.lib.tflite.ActivationFunctionType as libActivationFunctionTyp
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
 import onnx2tflite.lib.tflite.BuiltinOptions as libBuiltinOptions
 import onnx2tflite.lib.tflite.ConcatenationOptions as libConcatenationOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Concatenation(meta.BuiltinOptions):

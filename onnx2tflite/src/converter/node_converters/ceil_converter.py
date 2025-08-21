@@ -5,7 +5,6 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
@@ -17,19 +16,18 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class CeilConverter(NodeConverter):
-    node = 'Ceil'
+    node = "Ceil"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/ceil.cc#L39
     tflite_supported_types = [TensorType.FLOAT32]
     verified_types = [TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `Ceil` operator to TFLite `Ceil`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `Ceil` operator to TFLite `Ceil`."""
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Ceil` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.')
+                     f"ONNX `Ceil` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)

@@ -5,7 +5,6 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
@@ -17,24 +16,23 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class LogConverter(NodeConverter):
-    node = 'Log'
+    node = "Log"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/elementwise.cc#L327-L346
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT8, TensorType.INT16]
     verified_types = [TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `Log` operator to TFLite `Log`.
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `Log` operator to TFLite `Log`.
 
         :param node: ONNX `Log` operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
         :return: A list of TFLite operators, to add to the model.
         """
-
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Log` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.')
+                     f"ONNX `Log` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)

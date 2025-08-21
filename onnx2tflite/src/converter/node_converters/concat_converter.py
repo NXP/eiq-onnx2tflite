@@ -5,25 +5,28 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
-import onnx2tflite.src.onnx_parser.builtin_attributes.concat_attributes as concat_attributes
 import onnx2tflite.src.tflite_generator.builtin_options.concatenation_options as tfl_concatenation_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization, \
-    re_quantize_static_tensor, quantize_static_float_tensor
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import (
+    propagate_quantization,
+    quantize_static_float_tensor,
+    re_quantize_static_tensor,
+)
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.onnx_parser.builtin_attributes import concat_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.meta.types import UINTS, INTS, FLOATS
+from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 
 
 class ConcatConverter(NodeConverter):
-    node = 'Concat'
+    node = "Concat"
 
     onnx_supported_types = FLOATS + INTS + UINTS + [TensorType.BOOL, TensorType.COMPLEX64, TensorType.COMPLEX128,
                                                     TensorType.STRING]
@@ -31,7 +34,7 @@ class ConcatConverter(NodeConverter):
     tflite_supported_types = INTS + [TensorType.FLOAT32, TensorType.UINT8, TensorType.UINT32, TensorType.BOOL]
     verified_types = tflite_supported_types
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         self.assert_type_allowed(t_op.tmp_outputs[0].type)
 
         attrs = cast(concat_attributes, node.attributes)
@@ -80,12 +83,11 @@ class ConcatConverter(NodeConverter):
                                  "Concat op.")
                         input_tensor = re_quantize_static_tensor(self.builder, input_tensor, y.type, scale, zp)
                         t_op.tmp_inputs[idx] = input_tensor
-                else:
-                    # TFLite support re-quantization for UINT8, so apply only to INT8
-                    if input_tensor.quantization != y.quantization and input_tensor.type == TensorType.INT8:
-                        ops.add_pre(self.builder.create_quantize_operator_before(t_op, idx, y.type, scale, zp))
-                        logger.w(f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of "
-                                 "Concat op.")
+                # TFLite support re-quantization for UINT8, so apply only to INT8
+                elif input_tensor.quantization != y.quantization and input_tensor.type == TensorType.INT8:
+                    ops.add_pre(self.builder.create_quantize_operator_before(t_op, idx, y.type, scale, zp))
+                    logger.w(f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of "
+                             "Concat op.")
 
         if t_op.tmp_inputs[0].tensor_format.is_channels_last():
             axis = translator.create_channels_last_to_channels_first_permutation(rank)[axis]

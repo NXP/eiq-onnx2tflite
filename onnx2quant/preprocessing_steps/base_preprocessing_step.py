@@ -36,8 +36,8 @@ class PreprocessingStep(ABC):
         return None
 
     def create_tensor_for_data(self, data: np.ndarray, name: str | None = None) -> str:
-        """ Create an initializer (static tensor) for the given data. The name of the new tensor can be specified, but
-             if it's not unique in the model, it will be modified to be unique. The final used name is returned.
+        """Create an initializer (static tensor) for the given data. The name of the new tensor can be specified, but
+        if it's not unique in the model, it will be modified to be unique. The final used name is returned.
         """
         name = self.validate_name(name)
         tensor = onnx.numpy_helper.from_array(data, name)
@@ -46,7 +46,7 @@ class PreprocessingStep(ABC):
         return name
 
     def add_initializer(self, initializer: onnx.TensorProto):
-        """ Add a `TensorProto` to the `graph.initializers`, with all necessary additional steps. """
+        """Add a `TensorProto` to the `graph.initializers`, with all necessary additional steps."""
         self.model.graph.initializer.append(initializer)
         if self.model.ir_version <= 3:
             # IR version <= 3 requires all initializers to be in the `graph.input` as well (according to comment).
@@ -55,7 +55,7 @@ class PreprocessingStep(ABC):
             self.model.graph.input.append(vi)
 
     def validate_name(self, tensor_name: str | None) -> str:
-        tensor_name = tensor_name or 'tensor'
+        tensor_name = tensor_name or "tensor"
 
         existing_names = [
             vi.name for vi in chain(self.model.graph.value_info, self.model.graph.input, self.model.graph.output)
@@ -69,16 +69,16 @@ class PreprocessingStep(ABC):
 
         # Add a number after the name to make it unique.
         n = 0
-        while tensor_name + f'_{n}' in existing_names:
+        while tensor_name + f"_{n}" in existing_names:
             n += 1
-        return tensor_name + f'_{n}'
+        return tensor_name + f"_{n}"
 
     def try_get_tensor_type(self, tensor: str):
         for vi in chain(self.model.graph.value_info, self.model.graph.input, self.model.graph.output):
             if vi.name == tensor:
-                if hasattr(vi, 'type_proto'):
+                if hasattr(vi, "type_proto"):
                     return vi.type_proto.tensor_type
-                elif hasattr(vi, 'type'):
+                if hasattr(vi, "type"):
                     return vi.type.tensor_type.elem_type
 
         for initializer in self.model.graph.initializer:

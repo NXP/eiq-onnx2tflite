@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
@@ -18,18 +18,17 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES
 
 
 class SpaceToDepthConverter(NodeConverter):
-    node = 'SpaceToDepth'
+    node = "SpaceToDepth"
     tflite_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/space_to_depth.cc#L99-L139
     onnx_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT8, TensorType.INT32, TensorType.INT64]
     verified_types = [TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `SpaceToDepth` operator to TFLite `SpaceToDepth`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `SpaceToDepth` operator to TFLite `SpaceToDepth`."""
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `SpaceToDepth` has unexpected number of inputs ({len(t_op.tmp_inputs)}).')
+                     f"ONNX `SpaceToDepth` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)

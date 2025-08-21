@@ -6,20 +6,20 @@
 # See the LICENSE_MIT for more details.
 #
 
-import onnx2tflite.src.logger as logger
 import onnx2tflite.src.tflite_generator.builtin_options.reshape_options as tfl_reshape_options
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
-from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
 
 
 class ReshapeConverter(NodeConverter):
-    node = 'Reshape'
+    node = "Reshape"
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
@@ -28,7 +28,7 @@ class ReshapeConverter(NodeConverter):
 
     # noinspection PyMethodMayBeStatic
     def _safe_compute_flat_size(self, shape: list[int | str]) -> int:
-        """ Compute the flat size of a tensor with given shape. Strings and negative dimensions are treated as '1'.
+        """Compute the flat size of a tensor with given shape. Strings and negative dimensions are treated as '1'.
 
         :param shape: Shape of the tensor. Can include integers and strings.
         :return: The flat size of the tensor.
@@ -41,8 +41,7 @@ class ReshapeConverter(NodeConverter):
         return flat_size
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX 'Reshape' to TFLite 'Reshape'. """
-
+        """Convert ONNX 'Reshape' to TFLite 'Reshape'."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX: Reshape operator has unexpected number of inputs! "
                                                      f"Got '{len(t_op.tmp_inputs)}', expected '2'.")

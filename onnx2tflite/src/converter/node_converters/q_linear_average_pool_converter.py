@@ -8,34 +8,34 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.Padding import Padding
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
-from onnx2tflite.src.converter.quantization_utils import is_per_channel_quantized, \
-    set_quantization_parameters_to_tensor, \
-    calculate_uint_to_int_re_quantization_zero_point
-from onnx2tflite.src.converter.conversion import translator, common
+from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import (
+    calculate_uint_to_int_re_quantization_zero_point,
+    is_per_channel_quantized,
+    set_quantization_parameters_to_tensor,
+)
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import q_linear_average_pool_attributes
-from onnx2tflite.src.tflite_generator.builtin_options import (
-    average_pool_2d_options as tfl_average_pool_2d_options,
-    reshape_options as tfl_reshape_options
-)
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options as tfl_average_pool_2d_options
+from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
 
 
 # noinspection PyMethodMayBeStatic
 class QLinearAveragePoolConverter(NodeConverter):
-    node = 'QLinearAveragePool'
+    node = "QLinearAveragePool"
 
     def _check_ceil_mode(self, q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool):
-        """ Check if the ONNX QLinearAveragePool is convertible according to its 'ceil_mode' attribute. If not, exit
+        """Check if the ONNX QLinearAveragePool is convertible according to its 'ceil_mode' attribute. If not, exit
              with appropriate error message.
 
         :param q_ap_attributes: Attributes of the ONNX QLinearAveragePool operator.
@@ -57,7 +57,7 @@ class QLinearAveragePoolConverter(NodeConverter):
                         q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool,
                         builder: model_builder, input_zero_point: [int], input_type: TensorType,
                         ops_to_add: list[tflite_model.Operator]):
-        """ Convert the padding of the ONNX QLinearAveragePool operator according to its attributes. Insert any extra
+        """Convert the padding of the ONNX QLinearAveragePool operator according to its attributes. Insert any extra
              necessary operators into the 'ops_to_add' list. If the padding cannot be converted, exit with appropriate
              error.
 
@@ -93,7 +93,7 @@ class QLinearAveragePoolConverter(NodeConverter):
                          "Conversion of ONNX QLinearAveragePool with 'count_include_pad' == 1 is not yet supported.")
 
     def _get_zero_for_quantization(self, zp: int, data_type: TensorType) -> np.ndarray:
-        """ Get a value for 0 given the quantization parameters and type.
+        """Get a value for 0 given the quantization parameters and type.
 
         :param zp: Zero point quantization parameter.
         :param data_type: TFLite data type of the 'zero'.
@@ -109,16 +109,16 @@ class QLinearAveragePoolConverter(NodeConverter):
 
     def _convert_1d_q_linear_average_pool(self, q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool,
                                           t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'QLinearAveragePool' operator with a 1D kernel to TFLite 'AveragePool2D'.
-             TFLite doesn't support 1D AveragePool, but this behaviour can be represented using
-                    Reshape -> AveragePool2D -> Reshape.
-             The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary
-              dimension.
+        """Convert the ONNX 'QLinearAveragePool' operator with a 1D kernel to TFLite 'AveragePool2D'.
+         TFLite doesn't support 1D AveragePool, but this behaviour can be represented using
+                Reshape -> AveragePool2D -> Reshape.
+         The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary
+          dimension.
 
-            :param q_ap_attributes: Attributes of the ONNX QLinearAveragePool operator.
-            :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
-            :return: A list of TFLite operators, to add to the model.
-            """
+        :param q_ap_attributes: Attributes of the ONNX QLinearAveragePool operator.
+        :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
+        :return: A list of TFLite operators, to add to the model.
+        """
         if not t_op.tmp_inputs[0].shape.is_well_defined():
             # Dynamic shapes make it difficult to use the Reshape operators.
             logger.e(logger.Code.NOT_IMPLEMENTED,
@@ -164,13 +164,12 @@ class QLinearAveragePoolConverter(NodeConverter):
 
     def _convert_2d_q_linear_average_pool(self, q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool,
                                           t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'QLinearAveragePool' operator with a 2D kernel to TFLite 'AveragePool2D'.
+        """Convert the ONNX 'QLinearAveragePool' operator with a 2D kernel to TFLite 'AveragePool2D'.
 
         :param q_ap_attributes: Attributes of the ONNX QLinearAveragePool operator.
         :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
         :return: A list of TFLite operators, to add to the model.
         """
-
         self._check_ceil_mode(q_ap_attributes)
 
         x = t_op.tmp_inputs[0]
@@ -228,7 +227,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         for param_tensor in [x_scale_tensor, x_zp_tensor, y_scale_tensor, y_zp_tensor]:
             if param_tensor is not None and not tensor_has_data(param_tensor):
                 logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         'Conversion of ONNX QLinearAveragePool with dynamic quantization parameters is not possible.')
+                         "Conversion of ONNX QLinearAveragePool with dynamic quantization parameters is not possible.")
 
         numpy_zp_type = tf_lite_type_to_numpy(x.type)
 
@@ -248,7 +247,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         set_quantization_parameters_to_tensor(y, y_scale, y_zp)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime 'QLinearAveragePool' operator to TFLite 'AveragePool2D' and potential 'Reshape'
+        """Convert the ONNX Runtime 'QLinearAveragePool' operator to TFLite 'AveragePool2D' and potential 'Reshape'
              operators.
 
         :param node: ONNX Runtime QLinearAveragePool operator.
@@ -280,18 +279,17 @@ class QLinearAveragePoolConverter(NodeConverter):
         if kernel_rank == 1:
             return self._convert_1d_q_linear_average_pool(q_ap_attributes, t_op)
 
-        elif kernel_rank == 2:
+        if kernel_rank == 2:
             return self._convert_2d_q_linear_average_pool(q_ap_attributes, t_op)
 
-        else:
-            num_ones = q_ap_attributes.kernel_shape.count(1)
-            if kernel_rank - num_ones <= 2:
-                # TODO Enough dimensions are '1', so the input can be reshaped to 4D and a AveragePool2D can be applied.
-                #  Not sure if this is a realistic scenario and worth putting time into.
-                logger.e(logger.Code.NOT_IMPLEMENTED, f"Conversion of ONNX QLinearAveragePool with kernel shape "
-                                                      f"'{q_ap_attributes.kernel_shape}' is not yet implemented.")
+        num_ones = q_ap_attributes.kernel_shape.count(1)
+        if kernel_rank - num_ones <= 2:
+            # TODO Enough dimensions are '1', so the input can be reshaped to 4D and a AveragePool2D can be applied.
+            #  Not sure if this is a realistic scenario and worth putting time into.
+            logger.e(logger.Code.NOT_IMPLEMENTED, f"Conversion of ONNX QLinearAveragePool with kernel shape "
+                                                  f"'{q_ap_attributes.kernel_shape}' is not yet implemented.")
 
-            else:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f'Conversion of ONNX QLinearAveragePool with kernel shape `{q_ap_attributes.kernel_shape}` is '
-                         'not possible!')
+        else:
+            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
+                     f"Conversion of ONNX QLinearAveragePool with kernel shape `{q_ap_attributes.kernel_shape}` is "
+                     "not possible!")

@@ -126,11 +126,11 @@ class ExactValueForType(QuantizationRule):
 
 
 class FullyConnectedWeightZeroPoint(QuantizationRule):
-    """ LiteRT documentation says that `FullyConnected` must have weight zero point = 0
-         (https://ai.google.dev/edge/litert/models/quantization_spec)
-        If this condition is not satisfied, LiteRT will not raise any errors but the output will not be correct.
+    """LiteRT documentation says that `FullyConnected` must have weight zero point = 0
+     (https://ai.google.dev/edge/litert/models/quantization_spec)
+    If this condition is not satisfied, LiteRT will not raise any errors but the output will not be correct.
 
-        However, if the `weights` are dynamic the kernels DO in fact support any zero point. Not just 0s.
+    However, if the `weights` are dynamic the kernels DO in fact support any zero point. Not just 0s.
     """
 
     def valid(self, op: tflite_model.Operator) -> bool:
@@ -142,16 +142,15 @@ class FullyConnectedWeightZeroPoint(QuantizationRule):
             # The `weights` are dynamic. LiteRT supports any zero point in this case.
             return True
 
+        # Static `weights`.
+        if weights.type == TensorType.INT8:
+            zero_point = 0
+        elif weights.type == TensorType.UINT8:
+            zero_point = 128
         else:
-            # Static `weights`.
-            if weights.type == TensorType.INT8:
-                zero_point = 0
-            elif weights.type == TensorType.UINT8:
-                zero_point = 128
-            else:
-                return True
+            return True
 
-            return all(zp == zero_point for zp in weights.quantization.zero_point)
+        return all(zp == zero_point for zp in weights.quantization.zero_point)
 
     def __str__(self):
         return "FullyConnectedWeightZeroPoint()"
@@ -192,7 +191,7 @@ class ValidBiasValues(QuantizationRule):
         return True
 
     def __str__(self):
-        return f"ExactBiasValues()"
+        return "ExactBiasValues()"
 
 
 def verify_quantization_integrity(model: tflite_model.Model):
@@ -327,14 +326,13 @@ def verify_quantization_integrity(model: tflite_model.Model):
                             f"TFLite operator with op_type='{op.builtin_options.operator_type}' wasn't quantized "
                             f"properly. Following TFLite quantization rule was not satisfied: '{rule}'.")
                         is_error = True
-        else:
-            if operator_codes[op.opcode_index] in rules:
-                for rule in rules[operator_codes[op.opcode_index]]:
-                    if not rule.valid(op):
-                        logger.w(
-                            f"TFLite operator with op_type='{operator_codes[op.opcode_index]}' wasn't quantized "
-                            f"properly. Following TFLite quantization rule was not satisfied: '{rule}'.")
-                        is_error = True
+        elif operator_codes[op.opcode_index] in rules:
+            for rule in rules[operator_codes[op.opcode_index]]:
+                if not rule.valid(op):
+                    logger.w(
+                        f"TFLite operator with op_type='{operator_codes[op.opcode_index]}' wasn't quantized "
+                        f"properly. Following TFLite quantization rule was not satisfied: '{rule}'.")
+                    is_error = True
 
     if is_error:
         logger.e(logger.Code.INTERNAL_ERROR,

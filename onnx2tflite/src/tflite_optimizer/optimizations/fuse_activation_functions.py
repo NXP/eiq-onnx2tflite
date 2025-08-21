@@ -18,11 +18,11 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorHasOneConsumer
 
 class FuseActivationFunctions(BaseOptimization):
     ops_with_fused_activation_function = [
-        'Conv2D', 'Conv3D', 'DepthwiseConv2D', 'TransposeConv',
-        'MaxPool2D', 'AveragePool2D',
-        'SVDF',
-        'FullyConnected',
-        'Add', 'Mul', 'Sub', 'Div',
+        "Conv2D", "Conv3D", "DepthwiseConv2D", "TransposeConv",
+        "MaxPool2D", "AveragePool2D",
+        "SVDF",
+        "FullyConnected",
+        "Add", "Mul", "Sub", "Div",
 
         # 'Concatenation',  # currently disabled
         # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/concatenation.cc#L139
@@ -37,7 +37,7 @@ class FuseActivationFunctions(BaseOptimization):
         # 'RNN', 'SequenceRNN', 'BidirectionalSequenceRNN',
     ]
 
-    activation_functions = ['Relu', 'ReluN1To1', 'Relu6', 'Tanh', 'Sign']
+    activation_functions = ["Relu", "ReluN1To1", "Relu6", "Tanh", "Sign"]
 
     supported_activations_for_op: dict[BuiltinOperator, list[ActivationFunctionType]] = {
         BuiltinOperator.CONV_2D: [ActivationFunctionType.RELU, ActivationFunctionType.RELU_N1_TO_1,
@@ -128,41 +128,41 @@ class FuseActivationFunctions(BaseOptimization):
     ]
 
     def _act_fun_type_for_op(self, op: tflite_model.Operator) -> ActivationFunctionType:
-        if operator_is_type(op, 'Relu', self._builder):
+        if operator_is_type(op, "Relu", self._builder):
             return ActivationFunctionType.RELU
-        elif operator_is_type(op, 'ReluN1To1', self._builder):
+        if operator_is_type(op, "ReluN1To1", self._builder):
             return ActivationFunctionType.RELU_N1_TO_1
-        elif operator_is_type(op, 'Relu6', self._builder):
+        if operator_is_type(op, "Relu6", self._builder):
             return ActivationFunctionType.RELU6
-        elif operator_is_type(op, 'Tanh', self._builder):
+        if operator_is_type(op, "Tanh", self._builder):
             return ActivationFunctionType.TANH
-        elif operator_is_type(op, 'Sign', self._builder):
+        if operator_is_type(op, "Sign", self._builder):
             return ActivationFunctionType.SIGN_BIT
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(self.ops_with_fused_activation_function, ['x'], ['x1'], [
+                Op(self.ops_with_fused_activation_function, ["x"], ["x1"], [
                     NoFusedActivationFunction()
                 ]),
-                Op(self.activation_functions, ['x1'], ['y'])
+                Op(self.activation_functions, ["x1"], ["y"])
             ],
-            [TensorHasOneConsumer('x1')])
+            [TensorHasOneConsumer("x1")])
 
         to_remove = []
         for [leading_op, act_fun_op], tensor_map, _, _ in matcher.match_patterns():
             builtin_leading_op = leading_op.builtin_options.operator_type
             logger.internal_assert(builtin_leading_op in self.supported_activations_for_op.keys(),
-                                   f'FuseActivationFunctions: supported activations for operator `{builtin_leading_op}`'
-                                   'are not known.')
+                                   f"FuseActivationFunctions: supported activations for operator `{builtin_leading_op}`"
+                                   "are not known.")
 
             act_fun = self._act_fun_type_for_op(act_fun_op)
             if act_fun not in self.supported_activations_for_op[builtin_leading_op]:
                 # The leading op doesn't support this activation function.
                 continue
 
-            x, y = tensor_map['x'], tensor_map['y']
+            x, y = tensor_map["x"], tensor_map["y"]
             if x.quantization != y.quantization and builtin_leading_op in self.ops_that_need_equal_io_quantization:
                 # The fusion would result in different input and output quantization of `leading_op`, which would cause
                 #  runtime issues for that particular operator.
