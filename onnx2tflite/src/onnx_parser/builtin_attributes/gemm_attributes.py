@@ -21,8 +21,8 @@ from onnx2tflite.src.onnx_parser.meta import meta
 class Gemm(meta.ONNXOperatorAttributes):
     alpha: float
     beta: float
-    transA: int
-    transB: int
+    transA: int  # noqa: N815
+    transB: int  # noqa: N815
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
