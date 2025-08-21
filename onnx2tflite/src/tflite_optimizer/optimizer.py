@@ -11,6 +11,7 @@ from enum import Enum
 
 from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
+from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul_to_hard_swish import (
     CombineHardSigmoidAndMulIntoHardSwish,
 )
