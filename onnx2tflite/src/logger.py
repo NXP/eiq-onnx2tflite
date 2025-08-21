@@ -227,7 +227,7 @@ conversion_log = ConversionLog()
 
 
 # noinspection PyPep8Naming
-class loggingContext:
+class loggingContext:  # noqa: N801
     """Context manager used to nest logging contexts. Usage:
 
     with loggingContext(BasicLoggingContext.GLOBAL):
