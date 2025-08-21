@@ -195,15 +195,21 @@ class Quantization(meta.TFLiteObject):
 
     # TODO details
 
-    def __init__(self, min: Min = Min(), max: Max = Max(),
+    def __init__(self, min: Min | None = None, max: Max | None = None,
                  scale: Scale = None,
-                 zero_point: ZeroPoint = ZeroPoint([0]),
+                 zero_point: ZeroPoint | None = None,
                  quantized_dimension: int = 0,
                  details_type: libQuantizedDetails.QuantizationDetails = libQuantizedDetails.QuantizationDetails.NONE) -> None:
         self.min = min
+        if self.min is None:
+            self.min = Min()
         self.max = max
+        if self.max is None:
+            self.max = Max()
         self.scale = scale
         self.zero_point = zero_point
+        if self.zero_point is None:
+            self.zero_point = ZeroPoint([0])
         self.quantized_dimension = quantized_dimension
         self.details_type = details_type
 
@@ -486,12 +492,14 @@ class Operator(meta.TFLiteObject):
                  outputs: OperatorOutputs = None,
                  builtin_options: meta.BuiltinOptions = None,
                  opcode_index: int = 0,
-                 mutating_variable_inputs: MutatingVariableInputs = MutatingVariableInputs(),
+                 mutating_variable_inputs: MutatingVariableInputs | None = None,
                  custom_options_format: libCustomOptionsFormat.CustomOptionsFormat = libCustomOptionsFormat.CustomOptionsFormat.FLEXBUFFERS,
                  custom_options: meta.CustomOptions = None) -> None:
         self.opcode_index = opcode_index
         self.custom_options_format = custom_options_format
         self.mutating_variable_inputs = mutating_variable_inputs
+        if self.mutating_variable_inputs is None:
+            self.mutating_variable_inputs = MutatingVariableInputs()
         self.builtin_options = builtin_options
         if inputs is None:
             inputs = OperatorInputs()

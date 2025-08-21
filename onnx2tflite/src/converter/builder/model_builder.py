@@ -63,9 +63,12 @@ class ModelBuilder:
     conversion_config: ConversionConfig
 
     def __init__(self, model_version: int, model_description: str,
-                 conversion_config: ConversionConfig = ConversionConfig()) -> None:
+                 conversion_config: ConversionConfig | None = None) -> None:
         self._tfl_model = tflite_model.Model(model_version, model_description)
         self.conversion_config = conversion_config
+
+        if self.conversion_config is None:
+            self.conversion_config = ConversionConfig()
 
         self.op_code_type_index_map = {}
         self._tensor_name_map = {}

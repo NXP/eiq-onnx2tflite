@@ -142,7 +142,7 @@ def parse_input_shape_mapping(mapped_input_shapes: list[str] | str) -> dict[str,
 
 def build_conversion_context(
         onnx_model: onnx_model.ModelProto,
-        conversion_config: ConversionConfig = ConversionConfig(),
+        conversion_config: ConversionConfig | None = None,
         inferred_tensor_data: dict[str, np.ndarray] | None = None
 ) -> ConversionContext:
     """Build conversion context for converted ONNX model.
@@ -152,6 +152,8 @@ def build_conversion_context(
     :param inferred_tensor_data: Optional dictionary with tensor data inferred during shape inference.
     :return: Initialized ConversionContext instance.
     """
+    if conversion_config is None:
+        conversion_config = ConversionConfig()
     description = "doc:'" + onnx_model.doc_string + "' domain:'" + onnx_model.domain \
                   + "' producer:'" + onnx_model.producer_name + " " + onnx_model.producer_version + "'"
 
@@ -165,7 +167,7 @@ def build_conversion_context(
 
 def convert_model(
         source: str | onnx.ModelProto,
-        conversion_config: ConversionConfig = ConversionConfig(),
+        conversion_config: ConversionConfig | None = None,
 ) -> bytearray:
     """Convert an ONNX model into TFLite. Model could be provided through path to *.onnx file
     or directly as ModelProto object.
@@ -180,6 +182,9 @@ def convert_model(
 
     :return: Binary representation of the converted TFLite model.
     """
+    if conversion_config is None:
+        conversion_config = ConversionConfig()
+
     with loggingContext(BasicLoggingContext.GLOBAL):
         try:
             if isinstance(source, str):
