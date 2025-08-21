@@ -332,16 +332,16 @@ class MultipleSameOps(OpLikeBlock):
                 real_input_index = num_real_inputs - 1
                 inputs = reversed(inputs)
 
-            def _checked_all_inputs(real_input_idx: int) -> bool:
-                if step == 1:
-                    return real_input_idx >= num_real_inputs
-                if step == -1:
+            def _checked_all_inputs(_step: int, _num_real_inputs: int, real_input_idx: int) -> bool:
+                if _step == 1:
+                    return real_input_idx >= _num_real_inputs
+                if _step == -1:
                     return real_input_idx < 0
                 raise ValueError
 
             can_skip = False
             for inpt in inputs:
-                if _checked_all_inputs(real_input_index) and (inpt is not ...):
+                if _checked_all_inputs(step, num_real_inputs, real_input_index) and (inpt is not ...):
                     return False  # The inputs don't match
 
                 if inpt is ...:
@@ -403,15 +403,15 @@ class MultipleSameOps(OpLikeBlock):
                 real_output_index = num_real_outputs - 1
                 outputs = reversed(outputs)
 
-            def _checked_all_outputs(real_output_idx: int) -> bool:
-                if step == 1:
-                    return real_output_idx >= num_real_outputs
-                if step == -1:
+            def _checked_all_outputs(_step: int, _num_real_outputs: int, real_output_idx: int) -> bool:
+                if _step == 1:
+                    return real_output_idx >= _num_real_outputs
+                if _step == -1:
                     return real_output_idx < 0
                 raise ValueError
 
             for output in outputs:
-                if _checked_all_outputs(real_output_index) and (output is not ...):
+                if _checked_all_outputs(step, num_real_outputs, real_output_index) and (output is not ...):
                     return False  # The outputs don't match
 
                 if output is ...:
