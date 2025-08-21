@@ -395,17 +395,19 @@ class ModelBuilder:
         # Assign 'Outputs' and 'Inputs' their tensor indices
         outputs = self.get_sub_graph().outputs
         for tensor in outputs.tmp_outputs:
+            # noinspection PyBroadException
             try:
                 outputs.append(tensor.tmp_index)
-            except Exception as _:
+            except Exception as _: # noqa: BLE001
                 logger.e(logger.Code.GENERATED_MODEL_INVALID,
                          f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!")
 
         inputs = self.get_sub_graph().inputs
         for tensor in inputs.tmp_inputs:
+            # noinspection PyBroadException
             try:
                 inputs.append(tensor.tmp_index)
-            except Exception as _:
+            except Exception as _: # noqa: BLE001
                 if allow_inputs_stripping:
                     logger.i(f"The input tensor '{tensor.name}' will not be present in generated TFLite graph.")
                 else:

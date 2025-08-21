@@ -215,7 +215,10 @@ class SliceConverter(NodeConverter):
         t_op.tmp_inputs = [main_input, begin_tensor, size_tensor]
         t_op.builtin_options = slice_options.Slice()
 
-    def _convert_to_strided_slice(self, t_op, main_input, input_rank, starts, ends, axes, steps) -> None:
+    def _convert_to_strided_slice(
+        self, t_op: tflite_model.Operator, main_input: tflite_model.Tensor, input_rank: int,
+        starts: list[np.ndarray], ends: list[np.ndarray], axes: list[np.ndarray], steps: list[np.ndarray]
+    ) -> None:
         tf_begin = [0] * input_rank  # By default, start slice from 0
         tf_end = main_input.shape.vector.copy()  # By default, end slice at the end of dimension
         tf_strides = [1] * input_rank  # By default, step by 1

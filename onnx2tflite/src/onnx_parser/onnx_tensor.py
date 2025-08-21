@@ -129,7 +129,7 @@ class TensorProto(meta.ONNXObject):
             # Some models use empty tensor with dimension [0]. Avoid reshaping.
             if self.dims != [0]:
                 self.data = np.reshape(self.data, self.dims)
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             logger.e(logger.Code.INTERNAL_ERROR,
                      f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'", exception=e)
 

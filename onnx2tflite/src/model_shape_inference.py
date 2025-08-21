@@ -8,6 +8,7 @@
 import math
 import traceback
 from itertools import chain
+from typing import Callable
 
 import numpy as np
 import onnx
@@ -45,7 +46,8 @@ def shape_is_well_defined(shape: list) -> bool:
 class ModelShapeInference(SymbolicShapeInference):
     """Model shape inference with extended support for quantized operators."""
 
-    def __init__(self, int_max=2 ** 31 - 1, auto_merge=False, guess_output_rank=False, verbose=0):
+    def __init__(self, int_max: int = 2 ** 31 - 1, auto_merge: bool = False, guess_output_rank: bool = False,
+                 verbose: int = 0):
         super().__init__(int_max, auto_merge, guess_output_rank, verbose)
         self._register_custom_dispatchers()
 
@@ -82,7 +84,7 @@ class ModelShapeInference(SymbolicShapeInference):
         self.dispatcher_["Unsqueeze"] = self._infer_Unsqueeze
         self.dispatcher_["Upsample"] = self._infer_Upsample
 
-    def _infer_Expand(self, node) -> None:  # noqa: N802
+    def _infer_Expand(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # Original function only infers the output shape.
         super()._infer_Expand(node)
 
@@ -97,11 +99,11 @@ class ModelShapeInference(SymbolicShapeInference):
                 output_shape = get_shape_from_value_info(self.known_vi_[node.output[0]])
                 self.sympy_data_[node.output[0]] = np.broadcast_to(input_data, output_shape)
 
-        except BaseException:
+        except BaseException: # noqa: BLE001
             # Data inference failed. Continue.
             pass
 
-    def _infer_Upsample(self, node) -> None:  # noqa: N802
+    def _infer_Upsample(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # Originally there was no dispatcher for this operator, and the inference only worked for v7.
 
         if get_opset(self.out_mp_) < 9:  # V7
@@ -128,7 +130,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Cast(self, node) -> None:
+    def _infer_Cast(self, node: onnx.NodeProto) -> None:
         # Original implementation didn't support data inference for most cases, and the inferred data type was also
         #  not always correct.
 
@@ -147,11 +149,11 @@ class ModelShapeInference(SymbolicShapeInference):
                 np_type = to_numpy_type(to_type)
                 self.sympy_data_[node.output[0]] = np.asarray(data).astype(np_type).reshape(shape)
 
-        except BaseException:
+        except BaseException: # noqa: BLE001
             # Data inference failed. Continue.
             pass
 
-    def _infer_OneHot(self, node) -> None:  # noqa: N802
+    def _infer_OneHot(self, node: onnx.NodeProto) -> None:  # noqa: N802
         sympy_shape = self._get_sympy_shape(node, 0)
 
         # MODIFIED PART START
@@ -185,7 +187,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Reshape(self, node) -> None:  # noqa: N802
+    def _infer_Reshape(self, node: onnx.NodeProto) -> None:  # noqa: N802
         shape_value = self._try_get_value(node, 1)
         vi = self.known_vi_[node.output[0]]
         if shape_value is None:
@@ -245,12 +247,12 @@ class ModelShapeInference(SymbolicShapeInference):
                     self.sympy_data_[node.output[0]] = np.asarray(data).astype(np_type).reshape(
                         get_shape_from_sympy_shape(new_sympy_shape))
 
-            except Exception:
+            except Exception: # noqa: BLE001
                 # Failed to infer the data (doesn't matter).
                 pass
             # MODIFIED PART END
 
-    def _infer_Unsqueeze(self, node) -> None:  # noqa: N802
+    def _infer_Unsqueeze(self, node: onnx.NodeProto) -> None:  # noqa: N802
         input_shape = self._get_shape(node, 0)
         op_set = get_opset(self.out_mp_)
 
@@ -290,12 +292,12 @@ class ModelShapeInference(SymbolicShapeInference):
             if data is not None:
                 np_type = to_numpy_type(vi.type.tensor_type.elem_type)
                 self.sympy_data_[node.output[0]] = np.asarray(data).astype(np_type).reshape(output_shape)
-        except Exception:
+        except Exception: # noqa: BLE001
             # Failed to infer the data (doesn't matter).
             pass
         # MODIFIED PART END
 
-    def _infer_Squeeze(self, node) -> None:  # noqa: N802
+    def _infer_Squeeze(self, node: onnx.NodeProto) -> None:  # noqa: N802
         input_shape = self._get_shape(node, 0)
         op_set = get_opset(self.out_mp_)
 
@@ -315,7 +317,7 @@ class ModelShapeInference(SymbolicShapeInference):
             if self.verbose_ > 0:
                 symbolic_dimensions = [s for s in input_shape if type(s) != int]  # noqa: E721
                 if len(symbolic_dimensions) > 0:
-                    logger.debug(
+                    logger.d(
                         f"Symbolic dimensions in input shape of op: '{node.op_type}' node: '{node.name}'. "
                         f"Assuming the following dimensions are never equal to 1: {symbolic_dimensions}"
                     )
@@ -349,17 +351,17 @@ class ModelShapeInference(SymbolicShapeInference):
             if data is not None:
                 np_type = to_numpy_type(vi.type.tensor_type.elem_type)
                 self.sympy_data_[node.output[0]] = np.asarray(data).astype(np_type).reshape(output_shape)
-        except Exception:
+        except Exception: # noqa: BLE001
             # Failed to infer the data (doesn't matter).
             pass
         # MODIFIED PART END
 
-    def _infer_Transpose(self, node) -> None:  # noqa: N802
+    def _infer_Transpose(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # noinspection PyBroadException
         try:
             # Original code only infers the data.
             super()._infer_Transpose(node)
-        except Exception:
+        except Exception: # noqa: BLE001
             # Failed to infer the data. Just continue with shape inference.
             pass
 
@@ -376,7 +378,7 @@ class ModelShapeInference(SymbolicShapeInference):
             helper.make_tensor_value_info(node.output[0], input_type, get_shape_from_sympy_shape(output_shape))
         )
 
-    def _infer_Slice(self, node) -> None:  # noqa: N802
+    def _infer_Slice(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # The majority of this code was taken from `symbolic_shape_inference.py`.
 
         # SymPy fails to prove that `x_0 + ... + x_n >= 0` if one of `x_i` is a `sympy.Min(a, b)`,
@@ -386,7 +388,7 @@ class ModelShapeInference(SymbolicShapeInference):
         # so that we can prove inequalities for both expressions separately.
         #
         # If the number of `min(...)` subexpressions is not exactly one, this function just returns `[expr]`.
-        def flatten_min(expr) -> list:
+        def flatten_min(expr: sympy.Expr) -> list:
             # MODIFIED PART START
             assert isinstance(expr, sympy.Add), f"`Slice` shape inference: Expected a sum of two arguments, got {expr}"
             # MODIFIED PART END
@@ -413,7 +415,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 ]
             return [expr]
 
-        def less_equal(x, y) -> bool:
+        def less_equal(x: sympy.Expr, y: sympy.Expr) -> bool:
             try:
                 return bool(x <= y)
             except TypeError:
@@ -502,10 +504,11 @@ class ModelShapeInference(SymbolicShapeInference):
                 elif is_literal(new_sympy_shape[i]):
                     e = sympy.Min(e, new_sympy_shape[i])  # noqa: PLW2901
                 else:
+                    # noinspection PyBroadException
                     try:
                         if not less_equal(e, new_sympy_shape[i]):
                             e = new_sympy_shape[i]  # noqa: PLW2901
-                    except Exception:
+                    except Exception: # noqa: BLE001
                         # MODIFIED PART START
                         logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
                                  "Shape inference of `Slice` failed due to the use of symbolic shapes.")
@@ -560,7 +563,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 # MODIFIED PART END
                 self.sympy_data_[node.output[0]] = input_sympy_data[starts[0]: ends[0]: steps[0]]
 
-    def _infer_Identity(self, node) -> None:
+    def _infer_Identity(self, node: onnx.NodeProto) -> None:
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(
             helper.make_tensor_value_info(
@@ -576,7 +579,7 @@ class ModelShapeInference(SymbolicShapeInference):
             np_type = to_numpy_type(vi.type.tensor_type.elem_type)
             self.sympy_data_[node.output[0]] = np.array(values).astype(np_type)
 
-    def _infer_Resize(self, node) -> None:  # noqa: N802
+    def _infer_Resize(self, node: onnx.NodeProto) -> None:  # noqa: N802
         vi = self.known_vi_[node.output[0]]
         input_sympy_shape = np.array(self._get_sympy_shape(node, 0), np.float32)
 
@@ -653,7 +656,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 )
             )
 
-    def _infer_Range(self, node) -> None:  # noqa: N802
+    def _infer_Range(self, node: onnx.NodeProto) -> None:  # noqa: N802
         vi = self.known_vi_[node.output[0]]
         input_data = self._get_int_or_float_values(node, allow_float_values=True)
         if any([i is None for i in input_data]):
@@ -698,11 +701,11 @@ class ModelShapeInference(SymbolicShapeInference):
             np_type = to_numpy_type(vi.type.tensor_type.elem_type)
             self.sympy_data_[node.output[0]] = np.arange(start, limit, delta).astype(np_type)
 
-        except Exception as _:
+        except Exception as _: # noqa: BLE001
             # This shouldn't happen. In case it somehow does happen, simply continue.
             pass
 
-    def _infer_ReduceX(self, node) -> None:  # noqa: N802
+    def _infer_ReduceX(self, node: onnx.NodeProto) -> None:  # noqa: N802
         """Infer the output shape for `Reduce*` operators, which used an `axes` attribute up-to version 18 (excluding),
          and then switched to an `axes` input.
         This includes `ReduceL2`, `ReduceMax`, `ReduceMean`, `ReduceProd` and potentially others.
@@ -751,7 +754,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_ReduceSum(self, node) -> None:  # noqa: N802
+    def _infer_ReduceSum(self, node: onnx.NodeProto) -> None:  # noqa: N802
         keep_dims = get_attribute(node, "keepdims", 1)
         if get_opset(self.out_mp_) >= 13:
             # ReduceSum v13+ uses 'axes' as input.
@@ -796,7 +799,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_ConstantOfShape(self, node) -> None:
+    def _infer_ConstantOfShape(self, node: onnx.NodeProto) -> None:
         # Infer sympy data.
         # noinspection PyBroadException
         try:
@@ -812,7 +815,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 result = np.tile(value, shape)
                 self.sympy_data_[node.output[0]] = result
 
-        except Exception:
+        except Exception: # noqa: BLE001
             # Failed to infer output data. Continue to shape inference.
             pass
 
@@ -845,7 +848,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_QGemm(self, node) -> None:  # noqa: N802
+    def _infer_QGemm(self, node: onnx.NodeProto) -> None:  # noqa: N802
         a_shape = self._get_shape(node, 0)
         b_shape = self._get_shape(node, 3)
 
@@ -875,9 +878,10 @@ class ModelShapeInference(SymbolicShapeInference):
         )
         self.known_vi_[vi.name] = vi
 
-    def _infer_Tile(self, node) -> None:
+    def _infer_Tile(self, node: onnx.NodeProto) -> None:
 
         # Try to infer the output data.
+        # noinspection PyBroadException
         try:
             values = [self._try_get_value(node, i) for i in range(len(node.input))]
             if all([val is not None for val in values]):
@@ -885,7 +889,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 reps = values[1]
                 result = np.tile(inpt, reps)
                 self.sympy_data_[node.output[0]] = result
-        except Exception:
+        except Exception: # noqa: BLE001
             # Failed to infer output data. Continue to shape inference.
             pass
 
@@ -909,7 +913,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Concat(self, node) -> None:
+    def _infer_Concat(self, node: onnx.NodeProto) -> None:
         # The following code is taken from 'symbolic_shape_infer.py'.
         sympy_shape = self._get_sympy_shape(node, 0)
         axis = handle_negative_axis(get_attribute(node, "axis"), len(sympy_shape))
@@ -959,12 +963,12 @@ class ModelShapeInference(SymbolicShapeInference):
                 result = result.astype(to_numpy_type(vi.type.tensor_type.elem_type))  # Cast to the real type.
 
                 self.sympy_data_[node.output[0]] = result
-        except Exception:
+        except Exception: # noqa: BLE001
             # Failed to infer output data. Continue to shape inference.
             pass
         # MODIFIED PART END
 
-    def _infer_Split_Common(self, node, make_value_info_func) -> None:  # noqa: N802
+    def _infer_Split_Common(self, node: onnx.NodeProto, make_value_info_func: Callable) -> None:  # noqa: N802
         input_sympy_shape = self._get_sympy_shape(node, 0)
         axis = handle_negative_axis(get_attribute(node, "axis", 0), len(input_sympy_shape))
 
@@ -1018,7 +1022,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
             self.known_vi_[vi.name] = vi
 
-    def _infer_Constant(self, node) -> None:
+    def _infer_Constant(self, node: onnx.NodeProto) -> None:
         if get_attribute(node, "value") is not None:
             t = get_attribute(node, "value")
             try:
@@ -1040,7 +1044,7 @@ class ModelShapeInference(SymbolicShapeInference):
             if attr is not None:
                 self.sympy_data_[node.output[0]] = np.asarray(attr)
 
-    def _infer_QLinearAdd(self, node) -> None:
+    def _infer_QLinearAdd(self, node: onnx.NodeProto) -> None:
         input_1_shape = self._get_shape(node, 0)
         input_2_shape = self._get_shape(node, 3)
 
@@ -1049,7 +1053,7 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearMul(self, node) -> None:
+    def _infer_QLinearMul(self, node: onnx.NodeProto) -> None:
         input_1_shape = self._get_shape(node, 0)
         input_2_shape = self._get_shape(node, 3)
 
@@ -1058,7 +1062,7 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearGlobalAveragePool(self, node) -> None:
+    def _infer_QLinearGlobalAveragePool(self, node: onnx.NodeProto) -> None:
         input_shape = self._get_shape(node, 0)
         input_rank = len(input_shape)
         channels_last = get_attribute(node, "channels_last")
@@ -1072,11 +1076,11 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearSoftmax(self, node) -> None:
+    def _infer_QLinearSoftmax(self, node: onnx.NodeProto) -> None:
         # Strategy: same shape as input
         super()._propagate_shape_and_type(node, input_index=0, output_index=0)
 
-    def _infer_Dropout(self, node) -> None:
+    def _infer_Dropout(self, node: onnx.NodeProto) -> None:
         super()._propagate_shape_and_type(node, input_index=0, output_index=0)
 
         # Dropout layers might have "mask" output tensor. Infer shape to avoid incomplete inference error.
@@ -1085,7 +1089,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi = self.known_vi_[node.output[1]]
             vi.CopyFrom(onnx.helper.make_tensor_value_info(node.output[1], onnx.TensorProto.BOOL, mask_shape))
 
-    def _infer_Flatten(self, node) -> None:
+    def _infer_Flatten(self, node: onnx.NodeProto) -> None:
         """Ensure that flatten resolves dynamic shapes"""
         input_shape = self._get_shape(node, 0)
         dynamic_dim_index = None
@@ -1109,7 +1113,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi = self.known_vi_[node.output[0]]
             vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, new_shape))
 
-    def _infer_QLinearConcat(self, node) -> None:
+    def _infer_QLinearConcat(self, node: onnx.NodeProto) -> None:
         axis = get_attribute(node, "axis")
 
         aggregated_dimension = 0
@@ -1125,7 +1129,7 @@ class ModelShapeInference(SymbolicShapeInference):
         output_dtype = self.known_vi_[node.input[2]].type.tensor_type.elem_type
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearAveragePool(self, node) -> None:
+    def _infer_QLinearAveragePool(self, node: onnx.NodeProto) -> None:
         sympy_shape = self._compute_avg_pool_shape(node)
         self._update_computed_dims(sympy_shape)
         output = node.output[0]
@@ -1140,7 +1144,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _compute_avg_pool_shape(self, node) -> list:
+    def _compute_avg_pool_shape(self, node: onnx.NodeProto) -> list:
         # This is simplified code from self._compute_conv_pool_shape()
         sympy_shape = self._get_sympy_shape(node, 0)
         kernel_shape = get_attribute(node, "kernel_shape")
@@ -1249,6 +1253,7 @@ class ModelShapeInference(SymbolicShapeInference):
                      f"Model has dynamically defined inputs: {dynamic_inputs_names}. Make these inputs "
                      f"static using argument '--set-input-shape'.")
 
+    # noinspection PyMethodMayBeStatic
     def _get_symbolic_batch_dim_name_for_single_input_graph(self, graph: GraphProto) -> str | None:
         """Get name of symbolic batch dimension if it is present in the graph
         and graph has exactly one input tensor.
@@ -1410,7 +1415,7 @@ class ModelShapeInference(SymbolicShapeInference):
         except Error as e:
             # Just propagate the error
             raise e
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             # Some unexpected error happened during shape inference.
             logger.d(f"Generic shape inference exception caught ({type(e).__name__}). {traceback.format_exc()}")
 

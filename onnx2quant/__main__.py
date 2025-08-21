@@ -215,7 +215,7 @@ def run_quantization() -> None:
 
             assert isinstance(args.calibration_dataset_mapping, list)
             args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT,
                              f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}")
 
@@ -232,7 +232,7 @@ def run_quantization() -> None:
         except Error as e:
             # Just propagate the error
             raise e
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             context_logger.e(context_logger.Code.INTERNAL_ERROR,
                              f"Internal error ({type(e).__name__}). {traceback.format_exc()}")
 

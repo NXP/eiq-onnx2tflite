@@ -90,7 +90,7 @@ class ONNXModelInspector:
         """
         return [node for node in self.model.graph.nodes if tensor_name in node.inputs]
 
-    def tensor_originates_in_single_consumer_dequantize_op(self, tensor_name) -> bool:
+    def tensor_originates_in_single_consumer_dequantize_op(self, tensor_name: str) -> bool:
         """Check if tensor named 'tensor_name' originates in 'DequantizeLinear' operator.
         Input and output tensors of such operator must have only single consumer.
 
@@ -108,7 +108,7 @@ class ONNXModelInspector:
 
         return len(dequantize_output_consumers) == 1 and len(dequantize_input_consumers) == 1
 
-    def tensor_is_shared_dequantized_bias(self, tensor_name) -> bool:
+    def tensor_is_shared_dequantized_bias(self, tensor_name: str) -> bool:
         """Check if tensor named 'tensor_name' originates in 'DequantizeLinear' operator with
         input type INT32 and all consumers are Conv operators.
 
@@ -125,7 +125,7 @@ class ONNXModelInspector:
 
         return dequantize_input_tensor_type == onnx.TensorProto.INT32 and all(consumers_are_conv_ops)
 
-    def tensor_leads_to_quantize_op(self, tensor_name) -> bool:
+    def tensor_leads_to_quantize_op(self, tensor_name: str) -> bool:
         """Check if tensor named 'tensor_name' leads only to 'QuantizeLinear' operators.
 
         Note: we do not support QDQ scheme found in old QDQ quantized models from ONNX model Zoo, e.g.
@@ -147,14 +147,14 @@ class ONNXModelInspector:
         input_nodes = self.get_ops_with_input_tensor(tensor_name)
         return all(i.op_type == "QuantizeLinear" for i in input_nodes)
 
-    def is_output_of_model(self, tensor_name) -> int:
+    def is_output_of_model(self, tensor_name: str) -> int:
         return any(t.name == tensor_name for t in self.model.graph.outputs)
 
     def is_input_of_model(self, tensor_name: str) -> bool:
         """Determine whether a tensor with given name is an input to the ONNX graph."""
         return any(t.name == tensor_name for t in self.model.graph.inputs)
 
-    def tensor_is_float(self, tensor_name) -> bool:
+    def tensor_is_float(self, tensor_name: str) -> bool:
         """Check if tensor's type is float.
 
         :param tensor_name: Name of the searched tensor.
@@ -162,7 +162,7 @@ class ONNXModelInspector:
         """
         return self.get_tensor_type(tensor_name) == onnx.TensorProto.FLOAT
 
-    def tensor_not_float(self, tensor_name) -> bool:
+    def tensor_not_float(self, tensor_name: str) -> bool:
         """Check if tensor's type is NOT float.
 
         :param tensor_name: Name of the searched tensor.
@@ -191,7 +191,7 @@ class ONNXModelInspector:
 
         return None
 
-    def tensor_is_static(self, tensor_name) -> bool:
+    def tensor_is_static(self, tensor_name: str) -> bool:
         """Check if tensor is static and contains only single (scalar) value.
 
         :param tensor_name: Name of the searched tensor.

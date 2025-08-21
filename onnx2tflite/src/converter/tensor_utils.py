@@ -11,6 +11,7 @@ from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
 
 def _buffer_has_data(t_buffer: tflite_model.Buffer) -> bool | None:
     """Determine if given buffer has any data in it."""
+    # noinspection PyBroadException
     try:
         if t_buffer.data is None:
             return False
@@ -18,9 +19,8 @@ def _buffer_has_data(t_buffer: tflite_model.Buffer) -> bool | None:
         size = t_buffer.data.size
         return size != 0
 
-    except Exception as e:
+    except Exception as _: # noqa: BLE001 
         logger.d("'ModelBuilder.bufferHasData()' failed!")
-        print(e)
         return None
 
 

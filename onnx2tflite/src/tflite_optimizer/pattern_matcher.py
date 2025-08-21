@@ -99,7 +99,7 @@ class Op(OpLikeBlock):
             tensor_map.update(tensor_map_copy)
             return True
 
-        except BaseException:
+        except BaseException: # noqa: BLE001
             # Unexpected failure.
             return False
 
@@ -278,7 +278,7 @@ class MultipleSameOps(OpLikeBlock):
             tensor_map.update(tensor_map_copy)
             return True
 
-        except BaseException:
+        except BaseException: # noqa: BLE001
             # Unexpected failure.
             return False
 

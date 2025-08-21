@@ -43,7 +43,7 @@ class SoftmaxConverter(NodeConverter):
 
         return new_shape
 
-    def _normalize_axis(self, axis, rank) -> int:
+    def _normalize_axis(self, axis: int, rank: int) -> int:
         if axis < -rank or axis > rank - 1:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
                      f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
@@ -82,7 +82,7 @@ class SoftmaxConverter(NodeConverter):
 
         return OpsList(pre_ops=[transpose_pre], middle_op=t_op, post_ops=[transpose_post])
 
-    def _convert_v1_reshaped(self, op_softmax: tflite_model.Operator, axis) -> OpsList:
+    def _convert_v1_reshaped(self, op_softmax: tflite_model.Operator, axis: int) -> OpsList:
         old_shape = op_softmax.tmp_inputs[0].shape.vector
         new_shape = [math.prod(old_shape[:axis]), math.prod(old_shape[axis:])]
 
@@ -90,7 +90,7 @@ class SoftmaxConverter(NodeConverter):
 
         return OpsList(pre_ops=[reshape_pre], middle_op=op_softmax, post_ops=[reshape_post])
 
-    def _convert_v1_transposed_and_reshaped(self, op_softmax: tflite_model.Operator, axis) -> OpsList:
+    def _convert_v1_transposed_and_reshaped(self, op_softmax: tflite_model.Operator, axis: int) -> OpsList:
         input_shape = op_softmax.tmp_inputs[0].shape.vector
         rank = len(input_shape)
 

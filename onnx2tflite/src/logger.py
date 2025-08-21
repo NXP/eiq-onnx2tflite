@@ -12,7 +12,7 @@ Module implements functions for logging, error messages and custom assertions.
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import NoReturn
+from typing import NoReturn, Any
 
 logger = logging.getLogger("onnx2tflite")
 
@@ -242,9 +242,8 @@ class loggingContext:
     def __enter__(self):
         conversion_log.append_context(self.logging_context)
 
-    def __exit__(self, _, __, ___):
+    def __exit__(self, _exc_type: Any, _exc_val: Any, _exc_tb: Any):
         conversion_log.pop_last_context()
-
 
 def d(msg: str) -> None:
     """Log internal debug message with given parameters."""

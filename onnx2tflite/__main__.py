@@ -132,14 +132,14 @@ def run_conversion() -> None:
         try:
             args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
                 args.symbolic_dimensions_mapping)
-        except Exception as err:
+        except Exception as err: # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 
     if args.input_shapes_mapping:
         assert isinstance(args.input_shapes_mapping, list)
         try:
             args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
-        except Exception as err:
+        except Exception as err: # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 
     """ Convert the model """

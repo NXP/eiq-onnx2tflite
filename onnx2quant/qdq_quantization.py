@@ -948,7 +948,7 @@ class QDQQuantizer:
                     logger.i("ORT model optimization step hasn't removed any nodes.")
                 else:
                     logger.w(f"ORT model optimization step added {abs(removed_ops)} ops.")
-            except BaseException as e:
+            except BaseException as e: # noqa: BLE001
                 # Optimization failed - continue with non-optimized model
                 logger.w(f"Optimization step failed with: {type(e).__name__}. Skipping.")
                 logger.d(f"Optimization step failure reason: {traceback.format_exc()}")

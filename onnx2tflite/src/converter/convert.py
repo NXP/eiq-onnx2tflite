@@ -201,7 +201,7 @@ def convert_model(
                 if conversion_config.skip_shape_inference:
                     try:
                         onnx.checker.check_model(parsed_onnx_model, full_check=True)
-                    except Exception as e:
+                    except Exception as e: # noqa: BLE001
                         logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
                                  f"ONNX model's shapes not completely defined: {e!s}")
                 else:
@@ -235,7 +235,7 @@ def convert_model(
         except Error as e:
             # Just propagate the error
             raise e
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             logger.d(f"Generic conversion exception caught ({type(e).__name__}). {traceback.format_exc()}")
             logger.e(logger.Code.INTERNAL_ERROR,
                      f"Unexpected internal error: {type(e).__name__}. Please report this issue.")

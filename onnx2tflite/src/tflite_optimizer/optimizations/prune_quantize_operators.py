@@ -247,7 +247,10 @@ class PruneQuantizeOperators(BaseOptimization):
 
         return same_type and same_quantization
 
-    def _bypass_to_next_quantize_ops(self, input_to_ops, next_quantize_output, quantize_input) -> None:
+    def _bypass_to_next_quantize_ops(
+        self, input_to_ops: dict[str, list[tflite_model.Operator]],
+        next_quantize_output: tflite_model.Tensor, quantize_input: tflite_model.Tensor
+    ) -> None:
         ops_after_next_quantize = input_to_ops.get(next_quantize_output.name, [])
         for op_after_next_quantize in ops_after_next_quantize:
             for index, input_tensor in enumerate(op_after_next_quantize.tmp_inputs):
