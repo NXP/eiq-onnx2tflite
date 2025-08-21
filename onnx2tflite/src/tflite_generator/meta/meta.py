@@ -9,7 +9,6 @@
 
 Implementations of classes that all classes in /src/tflite_generator/ inherit from.
 """
-from abc import abstractmethod
 from collections.abc import Callable, Iterator
 
 import flatbuffers as fb
