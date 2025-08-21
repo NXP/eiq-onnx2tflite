@@ -110,16 +110,16 @@ def re_compute_q_params_for_type(tensor: tflite_model.Tensor, new_type: TensorTy
 
     match new_type:
         case TensorType.INT8:
-            qType = TensorProto.INT8
+            q_type = TensorProto.INT8
         case TensorType.UINT8:
-            qType = TensorProto.UINT8
+            q_type = TensorProto.UINT8
         case _:
             logger.e(logger.Code.INTERNAL_ERROR, f"Attempt to get zero point definition for type: {new_type}")
 
     data = dequantize(tensor.tmp_buffer.data, scale, zp)
     r_min = np.min(data)
     r_max = np.max(data)
-    q_min, q_max = quant_utils.get_qmin_qmax_for_qType(qType, reduce_range=False, symmetric=symmetric)
+    q_min, q_max = quant_utils.get_qmin_qmax_for_qType(q_type, reduce_range=False, symmetric=symmetric)
     zero_point, scale = quant_utils.compute_scale_zp(r_min, r_max, q_min, q_max, symmetric)
 
     return [scale], [zero_point]

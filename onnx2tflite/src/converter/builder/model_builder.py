@@ -419,11 +419,11 @@ class ModelBuilder:
 
         # Assign each operator its inputs and outputs indices
         for operator in self.get_sub_graph().operators.vector:
-            for inputTensor in operator.tmp_inputs:
-                operator.inputs.append(inputTensor.tmp_index)
+            for input_tensor in operator.tmp_inputs:
+                operator.inputs.append(input_tensor.tmp_index)
 
-            for outputTensor in operator.tmp_outputs:
-                operator.outputs.append(outputTensor.tmp_index)
+            for output_tensor in operator.tmp_outputs:
+                operator.outputs.append(output_tensor.tmp_index)
 
     def _build_operator_code(self, op_type: BuiltinOperator, version, custom_code: str = None) -> None:
         """Add a new OperatorCode for given 'op_type' and 'version' to the 'operator_codes' vector."""
