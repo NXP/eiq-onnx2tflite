@@ -156,12 +156,12 @@ class ConversionLog:
     _log = defaultdict(list)
     _log_count = 0
 
-    def append_context(self, loggingContext: LoggingContext) -> None:
+    def append_context(self, logging_context: LoggingContext) -> None:
         if len(self._current_logging_context) == 0:
             self._log = defaultdict(list)
             self._log_count = 0
 
-        self._current_logging_context.append(loggingContext.context_name)
+        self._current_logging_context.append(logging_context.context_name)
 
     def pop_last_context(self) -> None:
         self._current_logging_context.pop()
