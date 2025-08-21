@@ -848,7 +848,7 @@ class QDQQuantizer:
         QDQRegistry["GreaterOrEqual"] = QDQOperatorBase
         QDQRegistry["HardSwish"] = QDQOperatorBase
         QDQRegistry["InstanceNormalization"] = QDQNormalization
-        QDQRegistry["LayerNormalization"]: QDQNormalization
+        QDQRegistry["LayerNormalization"] = QDQNormalization
         QDQRegistry["Less"] = QDQOperatorBase
         QDQRegistry["LessOrEqual"] = QDQOperatorBase
         QDQRegistry["LogSoftmax"] = QDQLogSoftmax
