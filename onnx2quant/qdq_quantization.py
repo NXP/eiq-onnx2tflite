@@ -877,7 +877,7 @@ class QDQQuantizer:
         logger.e(logger.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
 
     # noinspection PyPep8Naming,PyMethodMayBeStatic
-    def _model_has_QDQ_nodes(self, model) -> bool:
+    def _model_has_QDQ_nodes(self, model) -> bool:  # noqa: N802
         """Detect if model already has QuantizeLinear or DequantizeLinear ops.
         """
         return any(

@@ -30,7 +30,8 @@ class MatMulConverter(NodeConverter):
     # Either way, the only overlapping type is float32.
     verified_types = [TensorType.FLOAT32]
 
-    def _convert_formatless_1D(self, t_op) -> OpsList:
+    # noinspection PyPep8Naming
+    def _convert_formatless_1D(self, t_op) -> OpsList:  # noqa: N802
         """Convert 'MatMul' operator with formatless input tensor when there's exactly one 1D input tensor.
 
         1D input is not supported by TFLite. We have to prepend input with 'Reshape' and append
@@ -86,7 +87,8 @@ class MatMulConverter(NodeConverter):
 
         return ops
 
-    def _convert_formatless_2D(self, t_op) -> OpsList:
+    # noinspection PyPep8Naming
+    def _convert_formatless_2D(self, t_op) -> OpsList:  # noqa: N802
         """Convert 'MatMul' with formatless input tensors where 'y' tensor is 2D and 'x' is in range <2D, 5D>.
         """
         y = t_op.tmp_inputs[1]
@@ -103,14 +105,16 @@ class MatMulConverter(NodeConverter):
 
         return ops
 
-    def _convert_formatless_ND(self, t_op) -> OpsList:
+    # noinspection PyPep8Naming
+    def _convert_formatless_ND(self, t_op) -> OpsList:  # noqa: N802
         """Convert 'MatMul' with formatless input tensors of rank 2 up to 5. Broadcasting is supported out of box.
         """
         t_op.builtin_options = batch_mat_mul_options.BatchMatMul(False, False, False)
 
         return OpsList(middle_op=t_op)
 
-    def _convert_channel_last_1D(self, t_op: tflite_model.Operator) -> OpsList:
+    # noinspection PyPep8Naming
+    def _convert_channel_last_1D(self, t_op: tflite_model.Operator) -> OpsList:  # noqa: N802
         """Convert 'MatMul' with channel first input tensors with exactly one 1D input tensor.
         Non-1D tensor is prepended by 'Transpose' operator to ensure matrix multiplication is computed correctly.
         Similarly, 'Transpose' operator is appended to the end of the chained operators.
@@ -152,7 +156,8 @@ class MatMulConverter(NodeConverter):
         if y_rank != 1:
             return _wrap_in_transpose(y, y_rank, input_index=1)
 
-    def _convert_channel_last_2D(self, t_op: tflite_model.Operator) -> OpsList:
+    # noinspection PyPep8Naming
+    def _convert_channel_last_2D(self, t_op: tflite_model.Operator) -> OpsList:  # noqa: N802
         """Convert 'MatMul' operator with 'x' input in channel last format and 'y' as a 2D tensor. Static
         input tensors with data are transposed. Dynamic input tensor are prepended with 'Transpose' operator.
         """
@@ -184,7 +189,8 @@ class MatMulConverter(NodeConverter):
 
         return ops
 
-    def _convert_channel_last_ND(self, t_op: tflite_model.Operator) -> OpsList:
+    # noinspection PyPep8Naming
+    def _convert_channel_last_ND(self, t_op: tflite_model.Operator) -> OpsList:  # noqa: N802
         """Convert 'MatMul' operator with at least one input in channel last format and zero 1D inputs. Static
         input tensors with data are transposed. Dynamic input tensor are prepended with 'Transpose' operator.
         """

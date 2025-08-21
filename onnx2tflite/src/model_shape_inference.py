@@ -130,7 +130,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Cast(self, node: onnx.NodeProto) -> None:
+    def _infer_Cast(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # Original implementation didn't support data inference for most cases, and the inferred data type was also
         #  not always correct.
 
@@ -563,7 +563,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 # MODIFIED PART END
                 self.sympy_data_[node.output[0]] = input_sympy_data[starts[0]: ends[0]: steps[0]]
 
-    def _infer_Identity(self, node: onnx.NodeProto) -> None:
+    def _infer_Identity(self, node: onnx.NodeProto) -> None:  # noqa: N802
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(
             helper.make_tensor_value_info(
@@ -799,7 +799,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_ConstantOfShape(self, node: onnx.NodeProto) -> None:
+    def _infer_ConstantOfShape(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # Infer sympy data.
         # noinspection PyBroadException
         try:
@@ -878,7 +878,7 @@ class ModelShapeInference(SymbolicShapeInference):
         )
         self.known_vi_[vi.name] = vi
 
-    def _infer_Tile(self, node: onnx.NodeProto) -> None:
+    def _infer_Tile(self, node: onnx.NodeProto) -> None:  # noqa: N802
 
         # Try to infer the output data.
         # noinspection PyBroadException
@@ -913,7 +913,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Concat(self, node: onnx.NodeProto) -> None:
+    def _infer_Concat(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # The following code is taken from 'symbolic_shape_infer.py'.
         sympy_shape = self._get_sympy_shape(node, 0)
         axis = handle_negative_axis(get_attribute(node, "axis"), len(sympy_shape))
@@ -1022,7 +1022,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
             self.known_vi_[vi.name] = vi
 
-    def _infer_Constant(self, node: onnx.NodeProto) -> None:
+    def _infer_Constant(self, node: onnx.NodeProto) -> None:  # noqa: N802
         if get_attribute(node, "value") is not None:
             t = get_attribute(node, "value")
             try:
@@ -1044,7 +1044,7 @@ class ModelShapeInference(SymbolicShapeInference):
             if attr is not None:
                 self.sympy_data_[node.output[0]] = np.asarray(attr)
 
-    def _infer_QLinearAdd(self, node: onnx.NodeProto) -> None:
+    def _infer_QLinearAdd(self, node: onnx.NodeProto) -> None:  # noqa: N802
         input_1_shape = self._get_shape(node, 0)
         input_2_shape = self._get_shape(node, 3)
 
@@ -1053,7 +1053,7 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearMul(self, node: onnx.NodeProto) -> None:
+    def _infer_QLinearMul(self, node: onnx.NodeProto) -> None:  # noqa: N802
         input_1_shape = self._get_shape(node, 0)
         input_2_shape = self._get_shape(node, 3)
 
@@ -1062,7 +1062,7 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearGlobalAveragePool(self, node: onnx.NodeProto) -> None:
+    def _infer_QLinearGlobalAveragePool(self, node: onnx.NodeProto) -> None:  # noqa: N802
         input_shape = self._get_shape(node, 0)
         input_rank = len(input_shape)
         channels_last = get_attribute(node, "channels_last")
@@ -1076,11 +1076,11 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearSoftmax(self, node: onnx.NodeProto) -> None:
+    def _infer_QLinearSoftmax(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # Strategy: same shape as input
         super()._propagate_shape_and_type(node, input_index=0, output_index=0)
 
-    def _infer_Dropout(self, node: onnx.NodeProto) -> None:
+    def _infer_Dropout(self, node: onnx.NodeProto) -> None:  # noqa: N802
         super()._propagate_shape_and_type(node, input_index=0, output_index=0)
 
         # Dropout layers might have "mask" output tensor. Infer shape to avoid incomplete inference error.
@@ -1089,7 +1089,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi = self.known_vi_[node.output[1]]
             vi.CopyFrom(onnx.helper.make_tensor_value_info(node.output[1], onnx.TensorProto.BOOL, mask_shape))
 
-    def _infer_Flatten(self, node: onnx.NodeProto) -> None:
+    def _infer_Flatten(self, node: onnx.NodeProto) -> None:  # noqa: N802
         """Ensure that flatten resolves dynamic shapes"""
         input_shape = self._get_shape(node, 0)
         dynamic_dim_index = None
@@ -1113,7 +1113,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi = self.known_vi_[node.output[0]]
             vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, new_shape))
 
-    def _infer_QLinearConcat(self, node: onnx.NodeProto) -> None:
+    def _infer_QLinearConcat(self, node: onnx.NodeProto) -> None:  # noqa: N802
         axis = get_attribute(node, "axis")
 
         aggregated_dimension = 0
@@ -1129,7 +1129,7 @@ class ModelShapeInference(SymbolicShapeInference):
         output_dtype = self.known_vi_[node.input[2]].type.tensor_type.elem_type
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearAveragePool(self, node: onnx.NodeProto) -> None:
+    def _infer_QLinearAveragePool(self, node: onnx.NodeProto) -> None:  # noqa: N802
         sympy_shape = self._compute_avg_pool_shape(node)
         self._update_computed_dims(sympy_shape)
         output = node.output[0]

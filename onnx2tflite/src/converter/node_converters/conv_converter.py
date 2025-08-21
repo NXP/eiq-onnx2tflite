@@ -115,7 +115,7 @@ class ConvConverter(NodeConverter):
 
         return pre_reshapes + converted_conv_ops + [reshape2]
 
-    def _convert_unpadded_2D(self, q_linear_conv, t_op) -> conv_utils.ConvConversionResult:
+    def _convert_unpadded_2D(self, q_linear_conv, t_op) -> conv_utils.ConvConversionResult:  # noqa: N802
         # Prepare the input and output tensors. To replace them, assign to t_op.tmp_inputs/tmp_outputs directly.
         output_tensor = t_op.tmp_outputs[0]
         input_tensor = t_op.tmp_inputs[0]
@@ -182,7 +182,7 @@ class ConvConverter(NodeConverter):
 
         return conversion_result.ops_list.flatten()
 
-    def _convert_unpadded_3D(self, o_conv_attributes, t_op) -> conv_utils.ConvConversionResult:
+    def _convert_unpadded_3D(self, o_conv_attributes, t_op) -> conv_utils.ConvConversionResult:  # noqa: N802
         """Convert the ONNX 'Conv' operator with a 3D kernel to TFLite 'Conv3D' without padding.
 
         TFLite Conv2D uses the [output_channels, H, W, input_channels] format for its weights.

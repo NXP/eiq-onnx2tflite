@@ -707,7 +707,7 @@ def convert_data_type(o_type: onnx.TensorProto.DataType) -> TensorType | int:
         logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'BFLOAT16' to TFLite.")
 
 
-def numpy_type_to_tf_lite(numpy_type: np.dtype) -> TensorType:
+def numpy_type_to_tf_lite(numpy_type: np.dtype) -> TensorType | int:
     """Convert the numpy data type to a corresponding TFLite 'TensorType'.
 
     :param numpy_type: Numpy dtype to convert.
@@ -763,7 +763,7 @@ def numpy_type_to_tf_lite(numpy_type: np.dtype) -> TensorType:
     logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Cannot convert numpy data type '{numpy_type}' to TFLite.")
 
 
-def tf_lite_type_to_numpy(tfl_type: TensorType) -> np.ScalarType:
+def tf_lite_type_to_numpy(tfl_type: TensorType | int) -> np.ScalarType:
     """Convert TFLite TensorType to numpy dtype"""
     if tfl_type == TensorType.FLOAT32:
         return np.dtype(np.float32)

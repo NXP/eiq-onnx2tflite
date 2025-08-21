@@ -96,7 +96,8 @@ class QLinearConvConverter(NodeConverter):
 
         return y, y_scale, y_zero_point
 
-    def _convert_unpadded_2D(self, q_linear_conv, t_op) -> conv_utils.ConvConversionResult:
+    # noinspection PyPep8Naming
+    def _convert_unpadded_2D(self, q_linear_conv, t_op) -> conv_utils.ConvConversionResult:  # noqa: N802
         # Prepare the input and output tensors. To replace them, assign to t_op.tmp_inputs/tmp_outputs directly.
         input_tensor, input_scale, input_zero_point = self._get_input_with_quant_params(q_linear_conv, t_op, 0)
         weight_tensor, weight_scale, weight_zero_point = self._get_input_with_quant_params(q_linear_conv, t_op, 1)
