@@ -25,12 +25,12 @@ class Slice(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.starts = None
         self.ends = None
         self.axes = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "starts":
                 self.starts = meta.ONNXIntListAttribute(attr)

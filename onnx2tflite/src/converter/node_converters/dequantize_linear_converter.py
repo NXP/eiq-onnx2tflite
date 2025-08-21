@@ -27,7 +27,10 @@ DequantizeLinearAttrs = dequantize_linear_attributes.DequantizeLinear
 class DequantizeLinearConverter(NodeConverter):
     node = "DequantizeLinear"
 
-    def _extract_quant_params(self, o_dequantize_linear: DequantizeLinearAttrs, t_op, allow_int32_input):
+    # noinspection PyMethodMayBeStatic
+    def _extract_quant_params(
+        self, o_dequantize_linear: DequantizeLinearAttrs, t_op, allow_int32_input
+    ) -> tuple[np.ndarray, np.ndarray, int]:
         if not (2 <= len(t_op.tmp_inputs) <= 3):
             logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX 'DequantizeLinear' has invalid number of inputs. "
                                                         f"Expected 2 or 3, got '{len(t_op.tmp_inputs)}'.")
@@ -82,7 +85,7 @@ class DequantizeLinearConverter(NodeConverter):
 
         return input_scale_data, input_zero_point_data, quantized_dimension
 
-    def _convert_quantized_bias_to_float_tensor(self, o_dequantize_linear, t_op):
+    def _convert_quantized_bias_to_float_tensor(self, o_dequantize_linear, t_op) -> None:
         scale, zero_point, quantized_dimension = self._extract_quant_params(o_dequantize_linear, t_op,
                                                                             allow_int32_input=True)
 

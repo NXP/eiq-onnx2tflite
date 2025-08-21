@@ -24,11 +24,11 @@ class Shape(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.start = None
         self.end = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "start":
                 self.start = attr.i

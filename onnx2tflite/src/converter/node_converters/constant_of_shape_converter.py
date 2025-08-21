@@ -47,7 +47,8 @@ class ConstantOfShapeConverter(NodeConverter):
 
         return self.builder.create_tensor_for_data(value.data, "value")
 
-    def _prepend_gather_operator(self, broadcast_to_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]):
+    def _prepend_gather_operator(
+        self, broadcast_to_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]) -> None:
         """Create a TFLite 'Gather' operator in front the 'broadcast_to_op' operator and add it to 'ops_to_add'.
         The 'Gather' will permute the input data from representing the shape of a channels first tensor, to a shape of
         a channels last tensor.

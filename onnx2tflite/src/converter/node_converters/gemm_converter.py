@@ -85,7 +85,7 @@ class GemmConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList):
+    def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList) -> None:
         """Handle the conversion of the 'alpha' attribute of the ONNX Gemm operator.
 
             Gemm carries out the following operation:
@@ -158,7 +158,7 @@ class GemmConverter(NodeConverter):
 
             ops.add_pre(mul_op)
 
-    def _handle_c_tensor(self, o_gemm: gemm_attributes.Gemm, t_op: tflite_model.Operator, ops: OpsList):
+    def _handle_c_tensor(self, o_gemm: gemm_attributes.Gemm, t_op: tflite_model.Operator, ops: OpsList) -> None:
         if (c := try_get_input(t_op, 2)) is None:
             return
 

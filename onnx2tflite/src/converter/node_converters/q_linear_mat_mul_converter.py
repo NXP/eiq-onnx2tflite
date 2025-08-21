@@ -52,7 +52,7 @@ class QLinearMatMulConverter(NodeConverter):
 
     def _ensure_signed_quantized_input(self, input_tensor: tflite_model.Tensor, t_op: tflite_model.Operator,
                                        input_index: int, input_zero_point: np.ndarray,
-                                       ops: OpsList):
+                                       ops: OpsList) -> None:
         if input_tensor.type == TensorType.UINT8:
             if tensor_has_data(input_tensor):
                 # Tensor can be re-quantized statically
@@ -190,8 +190,8 @@ class QLinearMatMulConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _handle_tensor_formats(self, t_op: tflite_model.Operator, ops: OpsList):
-        def process_input_tensor(input_index: int):
+    def _handle_tensor_formats(self, t_op: tflite_model.Operator, ops: OpsList) -> None:
+        def process_input_tensor(input_index: int) -> None:
             tensor = t_op.tmp_inputs[input_index]
             if not tensor.tensor_format.is_channels_last():
                 return
@@ -218,7 +218,7 @@ class QLinearMatMulConverter(NodeConverter):
             post_transpose = self.context.tflite_builder.create_transpose_operator_after(t_op, 0, to_tflite_perm)
             ops.add_post(post_transpose)
 
-    def _convert_per_tensor_q_linear_mat_mul(self, node, t_op):
+    def _convert_per_tensor_q_linear_mat_mul(self, node, t_op) -> list[tflite_model.Operator]:
         """Convert the ONNX QLinearMatMul operator to TFLite BatchMatMul.
 
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
@@ -287,7 +287,8 @@ class QLinearMatMulConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _get_input_with_quant_params(self, node: onnx_model.NodeProto, t_op, input_idx):
+    def _get_input_with_quant_params(self, node: onnx_model.NodeProto, t_op, input_idx
+                                     ) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
         """Get input tensor and corresponding q-params from other inputs (QLinearMatMul) or
         directly from tensor's quantization property.
 
@@ -313,7 +314,7 @@ class QLinearMatMulConverter(NodeConverter):
 
         return x, x_scale, x_zero_point
 
-    def _get_output_quant_params(self, t_op):
+    def _get_output_quant_params(self, t_op) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
         """Get output tensor and corresponding q-params from other inputs (QLinearMatMul) or
         directly from tensor's quantization property.
 

@@ -29,7 +29,7 @@ class ShapeConverter(NodeConverter):
     verified_types = FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.BOOL,
                                       TensorType.STRING]
 
-    def _append_gather_operator(self, shape_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]):
+    def _append_gather_operator(self, shape_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]) -> None:
         """Append a 'Gather' operator after the 'shape_op' and add it to the 'ops_to_add'. The 'Gather' op will permute
              the output of 'shape_op' to a channels first shape.
 
@@ -51,7 +51,7 @@ class ShapeConverter(NodeConverter):
         shape_op.tmp_outputs[0] = gather_input
 
     def _append_slice_operator(self, ops_to_add: list[tflite_model.Operator], begin_tensor: tflite_model.Tensor,
-                               size_tensor: tflite_model.Tensor):
+                               size_tensor: tflite_model.Tensor) -> None:
         """Create a 'Slice' operator after the last operator in 'ops_to_add' and add it to the list.
 
         :param ops_to_add: A list of operators that will be added to the model later.

@@ -54,7 +54,7 @@ class EinsumConverter(NodeConverter):
 
         return equation
 
-    def _handle_tensor_formats(self, t_op: tflite_model.Operator, ops: OpsList):
+    def _handle_tensor_formats(self, t_op: tflite_model.Operator, ops: OpsList) -> None:
         for index, inpt in enumerate(t_op.tmp_inputs):
             if inpt.tensor_format.is_channels_last():
                 # Transpose the input to channels_first to match the ONNX model.

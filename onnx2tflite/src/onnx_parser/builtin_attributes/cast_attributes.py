@@ -16,11 +16,11 @@ class Cast(meta.ONNXOperatorAttributes):
     saturate: int  # Only used for float8
     to: Optional[TensorProto.DataType.values]  # noqa: UP045
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.saturate = 1
         self.to = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "saturate":
                 self.saturate = attr.i

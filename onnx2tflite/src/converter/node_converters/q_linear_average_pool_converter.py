@@ -34,7 +34,7 @@ from onnx2tflite.src.tflite_generator.meta.types import name_for_type
 class QLinearAveragePoolConverter(NodeConverter):
     node = "QLinearAveragePool"
 
-    def _check_ceil_mode(self, q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool):
+    def _check_ceil_mode(self, q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool) -> None:
         """Check if the ONNX QLinearAveragePool is convertible according to its 'ceil_mode' attribute. If not, exit
              with appropriate error message.
 
@@ -56,7 +56,7 @@ class QLinearAveragePoolConverter(NodeConverter):
     def _handle_padding(self, t_op: tflite_model.Operator,
                         q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool,
                         builder: model_builder, input_zero_point: [int], input_type: TensorType,
-                        ops_to_add: list[tflite_model.Operator]):
+                        ops_to_add: list[tflite_model.Operator]) -> None:
         """Convert the padding of the ONNX QLinearAveragePool operator according to its attributes. Insert any extra
              necessary operators into the 'ops_to_add' list. If the padding cannot be converted, exit with appropriate
              error.
@@ -214,7 +214,7 @@ class QLinearAveragePoolConverter(NodeConverter):
 
         return ops_to_add
 
-    def _assign_q_params_to_tensors(self, t_op):
+    def _assign_q_params_to_tensors(self, t_op) -> None:
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 

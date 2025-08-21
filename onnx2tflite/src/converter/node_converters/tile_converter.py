@@ -30,7 +30,7 @@ class TileConverter(NodeConverter):
                               TensorType.STRING, TensorType.BOOL]
 
     # noinspection PyMethodMayBeStatic
-    def _check_input_types(self, t_op: tflite_model.Operator):
+    def _check_input_types(self, t_op: tflite_model.Operator) -> None:
         x = t_op.tmp_inputs[0]
         repeats = t_op.tmp_inputs[1]
 

@@ -43,7 +43,7 @@ class SoftmaxConverter(NodeConverter):
 
         return new_shape
 
-    def _normalize_axis(self, axis, rank):
+    def _normalize_axis(self, axis, rank) -> int:
         if axis < -rank or axis > rank - 1:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
                      f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
@@ -186,7 +186,7 @@ class SoftmaxConverter(NodeConverter):
             return self._convert_v1_transposed_and_reshaped(t_op, axis)
         return self._convert_v1_reshaped(t_op, axis)
 
-    def _handle_logsoftmax_quantization(self, ops, t_op):
+    def _handle_logsoftmax_quantization(self, ops, t_op) -> None:
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -204,7 +204,7 @@ class SoftmaxConverter(NodeConverter):
                 quantize_op = self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp)
                 ops.post_ops.insert(0, quantize_op)
 
-    def _handle_softmax_quantization(self, ops, t_op):
+    def _handle_softmax_quantization(self, ops, t_op) -> None:
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 

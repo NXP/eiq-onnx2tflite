@@ -36,7 +36,9 @@ ConvAttributes = conv_attributes.Conv | q_linear_conv_attributes.QLinearConv
 class QLinearConvConverter(NodeConverter):
     node = "QLinearConv"
 
-    def _get_input_with_quant_params(self, attrs: ConvAttributes, t_op: tflite_model.Operator, input_idx: int):
+    def _get_input_with_quant_params(
+        self, attrs: ConvAttributes, t_op: tflite_model.Operator, input_idx: int
+    ) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
         """Get input tensor and corresponding q-params from other inputs (QLinearConv) or
         directly from tensor's quantization property.
 
@@ -62,7 +64,7 @@ class QLinearConvConverter(NodeConverter):
 
         return x, x_scale, x_zero_point
 
-    def _get_bias_tensor_idx(self, attrs: ConvAttributes):
+    def _get_bias_tensor_idx(self, attrs: ConvAttributes) -> int:
         if isinstance(attrs, q_linear_conv_attributes.QLinearConv):
             return 8
         if isinstance(attrs, conv_attributes.Conv):
@@ -76,7 +78,7 @@ class QLinearConvConverter(NodeConverter):
             return 1
         logger.e(logger.Code.INTERNAL_ERROR, "Attempt to get index of weight tensor of incorrect ONNX operator.")
 
-    def _get_output_quant_params(self, t_op):
+    def _get_output_quant_params(self, t_op) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
         """Get output tensor and corresponding q-params from other inputs (QLinearConv) or
         directly from tensor's quantization property.
 
@@ -228,7 +230,7 @@ class QLinearConvConverter(NodeConverter):
 
         return conversion_result
 
-    def _convert_2d_q_linear_conv(self, attrs: ConvAttributes, t_op: tflite_model.Operator) -> [tflite_model.Operator]:
+    def _convert_2d_q_linear_conv(self, attrs: ConvAttributes, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         if conv_utils.group_conv_convertible_as_depthwise(attrs, t_op, self.get_weight_tensor_index(attrs)):
             t_op.builtin_options = depthwise_conv_2d_options.DepthwiseConv2D()
 

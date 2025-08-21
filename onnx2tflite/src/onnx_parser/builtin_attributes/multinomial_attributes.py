@@ -16,12 +16,12 @@ class Multinomial(meta.ONNXOperatorAttributes):
     sample_size: int
     seed: float | None
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.dtype = TensorProto.INT32
         self.sample_size = 1
         self.seed = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             match attr.name:
                 case "dtype":

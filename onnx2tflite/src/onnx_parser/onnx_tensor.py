@@ -33,7 +33,7 @@ class Dimension(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TensorShapeProto.Dimension) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.denotation = self._descriptor.denotation
 
         if self._descriptor.HasField("dim_value"):
@@ -50,7 +50,7 @@ class TensorShapeProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TensorShapeProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.dims = []
         for item in self._descriptor.dim:
             self.dims.append(Dimension(item))
@@ -68,7 +68,7 @@ class SparseTensor(meta.ONNXObject):
     def __init__(self, descriptor: onnx.SparseTensorProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         # noinspection PyTypeChecker
         self.elem_type = self._descriptor.elem_type  # Warning is probably OK. See 'elem_type' declaration above.
         self.shape = TensorShapeProto(self._descriptor.shape)
@@ -83,12 +83,12 @@ class Segment(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TensorProto.Segment) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.begin = self._descriptor.begin
         self.end = self._descriptor.end
 
 
-def _has_data(field):
+def _has_data(field) -> bool:
     """Determine if given repeated field has data stored in it."""
     return (field is not None) and (len(field) != 0)
 
@@ -109,7 +109,7 @@ class TensorProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TensorProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.dims = list(self._descriptor.dims)
         self.data_type = self._descriptor.data_type  # Warning is probably fine. See 'dataType' declaration above.
         self.segment = Segment(self._descriptor.segment)
@@ -133,7 +133,7 @@ class TensorProto(meta.ONNXObject):
             logger.e(logger.Code.INTERNAL_ERROR,
                      f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'", exception=e)
 
-    def _assign_data(self):
+    def _assign_data(self) -> None:
         """Assign tensor's data to the 'data' attribute from any initialized array in the descriptor.
         Also check that the data type used is allowed in the schema for the particular array.
         """

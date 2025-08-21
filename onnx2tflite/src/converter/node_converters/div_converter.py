@@ -26,7 +26,7 @@ class DivConverter(NodeConverter):
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.UINT8]
     verified_types = [TensorType.FLOAT32, TensorType.INT32]
 
-    def _cast_from_int64_to_int32(self, ops, t_op):
+    def _cast_from_int64_to_int32(self, ops, t_op) -> None:
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
 

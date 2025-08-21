@@ -49,7 +49,7 @@ class ModelShapeInference(SymbolicShapeInference):
         super().__init__(int_max, auto_merge, guess_output_rank, verbose)
         self._register_custom_dispatchers()
 
-    def _register_custom_dispatchers(self):
+    def _register_custom_dispatchers(self) -> None:
         self.dispatcher_["Cast"] = self._infer_Cast
         self.dispatcher_["Concat"] = self._infer_Concat
         self.dispatcher_["Constant"] = self._infer_Constant
@@ -82,7 +82,7 @@ class ModelShapeInference(SymbolicShapeInference):
         self.dispatcher_["Unsqueeze"] = self._infer_Unsqueeze
         self.dispatcher_["Upsample"] = self._infer_Upsample
 
-    def _infer_Expand(self, node):  # noqa: N802
+    def _infer_Expand(self, node) -> None:  # noqa: N802
         # Original function only infers the output shape.
         super()._infer_Expand(node)
 
@@ -101,7 +101,7 @@ class ModelShapeInference(SymbolicShapeInference):
             # Data inference failed. Continue.
             pass
 
-    def _infer_Upsample(self, node):  # noqa: N802
+    def _infer_Upsample(self, node) -> None:  # noqa: N802
         # Originally there was no dispatcher for this operator, and the inference only worked for v7.
 
         if get_opset(self.out_mp_) < 9:  # V7
@@ -128,7 +128,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Cast(self, node):
+    def _infer_Cast(self, node) -> None:
         # Original implementation didn't support data inference for most cases, and the inferred data type was also
         #  not always correct.
 
@@ -151,7 +151,7 @@ class ModelShapeInference(SymbolicShapeInference):
             # Data inference failed. Continue.
             pass
 
-    def _infer_OneHot(self, node):  # noqa: N802
+    def _infer_OneHot(self, node) -> None:  # noqa: N802
         sympy_shape = self._get_sympy_shape(node, 0)
 
         # MODIFIED PART START
@@ -185,7 +185,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Reshape(self, node):  # noqa: N802
+    def _infer_Reshape(self, node) -> None:  # noqa: N802
         shape_value = self._try_get_value(node, 1)
         vi = self.known_vi_[node.output[0]]
         if shape_value is None:
@@ -250,7 +250,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 pass
             # MODIFIED PART END
 
-    def _infer_Unsqueeze(self, node):  # noqa: N802
+    def _infer_Unsqueeze(self, node) -> None:  # noqa: N802
         input_shape = self._get_shape(node, 0)
         op_set = get_opset(self.out_mp_)
 
@@ -295,7 +295,7 @@ class ModelShapeInference(SymbolicShapeInference):
             pass
         # MODIFIED PART END
 
-    def _infer_Squeeze(self, node):  # noqa: N802
+    def _infer_Squeeze(self, node) -> None:  # noqa: N802
         input_shape = self._get_shape(node, 0)
         op_set = get_opset(self.out_mp_)
 
@@ -354,7 +354,7 @@ class ModelShapeInference(SymbolicShapeInference):
             pass
         # MODIFIED PART END
 
-    def _infer_Transpose(self, node):  # noqa: N802
+    def _infer_Transpose(self, node) -> None:  # noqa: N802
         # noinspection PyBroadException
         try:
             # Original code only infers the data.
@@ -376,7 +376,7 @@ class ModelShapeInference(SymbolicShapeInference):
             helper.make_tensor_value_info(node.output[0], input_type, get_shape_from_sympy_shape(output_shape))
         )
 
-    def _infer_Slice(self, node):  # noqa: N802
+    def _infer_Slice(self, node) -> None:  # noqa: N802
         # The majority of this code was taken from `symbolic_shape_inference.py`.
 
         # SymPy fails to prove that `x_0 + ... + x_n >= 0` if one of `x_i` is a `sympy.Min(a, b)`,
@@ -386,7 +386,7 @@ class ModelShapeInference(SymbolicShapeInference):
         # so that we can prove inequalities for both expressions separately.
         #
         # If the number of `min(...)` subexpressions is not exactly one, this function just returns `[expr]`.
-        def flatten_min(expr):
+        def flatten_min(expr) -> list:
             # MODIFIED PART START
             assert isinstance(expr, sympy.Add), f"`Slice` shape inference: Expected a sum of two arguments, got {expr}"
             # MODIFIED PART END
@@ -394,7 +394,7 @@ class ModelShapeInference(SymbolicShapeInference):
             if len(min_positions) == 1:
                 min_pos = min_positions[0]
 
-                def replace_min_with_arg(arg_idx):
+                def replace_min_with_arg(arg_idx) -> sympy.Expr:
                     replaced = list(expr.args)
                     # MODIFIED PART START
                     assert isinstance(
@@ -413,7 +413,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 ]
             return [expr]
 
-        def less_equal(x, y):
+        def less_equal(x, y) -> bool:
             try:
                 return bool(x <= y)
             except TypeError:
@@ -436,7 +436,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 # the last attempt; this may raise TypeError
                 return all(bool(d >= 0) for d in flatten_min(y - x))
 
-        def handle_negative_index(index, bound):
+        def handle_negative_index(index, bound) -> int:
             """Normalizes a negative index to be in [0, bound)"""
             try:
                 if not less_equal(0, index):
@@ -560,7 +560,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 # MODIFIED PART END
                 self.sympy_data_[node.output[0]] = input_sympy_data[starts[0]: ends[0]: steps[0]]
 
-    def _infer_Identity(self, node):
+    def _infer_Identity(self, node) -> None:
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(
             helper.make_tensor_value_info(
@@ -576,7 +576,7 @@ class ModelShapeInference(SymbolicShapeInference):
             np_type = to_numpy_type(vi.type.tensor_type.elem_type)
             self.sympy_data_[node.output[0]] = np.array(values).astype(np_type)
 
-    def _infer_Resize(self, node):  # noqa: N802
+    def _infer_Resize(self, node) -> None:  # noqa: N802
         vi = self.known_vi_[node.output[0]]
         input_sympy_shape = np.array(self._get_sympy_shape(node, 0), np.float32)
 
@@ -653,7 +653,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 )
             )
 
-    def _infer_Range(self, node):  # noqa: N802
+    def _infer_Range(self, node) -> None:  # noqa: N802
         vi = self.known_vi_[node.output[0]]
         input_data = self._get_int_or_float_values(node, allow_float_values=True)
         if any([i is None for i in input_data]):
@@ -702,7 +702,7 @@ class ModelShapeInference(SymbolicShapeInference):
             # This shouldn't happen. In case it somehow does happen, simply continue.
             pass
 
-    def _infer_ReduceX(self, node):  # noqa: N802
+    def _infer_ReduceX(self, node) -> None:  # noqa: N802
         """Infer the output shape for `Reduce*` operators, which used an `axes` attribute up-to version 18 (excluding),
          and then switched to an `axes` input.
         This includes `ReduceL2`, `ReduceMax`, `ReduceMean`, `ReduceProd` and potentially others.
@@ -751,7 +751,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_ReduceSum(self, node):  # noqa: N802
+    def _infer_ReduceSum(self, node) -> None:  # noqa: N802
         keep_dims = get_attribute(node, "keepdims", 1)
         if get_opset(self.out_mp_) >= 13:
             # ReduceSum v13+ uses 'axes' as input.
@@ -796,7 +796,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_ConstantOfShape(self, node):
+    def _infer_ConstantOfShape(self, node) -> None:
         # Infer sympy data.
         # noinspection PyBroadException
         try:
@@ -845,7 +845,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_QGemm(self, node):  # noqa: N802
+    def _infer_QGemm(self, node) -> None:  # noqa: N802
         a_shape = self._get_shape(node, 0)
         b_shape = self._get_shape(node, 3)
 
@@ -875,7 +875,7 @@ class ModelShapeInference(SymbolicShapeInference):
         )
         self.known_vi_[vi.name] = vi
 
-    def _infer_Tile(self, node):
+    def _infer_Tile(self, node) -> None:
 
         # Try to infer the output data.
         try:
@@ -909,7 +909,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _infer_Concat(self, node):
+    def _infer_Concat(self, node) -> None:
         # The following code is taken from 'symbolic_shape_infer.py'.
         sympy_shape = self._get_sympy_shape(node, 0)
         axis = handle_negative_axis(get_attribute(node, "axis"), len(sympy_shape))
@@ -964,7 +964,7 @@ class ModelShapeInference(SymbolicShapeInference):
             pass
         # MODIFIED PART END
 
-    def _infer_Split_Common(self, node, make_value_info_func):  # noqa: N802
+    def _infer_Split_Common(self, node, make_value_info_func) -> None:  # noqa: N802
         input_sympy_shape = self._get_sympy_shape(node, 0)
         axis = handle_negative_axis(get_attribute(node, "axis", 0), len(input_sympy_shape))
 
@@ -1018,7 +1018,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
             self.known_vi_[vi.name] = vi
 
-    def _infer_Constant(self, node):
+    def _infer_Constant(self, node) -> None:
         if get_attribute(node, "value") is not None:
             t = get_attribute(node, "value")
             try:
@@ -1040,7 +1040,7 @@ class ModelShapeInference(SymbolicShapeInference):
             if attr is not None:
                 self.sympy_data_[node.output[0]] = np.asarray(attr)
 
-    def _infer_QLinearAdd(self, node):
+    def _infer_QLinearAdd(self, node) -> None:
         input_1_shape = self._get_shape(node, 0)
         input_2_shape = self._get_shape(node, 3)
 
@@ -1049,7 +1049,7 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearMul(self, node):
+    def _infer_QLinearMul(self, node) -> None:
         input_1_shape = self._get_shape(node, 0)
         input_2_shape = self._get_shape(node, 3)
 
@@ -1058,7 +1058,7 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearGlobalAveragePool(self, node):
+    def _infer_QLinearGlobalAveragePool(self, node) -> None:
         input_shape = self._get_shape(node, 0)
         input_rank = len(input_shape)
         channels_last = get_attribute(node, "channels_last")
@@ -1072,11 +1072,11 @@ class ModelShapeInference(SymbolicShapeInference):
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearSoftmax(self, node):
+    def _infer_QLinearSoftmax(self, node) -> None:
         # Strategy: same shape as input
         super()._propagate_shape_and_type(node, input_index=0, output_index=0)
 
-    def _infer_Dropout(self, node):
+    def _infer_Dropout(self, node) -> None:
         super()._propagate_shape_and_type(node, input_index=0, output_index=0)
 
         # Dropout layers might have "mask" output tensor. Infer shape to avoid incomplete inference error.
@@ -1085,7 +1085,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi = self.known_vi_[node.output[1]]
             vi.CopyFrom(onnx.helper.make_tensor_value_info(node.output[1], onnx.TensorProto.BOOL, mask_shape))
 
-    def _infer_Flatten(self, node):
+    def _infer_Flatten(self, node) -> None:
         """Ensure that flatten resolves dynamic shapes"""
         input_shape = self._get_shape(node, 0)
         dynamic_dim_index = None
@@ -1109,7 +1109,7 @@ class ModelShapeInference(SymbolicShapeInference):
             vi = self.known_vi_[node.output[0]]
             vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, new_shape))
 
-    def _infer_QLinearConcat(self, node):
+    def _infer_QLinearConcat(self, node) -> None:
         axis = get_attribute(node, "axis")
 
         aggregated_dimension = 0
@@ -1125,7 +1125,7 @@ class ModelShapeInference(SymbolicShapeInference):
         output_dtype = self.known_vi_[node.input[2]].type.tensor_type.elem_type
         vi.CopyFrom(onnx.helper.make_tensor_value_info(vi.name, output_dtype, output_shape))
 
-    def _infer_QLinearAveragePool(self, node):
+    def _infer_QLinearAveragePool(self, node) -> None:
         sympy_shape = self._compute_avg_pool_shape(node)
         self._update_computed_dims(sympy_shape)
         output = node.output[0]
@@ -1140,7 +1140,7 @@ class ModelShapeInference(SymbolicShapeInference):
             )
         )
 
-    def _compute_avg_pool_shape(self, node):
+    def _compute_avg_pool_shape(self, node) -> list:
         # This is simplified code from self._compute_conv_pool_shape()
         sympy_shape = self._get_sympy_shape(node, 0)
         kernel_shape = get_attribute(node, "kernel_shape")
@@ -1205,7 +1205,8 @@ class ModelShapeInference(SymbolicShapeInference):
             sympy_shape[-rank + i] = strided_kernel_positions + 1
         return sympy_shape
 
-    def _find_undefined_dimensions(self, graph: GraphProto):
+    # noinspection PyMethodMayBeStatic
+    def _find_undefined_dimensions(self, graph: GraphProto) -> None:
         """Look for dynamic and symbolic dimensions in model inputs and raise error when
         there are any.
 
@@ -1214,7 +1215,7 @@ class ModelShapeInference(SymbolicShapeInference):
         symbolic_shapes = set()
         dynamic_inputs = set()
 
-        def iterate_value_infos(value_infos):
+        def iterate_value_infos(value_infos) -> None:
             for vi in value_infos:
                 if vi.type.HasField("tensor_type"):
                     shape = vi.type.tensor_type.shape

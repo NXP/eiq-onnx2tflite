@@ -79,7 +79,7 @@ class ModelBuilder:
         If 'can_reuse' is True, created tensor can be shared with other operators.
         """
 
-        def _dims_to_string(dims: list[int]):
+        def _dims_to_string(dims: list[int]) -> str:
             """Convert a list of integers to a string."""
             tmp = [str(dim) for dim in dims]
             return "_".join(tmp)
@@ -282,7 +282,7 @@ class ModelBuilder:
 
         t1.name, t2.name = t2.name, t1.name
 
-    def _make_inputs_channels_first(self):
+    def _make_inputs_channels_first(self) -> None:
         new_inputs = []
 
         for input_tensor in self.get_sub_graph().inputs.tmp_inputs:
@@ -315,7 +315,7 @@ class ModelBuilder:
 
         self.get_sub_graph().inputs.tmp_inputs = new_inputs
 
-    def _make_outputs_channels_first(self):
+    def _make_outputs_channels_first(self) -> None:
         new_outputs = []
 
         for output_tensor in self.get_sub_graph().outputs.tmp_outputs:
@@ -882,7 +882,7 @@ class ModelBuilder:
         return transpose
 
     def create_quantize_operator_before(self, before_operator: tflite_model.Operator, on_input_index: int,
-                                        new_input_data_type: TensorType,
+                                        new_input_data_type: TensorType | int,
                                         new_input_scale: list[float] | None = None,
                                         new_input_zero_point: list[int] | None = None) -> tflite_model.Operator:
         """Create a TFLite 'Quantize' operator before the 'before_operator'.
@@ -923,7 +923,7 @@ class ModelBuilder:
         return quantize
 
     def create_quantize_operator_after(self, after_operator: tflite_model.Operator, on_output_index: int,
-                                       new_output_data_type: TensorType,
+                                       new_output_data_type: TensorType | int,
                                        new_output_scale: list[float] | None = None,
                                        new_output_zero_point: list[int] | None = None) -> tflite_model.Operator:
         """Create a TFLite 'Quantize' operator after the 'after_operator'.

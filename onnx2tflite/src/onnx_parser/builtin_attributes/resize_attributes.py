@@ -27,7 +27,7 @@ class Resize(meta.ONNXOperatorAttributes):
     axes: ONNXIntListAttribute | None
     keep_aspect_ratio_policy: str
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.mode = "nearest"
 
         self.coordinate_transformation_mode = "half_pixel"
@@ -40,7 +40,7 @@ class Resize(meta.ONNXOperatorAttributes):
         self.axes = None
         self.keep_aspect_ratio_policy = "stretch"
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "mode":
                 self.mode = attr.s.decode("utf-8")

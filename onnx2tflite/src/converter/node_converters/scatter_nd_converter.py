@@ -38,7 +38,7 @@ class ScatterNDConverter(NodeConverter):
     # With int8 and uint8 TFLite inference crashes badly (Fatal Python error: Aborted) if the tensors are not quantized.
     verified_types = [TensorType.FLOAT32, TensorType.BOOL, TensorType.INT32, TensorType.INT64]
 
-    def _get_mask(self, t_op: tflite_model.Operator, ops: list[tflite_model.Operator]):
+    def _get_mask(self, t_op: tflite_model.Operator, ops: list[tflite_model.Operator]) -> tflite_model.Tensor:
         """Get a tensor which will contain `True` in places specified by the `indices` of the ONNX ScatterND, and
         `False` everywhere else, at runtime.
         """
@@ -65,7 +65,7 @@ class ScatterNDConverter(NodeConverter):
 
         return output_mask_tensor
 
-    def _get_updated_values(self, t_op: tflite_model.Operator, ops: list[tflite_model.Operator]):
+    def _get_updated_values(self, t_op: tflite_model.Operator, ops: list[tflite_model.Operator]) -> tflite_model.Tensor:
         """Get a tensor, which will contain the `updates` of the ONNX `ScatterND` at the corresponding indices.
         The other values will be 0.
 
@@ -141,7 +141,7 @@ class ScatterNDConverter(NodeConverter):
         return updated_values
 
     def _ensure_tensor_is_same_as_in_onnx_model(self, t_op: tflite_model.Operator, input_index: int,
-                                                ops: list[tflite_model.Operator]):
+                                                ops: list[tflite_model.Operator]) -> None:
         """If the input tensor of `t_op` on index `input_index` is `channels last`, this method will turn it to
         `channels first` to match the ONNX model. Static tensor is permuted statically and for dynamic tensors, a
         `Transpose` operator is prepended and it is added to `ops`.

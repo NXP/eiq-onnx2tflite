@@ -63,7 +63,7 @@ class UpsampleConverter(NodeConverter):
 
         return list(scales)
 
-    def _check_types(self, t_op: tflite_model.Operator):
+    def _check_types(self, t_op: tflite_model.Operator) -> None:
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 

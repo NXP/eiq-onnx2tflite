@@ -120,7 +120,7 @@ class MatMulConverter(NodeConverter):
         x_rank = len(t_op.tmp_inputs[0].shape.vector)
         y_rank = len(t_op.tmp_inputs[1].shape.vector)
 
-        def _wrap_in_transpose(tensor, tensor_rank, input_index):
+        def _wrap_in_transpose(tensor, tensor_rank, input_index) -> OpsList:
             ops = OpsList(middle_op=t_op)
 
             if tensor_has_data(tensor) and tensor.tensor_format.is_channels_last():
@@ -196,7 +196,7 @@ class MatMulConverter(NodeConverter):
 
         ops = OpsList(middle_op=t_op)
 
-        def process_input_tensor(tensor, tensor_rank, input_index):
+        def process_input_tensor(tensor, tensor_rank, input_index) -> None:
             if tensor_has_data(tensor) and tensor.tensor_format.is_channels_last():
                 t_op.tmp_inputs[input_index] = self._build_transposed_static_tensor(tensor, tensor_rank)
             elif tensor.tensor_format.is_channels_last():
@@ -216,7 +216,7 @@ class MatMulConverter(NodeConverter):
 
         return ops
 
-    def _build_transposed_static_tensor(self, tensor, tensor_rank):
+    def _build_transposed_static_tensor(self, tensor, tensor_rank) -> tflite_model.Tensor:
         permutation = list(translator.create_channels_last_to_channels_first_permutation(tensor_rank))
 
         new_tensor = self.context.tflite_builder.duplicate_tensor(tensor, tensor.name + "_transposed")

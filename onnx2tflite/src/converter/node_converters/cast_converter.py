@@ -22,7 +22,7 @@ class CastConverter(NodeConverter):
     node = "Cast"
 
     # noinspection PyMethodMayBeStatic
-    def _check_input_type(self, from_type: TensorType):
+    def _check_input_type(self, from_type: TensorType) -> None:
         if from_type == TensorType.UINT16:
             # For some reason, I couldn't run the TFLite model with uint16 input. Some weird error was raised when
             # 'SetTensor' was called. I couldn't find any test, where we used uint16 input tensors.
@@ -47,7 +47,7 @@ class CastConverter(NodeConverter):
                      f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not implemented.")
 
     # noinspection PyMethodMayBeStatic
-    def _check_output_type(self, to_type: TensorType):
+    def _check_output_type(self, to_type: TensorType) -> None:
         if to_type in {TensorType.UINT64, TensorType.STRING}:
             # Not supported by TFLite
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,

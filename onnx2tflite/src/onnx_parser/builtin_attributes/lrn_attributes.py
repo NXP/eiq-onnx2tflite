@@ -29,12 +29,12 @@ class LRN(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.alpha = np.float32(1e-4)  # ~= 9.99999974737e-05. Corresponds to onnxruntime/core/providers/cpu/nn/lrn.h:23
         self.beta = 0.75
         self.bias = 1.0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "alpha":
                 self.alpha = attr.f

@@ -143,7 +143,7 @@ class QDQClustersRecognizer:
 
         self._register_operator_specific_rules()
 
-    def _register_operator_specific_rules(self):
+    def _register_operator_specific_rules(self) -> None:
         self.op_specific_rules["Clip"] = self._validate_clip
         self.op_specific_rules["Concat"] = self._validate_concat
         self.op_specific_rules["Conv"] = self._validate_conv
@@ -249,7 +249,7 @@ class QDQClustersRecognizer:
                 self._inputs_are_not_outputs_of_model(node) and
                 self._surrounding_q_ops_have_same_quant_type(node))
 
-    def _is_qdq_quantized_node(self, node: onnx_model.NodeProto):
+    def _is_qdq_quantized_node(self, node: onnx_model.NodeProto) -> bool:
         """Check if operator can be considered as QDQ quantized. This usually means that all IO tensors are
         surrounded by q-ops but this could be operator specific.
 
@@ -277,7 +277,7 @@ class QDQClustersRecognizer:
 
         return all(outputs_quantized)
 
-    def _at_least_one_io_tensor_float(self, node: onnx_model.NodeProto):
+    def _at_least_one_io_tensor_float(self, node: onnx_model.NodeProto) -> bool:
         io_tensors = list(node.outputs) + list(node.inputs)
 
         # Ignore optional tensors
@@ -285,7 +285,7 @@ class QDQClustersRecognizer:
 
         return any([self.model_inspector.tensor_is_float(tensor_name) for tensor_name in io_tensors])
 
-    def _inputs_are_not_outputs_of_model(self, node: onnx_model.NodeProto):
+    def _inputs_are_not_outputs_of_model(self, node: onnx_model.NodeProto) -> bool:
         return all([not self.model_inspector.is_output_of_model(tensor_name) for tensor_name in node.inputs])
 
     def _surrounding_q_ops_have_same_quant_type(self, node: onnx_model.NodeProto) -> bool:
@@ -456,7 +456,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 class QDQOperator(QDQOperatorBase):
     quantizer: BaseQDQQuantizer
 
-    def _can_quantize_tensor(self, tensor_name):
+    def _can_quantize_tensor(self, tensor_name) -> bool:
         if not self.quantizer.is_tensor_quantized(tensor_name):
             # Tensor was not already set for quantization
             return True
@@ -833,7 +833,8 @@ class QDQQuantizer:
         self.op_types_to_quantize = op_types_to_quantize or self.default_op_types_to_quantize
         self._register_custom_qdq_quantizers()
 
-    def _register_custom_qdq_quantizers(self):
+    # noinspection PyMethodMayBeStatic
+    def _register_custom_qdq_quantizers(self) -> None:
         QDQRegistry["ArgMax"] = QDQOperatorBase
         QDQRegistry["ArgMin"] = QDQOperatorBase
         QDQRegistry["Clip"] = QDQClip
@@ -875,7 +876,8 @@ class QDQQuantizer:
 
         logger.e(logger.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
 
-    def _model_has_QDQ_nodes(self, model):
+    # noinspection PyPep8Naming,PyMethodMayBeStatic
+    def _model_has_QDQ_nodes(self, model) -> bool:
         """Detect if model already has QuantizeLinear or DequantizeLinear ops.
         """
         return any(
@@ -883,7 +885,7 @@ class QDQQuantizer:
         )
 
     def quantize_model(self, model_proto: onnx_model.ModelProto, quantization_config: QuantizationConfig,
-                       save_model=False, saved_model_name="quantized_model.onnx") -> None:
+                       save_model=False, saved_model_name="quantized_model.onnx") -> onnx.ModelProto:
         if self._model_has_QDQ_nodes(model_proto):
             logger.e(logger.Code.INVALID_ONNX_MODEL,
                      "Model is already quantized. Quantization of such model can lead to infinite loop. "

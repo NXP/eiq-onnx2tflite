@@ -165,14 +165,14 @@ class OperatorConverter:
 
         return t_operator
 
-    def _is_part_of_qdq_cluster(self, o_node: onnx_model.NodeProto):
+    def _is_part_of_qdq_cluster(self, o_node: onnx_model.NodeProto) -> bool:
         if self._recognized_qdq_ops is None:
             return False
 
         return o_node.unique_name in self._recognized_qdq_ops.qdq_cluster_quantization_ops
 
     # noinspection PyTypeChecker,SpellCheckingInspection
-    def _convert_operator(self, node: onnx_model.NodeProto):
+    def _convert_operator(self, node: onnx_model.NodeProto) -> None:
         """Convert an ONNX operator (node) to 1 or multiple TFLite operators and add them to the model."""
         t_op = self._convert_node(node)  # Operator in the TFLite model. Carries info about input and output tensors.
 
@@ -212,7 +212,7 @@ class OperatorConverter:
         #  shape inference.
         skipped_ops: list[(str, str)] = []
 
-        def run_conversion_safe(conversion_fn):
+        def run_conversion_safe(conversion_fn) -> None:
             has_inconvertible_node = False
 
             for idx, node in enumerate(o_nodes):
@@ -226,7 +226,7 @@ class OperatorConverter:
                 raise logger.Error(logger.Code.CONVERSION_IMPOSSIBLE,
                                    "Model contains nodes that are not convertible or not supported.")
 
-        def convert_all_ops(node: onnx_model.NodeProto):
+        def convert_all_ops(node: onnx_model.NodeProto) -> None:
             def _tensors_are_formatless(onnx_tensors: list[str]) -> bool:
                 """Return `True` if all ONNX tensors with given names are formatless."""
                 tflite_tensors = [self._context.tflite_builder.tensor_for_name(t) for t in onnx_tensors]
@@ -271,7 +271,7 @@ class OperatorConverter:
                 # Convert the node to tflite.
                 self._convert_operator(node)
 
-        def convert_qdq_cluster_nodes(node):
+        def convert_qdq_cluster_nodes(node) -> None:
             if node.op_type == "QuantizeLinear" and self._is_part_of_qdq_cluster(node):
                 t_op = self._convert_node(node)
                 node_converters.QuantizeLinearConverter(self._context).convert_into_tensor(node, t_op)

@@ -25,7 +25,7 @@ class LSTM(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.activation_alpha = None
         self.activation_beta = None
         self.activations = None
@@ -35,7 +35,7 @@ class LSTM(meta.ONNXOperatorAttributes):
         self.input_forget = 0
         self.layout = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "activation_alpha":
                 self.activation_alpha = meta.ONNXFloatListAttribute(attr)

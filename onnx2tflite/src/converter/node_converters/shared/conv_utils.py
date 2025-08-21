@@ -124,7 +124,7 @@ class _InputTensorsSplitter:
             else:
                 self._generate_dynamic_tensors(builder, groups, i[0], i[1], i[2])
 
-    def _generate_dynamic_tensors(self, builder, groups, split_tensor, axis, target_list):
+    def _generate_dynamic_tensors(self, builder, groups, split_tensor, axis, target_list) -> None:
         quantization = None
         if split_tensor.quantization is not None:
             if split_tensor.quantization.is_per_channel():
@@ -152,7 +152,8 @@ class _InputTensorsSplitter:
             target_list.append(conv_split_tensor)
         self.split_ops.append(split_op)
 
-    def _generate_static_tensors(self, builder, groups, split_tensor, axis, target_list):
+    # noinspection PyMethodMayBeStatic
+    def _generate_static_tensors(self, builder, groups, split_tensor, axis, target_list) -> None:
         quantization = None
         if split_tensor.quantization is not None:
             if split_tensor.quantization.is_per_channel():
@@ -175,7 +176,7 @@ class _InputTensorsSplitter:
 
             target_list.append(conv_input_tensor)
 
-    def _create_split_op(self, builder, groups, input_tensor, axis):
+    def _create_split_op(self, builder, groups, input_tensor, axis) -> TFOperator:
         axis_tensor = builder.create_tensor_for_data(np.asarray([axis], np.int32), "split_dim_")
         input_split_op = TFOperator(builtin_options=split_options.Split(groups))
         input_split_op.tmp_inputs = [axis_tensor, input_tensor]
@@ -222,10 +223,10 @@ class _OutputTensorsCombiner:
             self.output_tensors.append(output_tensor)
             self.concat_op.tmp_inputs.append(output_tensor)
 
-    def get_output_tensor(self, idx):
+    def get_output_tensor(self, idx) -> int:
         return self.output_tensors[idx]
 
-    def get_ops(self):
+    def get_ops(self) -> list[tflite_model.Operator]:
         return [self.concat_op]
 
 

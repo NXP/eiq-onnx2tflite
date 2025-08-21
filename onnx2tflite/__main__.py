@@ -24,7 +24,7 @@ syslog = logging.StreamHandler()
 syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
 logger.addHandler(syslog)
 
-def _get_user_choice_parser():
+def _get_user_choice_parser() -> argparse.ArgumentParser:
     """Return a parser, which handles options used to let the user provide additional information for the
     conversion. Without this information, the converter wouldn't be able to guarantee accurate conversion. This
     way, the user chooses to convert the model anyway, and the validity of the model is on the user's
@@ -48,7 +48,7 @@ def _get_user_choice_parser():
     return parser
 
 
-def _get_conversion_parser():
+def _get_conversion_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--allow-inputs-stripping", action=argparse.BooleanOptionalAction, default=True,
                         help="Model inputs will be removed if they are not necessary for inference and "

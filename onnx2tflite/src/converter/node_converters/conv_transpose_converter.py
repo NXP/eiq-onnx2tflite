@@ -115,7 +115,7 @@ class ConvTransposeConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _verify_kernel_shape_attribute(self, o_conv_attributes, t_op):
+    def _verify_kernel_shape_attribute(self, o_conv_attributes, t_op) -> None:
         weight_tensor = t_op.tmp_inputs[1]
         derived_kernel_shape = weight_tensor.shape.vector[2:]
 

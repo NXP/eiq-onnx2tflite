@@ -22,14 +22,14 @@ class QGemm(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         # QGemm uses the same module to parse its attributes as regular Gemm. (line 6):
         # https://github.com/microsoft/onnxruntime/blob/main/onnxruntime/contrib_ops/cpu/quantization/quant_gemm.cc
         self.alpha = 1.0
         self.transA = 0
         self.transB = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "alpha":
                 self.alpha = attr.f

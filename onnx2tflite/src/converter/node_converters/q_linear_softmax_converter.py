@@ -40,7 +40,7 @@ class QLinearSoftmaxConverter(NodeConverter):
 
         return new_shape
 
-    def _normalize_axis(self, axis, rank):
+    def _normalize_axis(self, axis, rank) -> int:
         if axis < -rank or axis > rank - 1:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
                      f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
@@ -191,7 +191,7 @@ class QLinearSoftmaxConverter(NodeConverter):
             return self._convert_v1_transposed_and_reshaped(t_op, axis)
         return self._convert_v1_reshaped(t_op, axis)
 
-    def _ensure_correct_output_quant_params(self, ops):
+    def _ensure_correct_output_quant_params(self, ops) -> None:
         t_op = ops.middle_op
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]

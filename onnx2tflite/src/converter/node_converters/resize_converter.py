@@ -70,7 +70,7 @@ class ResizeConverter(NodeConverter):
         # noinspection PyUnboundLocalVariable
         return align_corners, half_pixel
 
-    def _down_sampling(self, x: tflite_model.Tensor, y: tflite_model.Tensor):
+    def _down_sampling(self, x: tflite_model.Tensor, y: tflite_model.Tensor) -> bool:
         """Determine if the `Resize` is down-sampling at least in 1 dimension.
 
         :param x: Main input of the ONNX `Resize`.
@@ -80,7 +80,7 @@ class ResizeConverter(NodeConverter):
         return any(y_dim < x_dim for x_dim, y_dim in zip(x.shape, y.shape, strict=False))
 
     def _assert_convertible_scales(self, scales: np.ndarray, x: tflite_model.Tensor, y: tflite_model.Tensor,
-                                   axes: list[int]):
+                                   axes: list[int]) -> None:
         """Make sure that the `scales` input of the ONNX `Resize` is convertible to TFLite.
             The only way to convert it is to compute the resulting shape of the output, after the input is scaled.
              This is already done by the shape inference.

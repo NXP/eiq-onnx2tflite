@@ -14,12 +14,12 @@ class ArgMax(meta.ONNXOperatorAttributes):
     keepdims: int
     select_last_index: int
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.axis = 0
         self.keepdims = 1
         self.select_last_index = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             match attr.name:
                 case "axis":

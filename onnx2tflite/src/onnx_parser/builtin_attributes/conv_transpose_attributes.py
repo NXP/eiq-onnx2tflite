@@ -26,7 +26,7 @@ class ConvTranspose(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.auto_pad = "NOTSET"
         self.dilations = None
         self.group = 1
@@ -36,7 +36,7 @@ class ConvTranspose(meta.ONNXOperatorAttributes):
         self.pads = None
         self.strides = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "auto_pad":
                 self.auto_pad = attr.s.decode("UTF-8")

@@ -97,7 +97,7 @@ class QGemmConverter(NodeConverter):
             return self.builder.create_transpose_operator_before(t_op, input_idx, [1, 0])
 
     def _handle_c_tensor(self, o_q_gemm: q_gemm_attributes.QGemm, t_op: tflite_model.Operator,
-                         c: tflite_model.Tensor, a_scale, b_scale):
+                         c: tflite_model.Tensor, a_scale, b_scale) -> None:
         if c is None:
             return
 
@@ -132,7 +132,7 @@ class QGemmConverter(NodeConverter):
                  "ONNX Runtime operator QGemm has bias input ('C') with shape that is not supported by TFLite. "
                  "Make sure bias tensor has shape [N] or [1, N].")
 
-    def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList):
+    def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList) -> None:
         """Handle the conversion of the 'alpha' attribute of the ORT QGemm operator.
 
             QGemm carries out the following operation:

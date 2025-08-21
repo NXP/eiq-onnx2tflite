@@ -26,7 +26,7 @@ class ONNXObject:
         self._descriptor = descriptor
         self._init_attributes()
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         """Function is called from the constructor.
         Child classes should initialize their attributes from the '_descriptor' here!
         """
@@ -47,12 +47,12 @@ class ONNXOperatorAttributes:
         self._default_values()
         self._init_attributes()
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         """Child class should assign default values to its attributes or 'None'
         if it doesn't have a default value.
         """
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         """Child class should initialize its attributes with values from the '_descriptor'."""
 
 

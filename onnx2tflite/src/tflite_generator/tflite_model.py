@@ -28,7 +28,7 @@ from onnx2tflite.src.tflite_generator.meta import meta, types
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
 
 
-def _exactly_one_is_none(obj1: Optional, obj2: Optional):
+def _exactly_one_is_none(obj1: Optional, obj2: Optional) -> bool:
     return (obj1 is not None and obj2 is None) or (obj1 is None and obj2 is not None)
 
 
@@ -50,7 +50,7 @@ class Buffer(meta.TFLiteObject):
         self.data = data
         self.type = data_type
 
-    def __data_is_empty(self):
+    def __data_is_empty(self) -> bool:
         """Determine if the buffer data is empty."""
         return (self.data is None) or (self.data.size == 0)
 
@@ -307,7 +307,7 @@ class Shape(meta.IntVector):
 
         return not self.is_symbolic()
 
-    def __check_dims(self):
+    def __check_dims(self) -> None:
         """Check if all dimensions are integers. If not, transform this
         to 'shape_signature'.
         """

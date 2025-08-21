@@ -60,7 +60,7 @@ class SliceConverter(NodeConverter):
         return starts, ends, axes, steps
 
     def _clamp_starts_and_ends(self, starts: list[int], ends: list[int], axes: list[int], steps: list[int],
-                               input_shape: list[int]):
+                               input_shape: list[int]) -> None:
         """Clamp the ONNX Slice attributes 'starts' and 'ends' according to the documentation.
     
         :param starts: ONNX Slice attribute 'starts'
@@ -99,7 +99,7 @@ class SliceConverter(NodeConverter):
 
     def _validate_starts_and_ends(self, starts: list[int], ends: list[int], axes: list[int],
                                   main_input_shape: list[int],
-                                  steps: list[int]):
+                                  steps: list[int]) -> None:
         # Replace negative indices in 'starts' and 'ends'
         for i, axis in enumerate(axes):
             if starts[i] < 0:
@@ -110,7 +110,7 @@ class SliceConverter(NodeConverter):
         # Make sure 'starts' and 'ends' are in the valid ranges
         self._clamp_starts_and_ends(starts, ends, axes, steps, main_input_shape)
 
-    def _try_get_tensor_with_data(self, input_tensor):
+    def _try_get_tensor_with_data(self, input_tensor) -> tflite_model.Tensor | None:
         if input_tensor is not None and not tensor_has_data(input_tensor):  # Tensor has buffer data
             inferred_data = self.inspector.try_get_inferred_tensor_data(input_tensor.name)
             if inferred_data is not None:
@@ -198,7 +198,7 @@ class SliceConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _convert_to_slice(self, t_op, main_input, input_rank, starts, ends, axes):
+    def _convert_to_slice(self, t_op, main_input, input_rank, starts, ends, axes) -> None:
         # Prepare the TFLite parameters 'begin' and 'size'
         begin = [0] * input_rank  # By default, start the slice at 0
         size = main_input.shape.vector.copy()  # By default, end the slice at the end of the dimension
@@ -215,7 +215,7 @@ class SliceConverter(NodeConverter):
         t_op.tmp_inputs = [main_input, begin_tensor, size_tensor]
         t_op.builtin_options = slice_options.Slice()
 
-    def _convert_to_strided_slice(self, t_op, main_input, input_rank, starts, ends, axes, steps):
+    def _convert_to_strided_slice(self, t_op, main_input, input_rank, starts, ends, axes, steps) -> None:
         tf_begin = [0] * input_rank  # By default, start slice from 0
         tf_end = main_input.shape.vector.copy()  # By default, end slice at the end of dimension
         tf_strides = [1] * input_rank  # By default, step by 1

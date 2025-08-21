@@ -12,10 +12,10 @@ from onnx2tflite.src.onnx_parser.meta import meta
 class ScatterND(meta.ONNXOperatorAttributes):
     reduction: str
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.reduction = "none"
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "reduction":
                 self.reduction = attr.s.decode("utf-8")

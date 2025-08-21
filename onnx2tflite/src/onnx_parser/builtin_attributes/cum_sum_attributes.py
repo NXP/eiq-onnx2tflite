@@ -13,11 +13,11 @@ class CumSum(meta.ONNXOperatorAttributes):
     exclusive: int
     reverse: int
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.exclusive = 0
         self.reverse = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "exclusive":
                 self.exclusive = attr.i

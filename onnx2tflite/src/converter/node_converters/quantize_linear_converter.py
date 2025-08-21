@@ -34,7 +34,9 @@ class QuantizeLinearConverter(NodeConverter):
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT8, TensorType.INT16, TensorType.INT32]
     verified_types = [TensorType.FLOAT32]
 
-    def _extract_quant_params(self, ql_attributes: QuantizeLinearAttrs, t_op: tflite_model.Operator):
+    def _extract_quant_params(
+        self, ql_attributes: QuantizeLinearAttrs, t_op: tflite_model.Operator
+    ) -> tuple[np.ndarray, np.ndarray, int]:
         if len(t_op.tmp_inputs) not in {2, 3}:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX QuantizeLinear has '{len(t_op.tmp_inputs)}' inputs!")
 

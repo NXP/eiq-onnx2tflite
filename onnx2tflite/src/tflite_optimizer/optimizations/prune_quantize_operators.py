@@ -130,7 +130,7 @@ class PruneQuantizeOperators(BaseOptimization):
         return len(to_remove) != 0
 
     def _is_quantization_recasting_from_float(self, quantize_input: tflite_model.Tensor,
-                                              next_ops: list[tflite_model.Operator]):
+                                              next_ops: list[tflite_model.Operator]) -> bool:
         r"""Check if 'next_ops' just recast from one type to another. Scale + recalculated zp
         must be the same for all nodes. Input of first Quantize op has to be float to match
         criteria.
@@ -184,7 +184,7 @@ class PruneQuantizeOperators(BaseOptimization):
         return False
 
     def _is_quantization_recasting_from_integer(self, quantize_input: tflite_model.Tensor,
-                                                next_ops: list[tflite_model.Operator]):
+                                                next_ops: list[tflite_model.Operator]) -> bool:
         r"""Check if 'next_ops' just recast from one type to another. Scale + recalculated zp
         must be the same for all nodes. Input of first Quantize op has to be (u)int8 to
         match criteria.
@@ -241,13 +241,13 @@ class PruneQuantizeOperators(BaseOptimization):
 
         return False
 
-    def _same_type_and_quantization(self, a: tflite_model.Tensor, b: tflite_model.Tensor):
+    def _same_type_and_quantization(self, a: tflite_model.Tensor, b: tflite_model.Tensor) -> bool:
         same_type = a.type == b.type
         same_quantization = a.quantization == b.quantization
 
         return same_type and same_quantization
 
-    def _bypass_to_next_quantize_ops(self, input_to_ops, next_quantize_output, quantize_input):
+    def _bypass_to_next_quantize_ops(self, input_to_ops, next_quantize_output, quantize_input) -> None:
         ops_after_next_quantize = input_to_ops.get(next_quantize_output.name, [])
         for op_after_next_quantize in ops_after_next_quantize:
             for index, input_tensor in enumerate(op_after_next_quantize.tmp_inputs):

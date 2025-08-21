@@ -482,7 +482,7 @@ class PatternMatcher:
         builtin_op = builtin_operator_for_op_type(op_type)
         return self.builder.op_code_type_index_map.get(builtin_op, None)
 
-    def _validate_pattern(self):
+    def _validate_pattern(self) -> None:
         """Make sure the `pattern` is valid according to the limitations of the `PatternMatcher`.
         If it isn't, exit with error and a corresponding message.
         """
@@ -495,7 +495,7 @@ class PatternMatcher:
         for block in self.pattern:
             block.validate()
 
-    def _all_ops_are_in_the_model(self):
+    def _all_ops_are_in_the_model(self) -> bool:
         """Determine if it is even possible to find a match for the pattern, based on whether the ops in the pattern
         are in the model.
         """
@@ -646,7 +646,7 @@ class PatternMatcher:
         return False
 
     def _match_rest_of_pattern(self, real_pattern: list, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                               output_to_op: OutputTensorToOpMap, pattern_idx: int):
+                               output_to_op: OutputTensorToOpMap, pattern_idx: int) -> bool:
         """Provided that a part of the pattern has been matched with operators in the TFLite model, extend this matched
          `real_pattern` with new TFLite operators that match the rest of the pattern.
         :param pattern_idx: Index into the `self.patter`, with the first block that has not yet been matched.

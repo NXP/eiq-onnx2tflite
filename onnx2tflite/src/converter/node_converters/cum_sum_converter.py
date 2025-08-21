@@ -30,7 +30,7 @@ class CumSumConverter(NodeConverter):
     tflite_supported_types = [TensorType.INT32, TensorType.INT64, TensorType.FLOAT32]
     verified_types = [TensorType.INT32, TensorType.INT64, TensorType.FLOAT32]
 
-    def _check_axis_type(self, t_op: tflite_model.Operator):
+    def _check_axis_type(self, t_op: tflite_model.Operator) -> None:
         axis = t_op.tmp_inputs[1]
 
         if axis.type == TensorType.INT32:

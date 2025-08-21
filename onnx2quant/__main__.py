@@ -28,7 +28,7 @@ syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s
 logger.addHandler(syslog)
 
 
-def _get_preprocessing_parser():
+def _get_preprocessing_parser() -> argparse.ArgumentParser:
     """Return a parser which handles options used by the pre-processing stage that comes before quantization."""
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--replace-div-with-mul", action=argparse.BooleanOptionalAction, default=True,
@@ -41,7 +41,7 @@ def _get_preprocessing_parser():
     return parser
 
 
-def _parse_arguments():
+def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="onnx2quant",
         description="""
@@ -112,7 +112,7 @@ def _parse_calibration_dataset_mapping(mapped_calibration_dataset: list[str] | s
     return parsed_mapping
 
 
-def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: dict):
+def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: dict) -> None:
     """Create QDQ quantized model based on data defined by calibration dataset.
 
     :param onnx_model: ONNX model in ModelProto format.

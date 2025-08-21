@@ -12,10 +12,10 @@ from onnx2tflite.src.onnx_parser.meta import meta
 class Einsum(meta.ONNXOperatorAttributes):
     equation: str | None
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.equation = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "equation":
                 self.equation = attr.s.decode("utf-8")

@@ -54,7 +54,7 @@ class OneHotConverter(NodeConverter):
 
         return off_value, on_value
 
-    def _check_types(self, t_op: tflite_model.Operator, ops: OpsList):
+    def _check_types(self, t_op: tflite_model.Operator, ops: OpsList) -> None:
         indices = t_op.tmp_inputs[0]
         depth = t_op.tmp_inputs[1]
         values = t_op.tmp_inputs[2]

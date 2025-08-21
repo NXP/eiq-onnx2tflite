@@ -30,7 +30,7 @@ class Tensor(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Tensor) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         # noinspection PyTypeChecker
         self.elem_type = self._descriptor.elem_type  # Warning is probably OK. See 'elem_type' declaration above.
         self.shape = onnx_tensor.TensorShapeProto(self._descriptor.shape)
@@ -58,7 +58,7 @@ class Map(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Map) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         # noinspection PyTypeChecker
         self.key_type = self._descriptor.key_type  # Warning is probably OK. See 'key_type' declaration above.
         self.value_type = TypeProto(self._descriptor.value_type)
@@ -72,7 +72,7 @@ class Optional(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Optional) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.elem_type = TypeProto(self._descriptor.elem_type)
 
 
@@ -85,7 +85,7 @@ class Opaque(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Opaque) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.domain = self._descriptor.domain
         self.name = self._descriptor.name
 
@@ -108,14 +108,14 @@ class TypeProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         """Initialize attributes. Called by parent constructor."""
         self.denotation = self._descriptor.denotation
         # Initialize the types. Only 1 will have a value, others are 'None'.
         self._reset_types()
         self.__init_used_type()
 
-    def __init_used_type(self):
+    def __init_used_type(self) -> None:
         """Find out which 'type' field was used in the model and initialize the
         corresponding attribute.
         """
@@ -132,7 +132,7 @@ class TypeProto(meta.ONNXObject):
         elif self._descriptor.HasField("opaque_type"):
             self.opaque_type = Opaque(self._descriptor.opaque_type)
 
-    def _reset_types(self):
+    def _reset_types(self) -> None:
         """Set all 'type' attributes to 'None'."""
         self.tensor_type = None
         self.sequence_type = None
@@ -152,7 +152,7 @@ class ValueInfoProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.ValueInfoProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.name = self._descriptor.name
         self.type = TypeProto(self._descriptor.type)
         self.doc_string = self._descriptor.doc_string
@@ -176,7 +176,7 @@ class OperatorSetIdProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.OperatorSetIdProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.domain = self._descriptor.domain
         self.version = self._descriptor.version
 
@@ -319,7 +319,7 @@ class NodeProto(meta.ONNXObject):
         super().__init__(descriptor)
         self.version = version
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         """Initialize attributes. Called from parent constructor."""
         self.inputs = self._descriptor.input
         self.outputs = self._descriptor.output
@@ -394,7 +394,7 @@ class GraphProto(meta.ONNXObject):
         self._init_node_attributes = init_node_attributes
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         """Initialize attributes. Called from parent constructor."""
         self.name = self._descriptor.name
         self.nodes = RepeatedNodeProto(self._descriptor.node, self._opset_imports, self._init_node_attributes)
@@ -445,7 +445,7 @@ class ModelProto(meta.ONNXObject):
             logger.e(logger.Code.INVALID_INPUT, f"Cannot initialize ONNX model from object of type '{type(source)}'! "
                                                 f"Expected type 'onnx.ModelProto' or 'string'.")
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         """Initialize object attributes from the '_descriptor' attribute of the parent object."""
         self.ir_version = self._descriptor.ir_version
         self.opset_imports = RepeatedOperatorSetIdProto(self._descriptor.opset_import)

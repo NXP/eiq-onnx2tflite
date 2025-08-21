@@ -244,14 +244,14 @@ def quantize_int32(data: np.ndarray, scale: list[float], zero_point: list[int]) 
     return np.clip(new_data, -2_147_483_648, 2_147_483_648).astype(np.int32)
 
 
-def dequantize(data: np.ndarray, scale: list[float], zero_point: list[int]) -> np.ndarray:
+def dequantize(data: np.ndarray, scale: list[float] | np.ndarray, zero_point: list[int] | np.ndarray) -> np.ndarray:
     return np.multiply(np.subtract(np.array(data, dtype=np.float32), zero_point), scale, dtype=np.float32)
 
 
 def re_quantize_static_tensor(
         builder: "model_builder.ModelBuilder",
         tflite_tensor: tflite_model.Tensor,
-        to_type: tflTensorType.TensorType,
+        to_type: tflTensorType.TensorType | int,
         new_scale: list[float] | None = None,
         new_zero_point: list[int] | None = None,
 ) -> tflite_model.Tensor:
