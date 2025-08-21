@@ -51,7 +51,8 @@ class MultinomialConverter(NodeConverter):
 
         if attrs.seed is None:
             # ONNX would auto-generate a seed in this case. TFLite requires a seed, so we must generate a random one.
-            seed_int = np.random.randint(np.iinfo("int32").min, np.iinfo("int32").max)
+            rng = np.random.default_rng()
+            seed_int = rng.integers(np.iinfo("int32").min, np.iinfo("int32").max)
 
         else:
             # ONNX `Multinomial` supports a `seed` attribute which is type `float32`. TFLite `Multinomial` also has a
