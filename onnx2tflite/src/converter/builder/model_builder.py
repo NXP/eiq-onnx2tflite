@@ -672,6 +672,7 @@ class ModelBuilder:
         if to_remove is not None:
             collection.remove(to_remove)
 
+    # noinspection PyMethodMayBeStatic
     def _tensors_similar(self, t_tensor1: tflite_model.Tensor, t_tensor2: tflite_model.Tensor) -> bool:
         """Determine if the given TFLite tensors have the same shape and
         datatype.

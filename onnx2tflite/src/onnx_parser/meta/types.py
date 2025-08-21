@@ -72,3 +72,6 @@ def to_numpy_type(o_type: onnx.TensorProto.DataType) -> np.ScalarType:
     elif o_type == onnx.TensorProto.BFLOAT16:
         # numpy doesn't support bfloat16, and neither does TFLite. Perhaps convert to float32 if needed.
         logger.e(logger.Code.NOT_IMPLEMENTED, "ONNX DataType 'BFLOAT16' is not yet supported.")
+
+    else:
+        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"ONNX DataType '{o_type}' is not yet supported.")

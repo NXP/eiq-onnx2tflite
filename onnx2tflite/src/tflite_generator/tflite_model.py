@@ -35,7 +35,7 @@ def _exactly_one_is_none(obj1: Optional, obj2: Optional) -> bool:
 class Buffer(meta.TFLiteObject):
     """'data' is an array of any type, but MUST have the correct 'dtype' specified!"""
 
-    data: np.ndarray
+    data: np.ndarray | None
     type: libTensorType.TensorType
 
     """ IMPORTANT! The following attributes are used only by 'ModelBuilder' 

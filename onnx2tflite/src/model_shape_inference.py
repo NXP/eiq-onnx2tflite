@@ -330,7 +330,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 else:
                     assert input_shape[i] == 1 or type(input_shape[i]) != int  # noqa: E721
                     if self.verbose_ > 0 and type(input_shape[i]) != int:  # noqa: E721
-                        logger.debug(
+                        logger.d(
                             f"Symbolic dimensions in input shape of op: '{node.op_type}' node: '{node.name}'. "
                             f"Assuming the dimension '{input_shape[i]}' at index {i} of the input to be equal to 1."
                         )

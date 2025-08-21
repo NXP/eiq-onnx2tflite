@@ -211,8 +211,8 @@ class ResizeConverter(NodeConverter):
         elif o_resize.mode == "nearest":
             t_op.builtin_options = ResizeNearestNeighbor(align_corners, half_pixel)
 
-            if (o_resize.coordinate_transformation_mode == "asymmetric" and o_resize.nearest_mode == "floor") or (o_resize.coordinate_transformation_mode != "asymmetric" and \
-                    o_resize.nearest_mode == "round_prefer_ceil"):
+            if ((o_resize.coordinate_transformation_mode == "asymmetric" and o_resize.nearest_mode == "floor") or
+                (o_resize.coordinate_transformation_mode != "asymmetric" and o_resize.nearest_mode == "round_prefer_ceil")):
                 # TFLite can handle this natively.
                 pass
             # I haven't found a way to represent this in TFLite. There will always be a rounding error.

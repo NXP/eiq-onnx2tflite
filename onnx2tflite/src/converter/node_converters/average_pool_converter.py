@@ -33,7 +33,7 @@ class AveragePoolConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]  # INT8 not supported by ORT
 
     def _convert_1d_average_pool(self, node: onnx_model.NodeProto,
-                                 t_op: tflite_model.Operator) -> [tflite_model.Operator]:
+                                 t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'AveragePool' operator with a 1D kernel to TFLite 'AveragePool2D'.
         TFLite doesn't support 1D AveragePool, but this behaviour can be represented using
                Reshape -> AveragePool2D -> Reshape.
@@ -88,7 +88,7 @@ class AveragePoolConverter(NodeConverter):
         return [reshape1] + converted_average_pool_ops + [reshape2]
 
     def _convert_2d_average_pool(self, node: onnx_model.NodeProto,
-                                 t_op: tflite_model.Operator) -> [tflite_model.Operator]:
+                                 t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'AveragePool' operator with a 2D kernel to TFLite 'AveragePool2D'."""
         attrs = cast(onnx_average_pool_attributes.AveragePool, node.attributes)
 
@@ -160,7 +160,7 @@ class AveragePoolConverter(NodeConverter):
 
         return ops.flatten()
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> [tflite_model.Operator]:
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'AveragePool' operator to TFLite 'AveragePool2D' and 'Reshape' operators."""
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)

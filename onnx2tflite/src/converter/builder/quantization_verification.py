@@ -150,6 +150,7 @@ class FullyConnectedWeightZeroPoint(QuantizationRule):
         else:
             return True
 
+        # noinspection PyTypeChecker
         return all(zp == zero_point for zp in weights.quantization.zero_point)
 
     def __str__(self):

@@ -105,7 +105,7 @@ class MatMulConverter(NodeConverter):
 
         return ops
 
-    # noinspection PyPep8Naming
+    # noinspection PyPep8Naming,PyMethodMayBeStatic
     def _convert_formatless_ND(self, t_op) -> OpsList:  # noqa: N802
         """Convert 'MatMul' with formatless input tensors of rank 2 up to 5. Broadcasting is supported out of box.
         """

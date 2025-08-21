@@ -35,7 +35,6 @@ class ShapeConverter(NodeConverter):
 
         :param shape_op: A 'Shape' operator after which the 'Gather' operator will be created.
         :param ops_to_add: A list of operators that will be added to the model later.
-        :param builder: A ModelBuilder object.
         """
         input_rank = shape_op.tmp_inputs[0].rank
 
@@ -69,6 +68,7 @@ class ShapeConverter(NodeConverter):
         slice_op.tmp_outputs = [previous_op.tmp_outputs[0]]
         previous_op.tmp_outputs = [slice_input]
 
+    # noinspection PyMethodMayBeStatic
     def _validate_index(self, index: int, default_value: int, rank: int) -> int:
         if index is None:
             index = default_value

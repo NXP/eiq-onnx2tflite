@@ -73,7 +73,7 @@ class TFLiteVector(TFLiteObject):
     def remove(self, item) -> None:
         self.vector.remove(item)
 
-    def get(self, index: int) -> TFLiteObject | int | float | bool:
+    def get(self, index: int) -> type[TFLiteObject] | int | float | bool:
         return self.vector[index]
 
     def get_last(self) -> TFLiteObject | int | float | bool | None:
@@ -121,7 +121,7 @@ class TFLiteAtomicVector(TFLiteVector):
     def __eq__(self, other):
         return self.vector == other.vector
 
-    def gen_tflite(self, builder: fb.Builder) -> int:
+    def gen_tflite(self, builder: fb.Builder) -> int | None:
         """Generates TFLite code for the vector"""
         if (not self.gen_empty) and (len(self.vector) == 0):
             # Nothing to generate

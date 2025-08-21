@@ -263,6 +263,7 @@ class GemmConverter(NodeConverter):
             t.tmp_buffer.data = np.transpose(t.tmp_buffer.data)
             t.shape = tflite_model.Shape(list(t.tmp_buffer.data.shape))
 
+            return None
         else:
             # Dynamic tensor -> prepend a Transpose op.
             return self.context.tflite_builder.create_transpose_operator_before(t_op, input_idx, [1, 0])

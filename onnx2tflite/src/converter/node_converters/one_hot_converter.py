@@ -54,7 +54,7 @@ class OneHotConverter(NodeConverter):
 
         return off_value, on_value
 
-    def _check_types(self, t_op: tflite_model.Operator, ops: OpsList) -> None:
+    def _check_types(self, t_op: tflite_model.Operator) -> None:
         indices = t_op.tmp_inputs[0]
         depth = t_op.tmp_inputs[1]
         values = t_op.tmp_inputs[2]
@@ -281,7 +281,7 @@ class OneHotConverter(NodeConverter):
 
         axis = self._handle_tensor_formats(t_op, axis, ops)
 
-        self._check_types(t_op, ops)
+        self._check_types(t_op)
 
         t_op.builtin_options = OneHot(axis)
 

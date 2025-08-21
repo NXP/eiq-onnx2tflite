@@ -37,7 +37,7 @@ class ConcatConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         self.assert_type_allowed(t_op.tmp_outputs[0].type)
 
-        attrs = cast(concat_attributes, node.attributes)
+        attrs = cast(concat_attributes.Concat, node.attributes)
 
         axis = attrs.axis
         rank = len(t_op.tmp_inputs[0].shape.vector)

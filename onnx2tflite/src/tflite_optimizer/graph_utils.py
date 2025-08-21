@@ -90,7 +90,7 @@ op_type_to_builtin_operator_map = {
 }
 
 
-def builtin_operator_for_op_type(op_type: str) -> BuiltinOperator:
+def builtin_operator_for_op_type(op_type: str) -> BuiltinOperator | int:
     builtin_op = op_type_to_builtin_operator_map.get(op_type)
     if builtin_op is None:
         logger.e(logger.Code.INTERNAL_ERROR, f"PatternMatcher doesn't support `{op_type}` yet.")

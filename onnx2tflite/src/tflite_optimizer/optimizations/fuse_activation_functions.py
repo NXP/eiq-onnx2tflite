@@ -127,7 +127,7 @@ class FuseActivationFunctions(BaseOptimization):
         BuiltinOperator.CONCATENATION,
     ]
 
-    def _act_fun_type_for_op(self, op: tflite_model.Operator) -> ActivationFunctionType:
+    def _act_fun_type_for_op(self, op: tflite_model.Operator) -> ActivationFunctionType | int | None:
         if operator_is_type(op, "Relu", self._builder):
             return ActivationFunctionType.RELU
         if operator_is_type(op, "ReluN1To1", self._builder):
@@ -138,6 +138,8 @@ class FuseActivationFunctions(BaseOptimization):
             return ActivationFunctionType.TANH
         if operator_is_type(op, "Sign", self._builder):
             return ActivationFunctionType.SIGN_BIT
+
+        return None
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(

@@ -173,7 +173,7 @@ class MaxPoolConverter(NodeConverter):
         """Convert the ONNX 'MaxPool' operator to TFLite 'MaxPool2D' and 'Reshape' operators."""
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
-        attrs = cast(onnx_max_pool_attributes, node.attributes)
+        attrs = cast(onnx_max_pool_attributes.MaxPool, node.attributes)
 
         kernel_rank = len(attrs.kernel_shape)
         if kernel_rank == 1:

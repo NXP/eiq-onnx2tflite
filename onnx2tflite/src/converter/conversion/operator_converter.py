@@ -210,7 +210,7 @@ class OperatorConverter:
         """Find the best way to convert all operators in the ONNX model and convert them to TFLite."""
         # A list of operators (op_type, name), that have been skipped because their output data was inferred during
         #  shape inference.
-        skipped_ops: list[(str, str)] = []
+        skipped_ops: list[tuple[str, str]] = []
 
         def run_conversion_safe(conversion_fn) -> None:
             has_inconvertible_node = False

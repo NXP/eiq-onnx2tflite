@@ -55,7 +55,7 @@ class QLinearAveragePoolConverter(NodeConverter):
 
     def _handle_padding(self, t_op: tflite_model.Operator,
                         q_ap_attributes: q_linear_average_pool_attributes.QLinearAveragePool,
-                        builder: model_builder, input_zero_point: [int], input_type: TensorType,
+                        builder: model_builder, input_zero_point: list[int], input_type: TensorType,
                         ops_to_add: list[tflite_model.Operator]) -> None:
         """Convert the padding of the ONNX QLinearAveragePool operator according to its attributes. Insert any extra
              necessary operators into the 'ops_to_add' list. If the padding cannot be converted, exit with appropriate

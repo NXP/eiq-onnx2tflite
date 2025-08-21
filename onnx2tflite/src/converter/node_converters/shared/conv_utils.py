@@ -176,6 +176,7 @@ class _InputTensorsSplitter:
 
             target_list.append(conv_input_tensor)
 
+    # noinspection PyMethodMayBeStatic
     def _create_split_op(self, builder, groups, input_tensor, axis) -> TFOperator:
         axis_tensor = builder.create_tensor_for_data(np.asarray([axis], np.int32), "split_dim_")
         input_split_op = TFOperator(builtin_options=split_options.Split(groups))
