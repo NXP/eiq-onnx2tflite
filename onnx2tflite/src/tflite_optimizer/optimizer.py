@@ -159,7 +159,7 @@ class Optimizer:
                     logger.w(f"Optimization blacklist contains invalid optimization '{o}'.")
 
         # Execute the optimizations until the model is fully optimized.
-        for i in range(self.optimization_application_limit):
+        for _ in range(self.optimization_application_limit):
             run_again = False
 
             for optimization in optimizations:

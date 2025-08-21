@@ -235,7 +235,7 @@ class ScatterNDConverter(NodeConverter):
 
         # If any inputs are `channels last`, turn them to `channels first` to match the ONNX models. Otherwise, the
         #  shapes would not match and the `indices` would refer to different data.
-        for i, inpt in enumerate(t_op.tmp_inputs):
+        for i, _ in enumerate(t_op.tmp_inputs):
             self._ensure_tensor_is_same_as_in_onnx_model(t_op, i, pre_ops)
 
         if y.tensor_format.is_channels_last():

@@ -386,7 +386,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 
         rng = np.random.default_rng(seed)
 
-        for idx in range(num_samples):
+        for _ in range(num_samples):
             sample = {}
 
             for input_name, input_metadata in inputs.items():
