@@ -19,9 +19,9 @@ class Split(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.SplitOptions, BuiltinOperator.SPLIT)
         self.num_splits = num_splits
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libSplitOptions.Start(builder)
-        
+
         libSplitOptions.AddNumSplits(builder, self.num_splits)
 
         return libSplitOptions.End(builder)

@@ -8,21 +8,20 @@
 import numpy as np
 
 import onnx2tflite.lib.tflite.Padding as tflPadding
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options, reshape_options
 
 
 class QLinearGlobalAveragePoolConverter(NodeConverter):
-    node = 'QLinearGlobalAveragePool'
+    node = "QLinearGlobalAveragePool"
 
     def _convert_2d_q_linear_global_average_pool(self, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the 2D ONNX Runtime QLinearGlobalAveragePool operator to TFLite `AveragePool2D`. """
-
+        """Convert the 2D ONNX Runtime QLinearGlobalAveragePool operator to TFLite `AveragePool2D`."""
         # Prepare the input and output tensors.
         output_tensor = t_op.tmp_outputs[0]
         input_tensor = t_op.tmp_inputs[0]
@@ -81,7 +80,7 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
     def _convert_q_linear_global_average_pool_and_surround_with_reshapes(
             self, t_op: tflite_model.Operator, reshape_1_output_shape: list[int],
             reshape_2_input_shape: list[int], reshape_2_output_shape: list[int]) -> list[tflite_model.Operator]:
-        """ Convert an ONNX QLinearGlobalAveragePool to TFLite AveragePool2D and surround it with 2 Reshape operators.
+        """Convert an ONNX QLinearGlobalAveragePool to TFLite AveragePool2D and surround it with 2 Reshape operators.
             The Reshape operators will change the shape to 4D, according to input parameters.
 
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
@@ -124,10 +123,9 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
 
     def _convert_more_than_2d_q_linear_global_average_pool(self, t_op: tflite_model.Operator
                                                            ) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime QLinearGlobalAveragePool operator with a kernel of at least 3 dimensions, to TFLite
-             `AveragePool2D` and extra `Reshape` operators.
+        """Convert the ONNX Runtime QLinearGlobalAveragePool operator with a kernel of at least 3 dimensions, to TFLite
+        `AveragePool2D` and extra `Reshape` operators.
         """
-
         input_rank = t_op.tmp_inputs[0].rank
         if input_rank < 5:
             logger.e(logger.Code.INTERNAL_ERROR,
@@ -161,10 +159,9 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
                                                                                      reshape_2_output_shape)
 
     def _convert_1d_q_linear_global_average_pool(self, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime QLinearGlobalAveragePool operator with a 1D kernel, to TFLite `AveragePool2D` and
-             extra `Reshape` operators.
+        """Convert the ONNX Runtime QLinearGlobalAveragePool operator with a 1D kernel, to TFLite `AveragePool2D` and
+        extra `Reshape` operators.
         """
-
         input_rank = t_op.tmp_inputs[0].rank
         if input_rank != 3:
             logger.e(logger.Code.INTERNAL_ERROR, f"Input tensor has '{input_rank}' dimensions! Expected 3.")
@@ -197,22 +194,20 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
                                                                                      reshape_2_output_shape)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime QLinearGlobalAveragePool operator to TFLite `AveragePool2D`. """
-
+        """Convert the ONNX Runtime QLinearGlobalAveragePool operator to TFLite `AveragePool2D`."""
         rank = t_op.tmp_inputs[0].rank
 
         if rank == 3:
             # 1D kernel
             return self._convert_1d_q_linear_global_average_pool(t_op)
 
-        elif rank == 4:
+        if rank == 4:
             # 2D kernel
             return self._convert_2d_q_linear_global_average_pool(t_op)
 
-        elif rank >= 5:
+        if rank >= 5:
             # kernel with at least 3 dimensions
             return self._convert_more_than_2d_q_linear_global_average_pool(t_op)
 
-        else:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearGlobalAveragePool with '{rank}' "
-                                                        f"dimensions is not possible!")
+        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearGlobalAveragePool with '{rank}' "
+                                                    f"dimensions is not possible!")

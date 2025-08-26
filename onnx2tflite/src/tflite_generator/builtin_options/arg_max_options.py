@@ -7,11 +7,11 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import ArgMaxOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class ArgMax(meta.BuiltinOptions):
@@ -21,7 +21,7 @@ class ArgMax(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.ArgMaxOptions, BuiltinOperator.ARG_MAX)
         self.output_type = output_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ArgMaxOptions.Start(builder)
 
         ArgMaxOptions.AddOutputType(builder, self.output_type)

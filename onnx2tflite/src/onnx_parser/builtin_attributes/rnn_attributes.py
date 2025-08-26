@@ -4,7 +4,7 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
@@ -24,16 +24,16 @@ class RNN(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.activation_alpha = None
         self.activation_beta = None
         self.activations = None
         self.clip = None
-        self.direction = 'forward'
+        self.direction = "forward"
         self.hidden_size = None
         self.layout = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "activation_alpha":
                 self.activation_alpha = meta.ONNXFloatListAttribute(attr)

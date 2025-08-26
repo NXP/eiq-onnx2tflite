@@ -8,23 +8,23 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import CastOptions as libCastOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Cast(meta.BuiltinOptions):
     in_data_type: TensorType
     out_data_type: TensorType
 
-    def __init__(self, in_data_type: TensorType, out_data_type: TensorType) -> None:
+    def __init__(self, in_data_type: TensorType | int, out_data_type: TensorType | int) -> None:
         super().__init__(BuiltinOptions.CastOptions, BuiltinOperator.CAST)
         self.in_data_type = in_data_type
         self.out_data_type = out_data_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libCastOptions.Start(builder)
 
         libCastOptions.AddInDataType(builder, self.in_data_type)

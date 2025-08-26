@@ -4,37 +4,37 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    meta
+"""meta
 
 Definitions of classes, that other classes in /src/onnx_parser/ inherit from.
 """
 
-from typing import Iterable, Any, Callable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 import onnx
 
 
 class ONNXObject:
-    """ Parent class of most objects in the /onnx_parser/ directory.
-        Encapsulates the *Proto descriptor.
+    """Parent class of most objects in the /onnx_parser/ directory.
+    Encapsulates the *Proto descriptor.
     """
+
     _descriptor: Any  # Type depends on particular onnx objects. Specified in child classes.
 
     def __init__(self, descriptor: Any) -> None:
         self._descriptor = descriptor
         self._init_attributes()
 
-    def _init_attributes(self):
-        """ Function is called from the constructor.
-            Child classes should initialize their attributes from the '_descriptor' here!
+    def _init_attributes(self) -> None:
+        """Function is called from the constructor.
+        Child classes should initialize their attributes from the '_descriptor' here!
         """
-        pass
 
 
 class ONNXOperatorAttributes:
-    """ Parent class of every class in the '/onnx_parser/builtin_attributes/' directory.
-        Represents an operator with its specific attributes.
+    """Parent class of every class in the '/onnx_parser/builtin_attributes/' directory.
+    Represents an operator with its specific attributes.
     """
 
     """ Protobuf descriptor. Holds barely structured data, that represents the individual
@@ -47,19 +47,18 @@ class ONNXOperatorAttributes:
         self._default_values()
         self._init_attributes()
 
-    def _default_values(self):
-        """ Child class should assign default values to its attributes or 'None'
-            if it doesn't have a default value.
+    def _default_values(self) -> None:
+        """Child class should assign default values to its attributes or 'None'
+        if it doesn't have a default value.
         """
-        pass
 
-    def _init_attributes(self):
-        """ Child class should initialize its attributes with values from the '_descriptor'. """
-        pass
+    def _init_attributes(self) -> None:
+        """Child class should initialize its attributes with values from the '_descriptor'."""
 
 
 class ONNXScalarListAttribute(list[int | float]):
-    """ Class represents an ONNX operator attribute, that is a list of scalar values and has 'name' and 'type'. """
+    """Class represents an ONNX operator attribute, that is a list of scalar values and has 'name' and 'type'."""
+
     _descriptor: onnx.AttributeProto
 
     name: str
@@ -83,21 +82,21 @@ class ONNXScalarListAttribute(list[int | float]):
 
 
 class ONNXIntListAttribute(ONNXScalarListAttribute):
-    """ List of ONNX integer attributes (ints). """
+    """List of ONNX integer attributes (ints)."""
 
     def __init__(self, descriptor: onnx.AttributeProto):
         super().__init__(descriptor, lambda x: x.ints)
 
 
 class ONNXFloatListAttribute(ONNXScalarListAttribute):
-    """ List of ONNX float attributes (floats). """
+    """List of ONNX float attributes (floats)."""
 
     def __init__(self, descriptor: onnx.AttributeProto):
         super().__init__(descriptor, lambda x: x.floats)
 
 
 class ONNXStringListAttribute(list[str]):
-    """ List of ONNX string attributes (strings). """
+    """List of ONNX string attributes (strings)."""
 
     _descriptor: onnx.AttributeProto
 

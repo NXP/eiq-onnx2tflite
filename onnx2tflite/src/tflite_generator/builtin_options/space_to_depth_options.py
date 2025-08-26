@@ -7,10 +7,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import SpaceToDepthOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class SpaceToDepth(meta.BuiltinOptions):
@@ -20,7 +20,7 @@ class SpaceToDepth(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.SpaceToDepthOptions, BuiltinOperator.SPACE_TO_DEPTH)
         self.block_size = block_size
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         SpaceToDepthOptions.Start(builder)
 
         SpaceToDepthOptions.SpaceToDepthOptionsAddBlockSize(builder, self.block_size)

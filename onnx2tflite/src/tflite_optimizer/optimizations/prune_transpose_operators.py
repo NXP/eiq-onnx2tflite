@@ -15,42 +15,42 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import RuleOr, TensorHasData,
 
 
 class FuseTransposeOperators(BaseOptimization):
-    """ Remove some `Transpose` operators in the following pattern.
+    """Remove some `Transpose` operators in the following pattern.
 
-               │  'x'
-         ┌─────▼─────┐
-         │ Transpose │
-         └─────┬─────┘                                          │  'x'
-           ┌───┴──── ... ────────┐  'y'      ─────►         ┌───┴──── ... ────────┐   ('y' is not in the model anymore)
-     ┌─────▼─────┐         ┌─────▼─────┐              ┌─────▼─────┐         ┌─────▼─────┐
-     │ Transpose │   ...   │ Transpose │              │ Transpose │   ...   │ Transpose │
-     └─────┬─────┘         └─────┬─────┘              └─────┬─────┘         └─────┬─────┘
-           │                     │  'z'                     │                     │  'z'
-     """
+              │  'x'
+        ┌─────▼─────┐
+        │ Transpose │
+        └─────┬─────┘                                          │  'x'
+          ┌───┴──── ... ────────┐  'y'      ─────►         ┌───┴──── ... ────────┐   ('y' is not in the model anymore)
+    ┌─────▼─────┐         ┌─────▼─────┐              ┌─────▼─────┐         ┌─────▼─────┐
+    │ Transpose │   ...   │ Transpose │              │ Transpose │   ...   │ Transpose │
+    └─────┬─────┘         └─────┬─────┘              └─────┬─────┘         └─────┬─────┘
+          │                     │  'z'                     │                     │  'z'
+    """
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Transpose'], ['x', 'perm1'], ['y']),
-                MultipleSameOps(['Transpose'], ['y', 'perm2'])  # Nothing other than `Transpose` ops can use `y`.
+                Op(["Transpose"], ["x", "perm1"], ["y"]),
+                MultipleSameOps(["Transpose"], ["y", "perm2"])  # Nothing other than `Transpose` ops can use `y`.
             ],
             [
-                TensorsHaveData(['perm1', 'perm2']),
-                TensorIsNotModelOutput('y')
+                TensorsHaveData(["perm1", "perm2"]),
+                TensorIsNotModelOutput("y")
             ])
 
         to_remove = []
         for [leading_transpose, following_transposes], tensor_map, _, _ in matcher.match_patterns():
-            x = tensor_map['x']
-            perm1 = tensor_map['perm1'].tmp_buffer.data
+            x = tensor_map["x"]
+            perm1 = tensor_map["perm1"].tmp_buffer.data
 
             # Remove the leading transpose.
             for second_transpose in following_transposes:
                 # Combine the permutations for a new permutation of the second `Transpose`.
                 perm2 = second_transpose.tmp_inputs[1].tmp_buffer.data
                 combined_perm = np.array(combine_permutations(perm1, perm2), np.int32)
-                second_transpose.tmp_inputs[1] = self._builder.create_tensor_for_data(combined_perm, 'perm')
+                second_transpose.tmp_inputs[1] = self._builder.create_tensor_for_data(combined_perm, "perm")
 
                 # Compute the output shape of the second `Transpose`.
                 new_output_shape = apply_permutation_to(x.shape.vector, combined_perm)
@@ -68,26 +68,26 @@ class FuseTransposeOperators(BaseOptimization):
 
 
 class RemoveIdentityTransposeOperators(BaseOptimization):
-    """ Remove operators that match the following pattern.
+    """Remove operators that match the following pattern.
 
-                     │  'x'
-               ┌─────▼─────┐
-               │ Transpose ◄───── identity permutation
-               └─────┬─────┘
-                     │  'y'
+          │  'x'
+    ┌─────▼─────┐
+    │ Transpose ◄───── identity permutation
+    └─────┬─────┘
+          │  'y'
     """
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Transpose'], ['x', 'perm'], ['y'])
+                Op(["Transpose"], ["x", "perm"], ["y"])
             ],
             [
-                TensorHasData('perm'),  # Note: identity permutation must be checked later.
+                TensorHasData("perm"),  # Note: identity permutation must be checked later.
                 RuleOr(
-                    TensorIsNotModelOutput('x'),
-                    TensorIsNotModelOutput('y')
+                    TensorIsNotModelOutput("x"),
+                    TensorIsNotModelOutput("y")
                     # If both 'x' and 'y' are model outputs, the `Transpose` cannot be removed. If the op was removed,
                     #  its input and output would be combined into 1 tensor, which would have to represent 2 model
                     #  outputs with 2 different names, which is not possible.
@@ -99,11 +99,11 @@ class RemoveIdentityTransposeOperators(BaseOptimization):
             if not self._builder.operator_can_be_skipped(transpose):
                 continue
 
-            x = tensor_map['x']
-            y = tensor_map['y']
+            x = tensor_map["x"]
+            y = tensor_map["y"]
 
             # Check if the `Transpose` is doing nothing.
-            permutation = tensor_map['perm'].tmp_buffer.data
+            permutation = tensor_map["perm"].tmp_buffer.data
             if not np.allclose(permutation, range(x.rank)):
                 # Not and identity permutation.
                 continue

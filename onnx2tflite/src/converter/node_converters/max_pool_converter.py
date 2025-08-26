@@ -10,24 +10,22 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
 import onnx2tflite.src.onnx_parser.builtin_attributes.max_pool_attributes as onnx_max_pool_attributes
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
-from onnx2tflite.src.converter.conversion import translator, common
+from onnx2tflite.src import logger
+from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
-from onnx2tflite.src.tflite_generator.builtin_options import (
-    max_pool_2d_options as tfl_max_pool_2d_options,
-    reshape_options as tfl_reshape_options
-)
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import max_pool_2d_options as tfl_max_pool_2d_options
+from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class MaxPoolConverter(NodeConverter):
-    node = 'MaxPool'
+    node = "MaxPool"
 
     onnx_supported_types = FLOATS + [TensorType.UINT8, TensorType.INT8]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/pooling.cc#L420-L440
@@ -35,14 +33,13 @@ class MaxPoolConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT8]
 
     def _convert_1d_max_pool(self, o_mp: onnx_max_pool_attributes.MaxPool, t_op: tflite_model.Operator) -> OpsList:
-        """ Convert the ONNX 'MaxPool' operator with a 1D kernel to TFLite 'MaxPool2D'.
-             TFLite doesn't support 1D MaxPool, but this behaviour can be represented using
-                    Reshape -> MaxPool2D -> Reshape.
-             The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary
-              dimension.
+        """Convert the ONNX 'MaxPool' operator with a 1D kernel to TFLite 'MaxPool2D'.
+        TFLite doesn't support 1D MaxPool, but this behaviour can be represented using
+               Reshape -> MaxPool2D -> Reshape.
+        The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary
+         dimension.
 
         """
-
         for dim in t_op.tmp_inputs[0].shape.vector:
             if (not isinstance(dim, int)) or dim < 0:
                 # Dynamic shapes make it difficult to use the Reshape operators.
@@ -101,13 +98,11 @@ class MaxPoolConverter(NodeConverter):
 
     # noinspection PyMethodMayBeStatic
     def _get_pad_constant_value(self, input_type: TensorType) -> np.ndarray:
-        """
-        Get scalar NumPy array with constant value used as constant value for 'Pad' operator.
+        """Get scalar NumPy array with constant value used as constant value for 'Pad' operator.
 
         :param input_type: Input tensor type.
         :return: Scalar array with single minimum value of given type.
         """
-
         match input_type:
             case TensorType.INT8:
                 return np.asarray([np.iinfo(np.int8).min], dtype=np.int8)
@@ -116,11 +111,10 @@ class MaxPoolConverter(NodeConverter):
             case TensorType.FLOAT32:
                 return np.asarray([np.finfo(np.float32).min], dtype=np.float32)
             case _:
-                logger.e(logger.Code.INVALID_TYPE, f"Unexpected input type for MaxPool operator.")
+                logger.e(logger.Code.INVALID_TYPE, "Unexpected input type for MaxPool operator.")
 
     def _convert_2d_max_pool(self, o_mp: onnx_max_pool_attributes.MaxPool, t_op: tflite_model.Operator) -> OpsList:
-        """ Convert the ONNX 'MaxPool' operator with a 2D kernel to TFLite 'MaxPool2D'. """
-
+        """Convert the ONNX 'MaxPool' operator with a 2D kernel to TFLite 'MaxPool2D'."""
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -176,28 +170,26 @@ class MaxPoolConverter(NodeConverter):
         return ops
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'MaxPool' operator to TFLite 'MaxPool2D' and 'Reshape' operators. """
-
+        """Convert the ONNX 'MaxPool' operator to TFLite 'MaxPool2D' and 'Reshape' operators."""
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
-        attrs = cast(onnx_max_pool_attributes, node.attributes)
+        attrs = cast(onnx_max_pool_attributes.MaxPool, node.attributes)
 
         kernel_rank = len(attrs.kernel_shape)
         if kernel_rank == 1:
             return self._convert_1d_max_pool(attrs, t_op).flatten()
 
-        elif kernel_rank == 2:
+        if kernel_rank == 2:
             return self._convert_2d_max_pool(attrs, t_op).flatten()
 
-        else:
-            num_ones = attrs.kernel_shape.count(1)
-            if kernel_rank - num_ones <= 2:
-                # Enough dimensions are '1', so the input can be reshaped to 4D and a MaxPool2D can be applied.
-                # Not sure if this is a realistic scenario and worth putting time into.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}'"
-                         f" is not yet implemented.")
+        num_ones = attrs.kernel_shape.count(1)
+        if kernel_rank - num_ones <= 2:
+            # Enough dimensions are '1', so the input can be reshaped to 4D and a MaxPool2D can be applied.
+            # Not sure if this is a realistic scenario and worth putting time into.
+            logger.e(logger.Code.NOT_IMPLEMENTED,
+                     f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}'"
+                     f" is not yet implemented.")
 
-            else:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!")
+        else:
+            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
+                     f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!")

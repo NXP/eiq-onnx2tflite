@@ -12,27 +12,27 @@ from onnx2tflite.src import logger
 
 
 class ReplaceConstantWithStaticTensor(PreprocessingStep):
-    """ Remove `Constant` nodes and assign the static data directly to the output tensor. This can allow other
-         preprocessing steps to improve the model.
+    """Remove `Constant` nodes and assign the static data directly to the output tensor. This can allow other
+    preprocessing steps to improve the model.
     """
 
     def disabling_flag(self) -> str:
-        return '--no-replace-constant-with-static-tensor'
+        return "--no-replace-constant-with-static-tensor"
 
-    def run(self):
+    def run(self) -> None:
         to_remove = []
         for node in self.model.graph.node:
-            if node.op_type != 'Constant':
+            if node.op_type != "Constant":
                 continue
 
             new_output_tensor = None
             for attr in node.attribute:
                 match attr.name:
-                    case 'value':
+                    case "value":
                         new_output_tensor = attr.t
 
                     case _:
-                        logger.d(f'ReplaceConstantWithStaticTensor: attribute `{attr.name}` is not yet supported.')
+                        logger.d(f"ReplaceConstantWithStaticTensor: attribute `{attr.name}` is not yet supported.")
 
             # Add the `output_tensor` to `initializers`.
             new_output_tensor.name = node.output[0]

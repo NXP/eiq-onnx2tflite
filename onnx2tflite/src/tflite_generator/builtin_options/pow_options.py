@@ -18,7 +18,7 @@ class Pow(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.PowOptions, BuiltinOperator.POW)
 
-    def gen_tflite(self, builder: flatbuffers.Builder):
+    def gen_tflite(self, builder: flatbuffers.Builder) -> int:
         PowOptions.Start(builder)
 
         return PowOptions.End(builder)

@@ -7,10 +7,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import RandomOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Multinomial(meta.BuiltinOptions):
@@ -22,7 +22,7 @@ class Multinomial(meta.BuiltinOptions):
         self.seed = seed
         self.seed2 = seed2
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         RandomOptions.Start(builder)
 
         RandomOptions.AddSeed(builder, self.seed)

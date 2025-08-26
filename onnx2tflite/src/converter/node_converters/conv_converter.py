@@ -6,31 +6,34 @@
 # See the LICENSE_MIT for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.onnx_model as onnx_model
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.node_converters.q_linear_conv_converter import QLinearConvConverter
-from onnx2tflite.src.converter.node_converters.shared import conv_utils
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
-from onnx2tflite.src.converter.conversion.translator import apply_permutation_to
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.q_linear_conv_converter import QLinearConvConverter
+from onnx2tflite.src.converter.node_converters.shared import conv_utils
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
-from onnx2tflite.src.tflite_generator.builtin_options import conv_2d_options, conv_3d_options, \
-    depthwise_conv_2d_options, reshape_options
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import (
+    conv_2d_options,
+    conv_3d_options,
+    depthwise_conv_2d_options,
+    reshape_options,
+)
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
 
 
 # noinspection PyPep8Naming
 class ConvConverter(NodeConverter):
-    node = 'Conv'
+    node = "Conv"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/conv.cc#L359-L361
@@ -38,16 +41,16 @@ class ConvConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def _convert_1d_conv(self, o_conv_attributes: conv_attributes.Conv,
-                         t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX 'Conv' operator with a 1D kernel to TFLite 'Conv2D'.
-            TFLite doesn't support 1D convolution, but this behaviour can be represented using
-                   Reshape -> Conv2D -> Reshape.
-            The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary dimension.
+                         t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX 'Conv' operator with a 1D kernel to TFLite 'Conv2D'.
+        TFLite doesn't support 1D convolution, but this behaviour can be represented using
+               Reshape -> Conv2D -> Reshape.
+        The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary dimension.
 
-            :param o_conv_attributes: Attributes of the ONNX Conv operator.
-            :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
-            :return: A list of TFLite operators, to add to the model.
-            """
+        :param o_conv_attributes: Attributes of the ONNX Conv operator.
+        :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
+        :return: A list of TFLite operators, to add to the model.
+        """
         # -- Calculate the shapes for equivalent 2D convolution --
         conv_2d_input_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_inputs[0].shape.vector)
         conv_2d_weight_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_inputs[1].shape.vector)
@@ -112,7 +115,7 @@ class ConvConverter(NodeConverter):
 
         return pre_reshapes + converted_conv_ops + [reshape2]
 
-    def _convert_unpadded_2D(self, q_linear_conv, t_op) -> conv_utils.ConvConversionResult:
+    def _convert_unpadded_2D(self, q_linear_conv, t_op) -> conv_utils.ConvConversionResult:  # noqa: N802
         # Prepare the input and output tensors. To replace them, assign to t_op.tmp_inputs/tmp_outputs directly.
         output_tensor = t_op.tmp_outputs[0]
         input_tensor = t_op.tmp_inputs[0]
@@ -138,7 +141,7 @@ class ConvConverter(NodeConverter):
         return conversion_result
 
     def _convert_2d_conv(self, conv_attributes: conv_attributes.Conv,
-                         t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
+                         t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         if conv_utils.group_conv_convertible_as_depthwise(conv_attributes, t_op, weight_tensor_index=1):
             t_op.builtin_options = depthwise_conv_2d_options.DepthwiseConv2D()
 
@@ -163,34 +166,33 @@ class ConvConverter(NodeConverter):
 
             return conversion_result.ops_list.flatten()
 
-        elif conv_utils.group_conv_convertible_into_multiple_convolutions(conv_attributes, t_op):
+        if conv_utils.group_conv_convertible_into_multiple_convolutions(conv_attributes, t_op):
             t_op.builtin_options = conv_2d_options.Conv2D()
 
             return conv_utils.create_separated_convolutions_based_on_group(
                 conv_attributes, t_op, self.builder, self._convert_unpadded_2D, conv_utils.conv_op_factory, 0)
 
-        else:
-            t_op.builtin_options = conv_2d_options.Conv2D()
-            conversion_result = self._convert_unpadded_2D(conv_attributes, t_op)
-            padding, pad_op = conv_utils.build_input_tensor_padding(conv_attributes, t_op, self.builder)
-            t_op.builtin_options.padding = padding
+        t_op.builtin_options = conv_2d_options.Conv2D()
+        conversion_result = self._convert_unpadded_2D(conv_attributes, t_op)
+        padding, pad_op = conv_utils.build_input_tensor_padding(conv_attributes, t_op, self.builder)
+        t_op.builtin_options.padding = padding
 
-            if pad_op is not None:
-                conversion_result.ops_list.add_pre(pad_op)
+        if pad_op is not None:
+            conversion_result.ops_list.add_pre(pad_op)
 
-            return conversion_result.ops_list.flatten()
+        return conversion_result.ops_list.flatten()
 
-    def _convert_unpadded_3D(self, o_conv_attributes, t_op) -> conv_utils.ConvConversionResult:
-        """ Convert the ONNX 'Conv' operator with a 3D kernel to TFLite 'Conv3D' without padding.
+    def _convert_unpadded_3D(self, o_conv_attributes, t_op) -> conv_utils.ConvConversionResult:  # noqa: N802
+        """Convert the ONNX 'Conv' operator with a 3D kernel to TFLite 'Conv3D' without padding.
 
-            TFLite Conv2D uses the [output_channels, H, W, input_channels] format for its weights.
-            TFLite Conv3D is different, for some reason it needs the weights to be in the format [D, H, W, in_c, out_c].
-            ONNX 3D Conv uses [out_c, in_c, D, H, W] which the converter would normally change to [out_c, D, H, W, in_c].
-            Therefore, we need to move the fist dimension to the end explicitly.
+        TFLite Conv2D uses the [output_channels, H, W, input_channels] format for its weights.
+        TFLite Conv3D is different, for some reason it needs the weights to be in the format [D, H, W, in_c, out_c].
+        ONNX 3D Conv uses [out_c, in_c, D, H, W] which the converter would normally change to [out_c, D, H, W, in_c].
+        Therefore, we need to move the fist dimension to the end explicitly.
 
-            :param o_conv_attributes: Attributes of the ONNX Conv operator.
-            :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
-            :return: ConvConversionResult with added ops and references to IO tensors.
+        :param o_conv_attributes: Attributes of the ONNX Conv operator.
+        :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
+        :return: ConvConversionResult with added ops and references to IO tensors.
         """
         t_conv = t_op.builtin_options
         output_tensor = t_op.tmp_outputs[0]
@@ -242,32 +244,31 @@ class ConvConverter(NodeConverter):
         return conversion_result
 
     def _convert_3d_conv(self, o_conv_attributes: conv_attributes.Conv,
-                         t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
+                         t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         t_op.builtin_options = conv_3d_options.Conv3D()
 
         if conv_utils.group_conv_convertible_into_multiple_convolutions(o_conv_attributes, t_op):
             return conv_utils.create_separated_convolutions_based_on_group(
                 o_conv_attributes, t_op, self.builder, self._convert_unpadded_3D, conv_utils.conv_op_factory, 4)
-        else:
-            if o_conv_attributes.group != 1:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "ONNX Conv with a 3D kernel and unsupported 'group' value!")
+        if o_conv_attributes.group != 1:
+            logger.e(logger.Code.NOT_IMPLEMENTED, "ONNX Conv with a 3D kernel and unsupported 'group' value!")
 
-            conversion_result = self._convert_unpadded_3D(o_conv_attributes, t_op)
-            padding, pad_op = conv_utils.build_input_tensor_padding(o_conv_attributes, t_op, self.builder)
-            t_op.builtin_options.padding = padding
+        conversion_result = self._convert_unpadded_3D(o_conv_attributes, t_op)
+        padding, pad_op = conv_utils.build_input_tensor_padding(o_conv_attributes, t_op, self.builder)
+        t_op.builtin_options.padding = padding
 
-            if pad_op is not None:
-                conversion_result.ops_list.add_pre(pad_op)
+        if pad_op is not None:
+            conversion_result.ops_list.add_pre(pad_op)
 
-            return conversion_result.ops_list.flatten()
+        return conversion_result.ops_list.flatten()
 
     def convert(self, conv_node: onnx_model.NodeProto,
-                t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX 'Conv' operator to TFLite 'Conv2D' and potential 'Reshape' operators.
+                t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX 'Conv' operator to TFLite 'Conv2D' and potential 'Reshape' operators.
 
-            :param conv_node: ONNX Conv node.
-            :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
-            :return: A list of TFLite operators, to add to the model.
+        :param conv_node: ONNX Conv node.
+        :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
+        :return: A list of TFLite operators, to add to the model.
         """
         o_conv_attributes = cast(conv_attributes.Conv, conv_node.attributes)
 
@@ -280,14 +281,13 @@ class ConvConverter(NodeConverter):
 
         if o_conv_attributes.kernel_shape is None:
             o_conv_attributes.kernel_shape = translator.infer_kernel_shape(weight_tensor)
-        else:
-            if o_conv_attributes.kernel_shape != translator.infer_kernel_shape(weight_tensor):
-                logger.e(logger.Code.INVALID_ONNX_MODEL,
-                         "Weight tensor shape not corresponds to kernel_shape attribute")
+        elif o_conv_attributes.kernel_shape != translator.infer_kernel_shape(weight_tensor):
+            logger.e(logger.Code.INVALID_ONNX_MODEL,
+                     "Weight tensor shape not corresponds to kernel_shape attribute")
 
         if t_op.is_quantized_without_qdq():
             # Not supported by ONNX. Keep this check just in case.
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `Conv` has quantized inputs.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Conv` has quantized inputs.")
 
         if input_tensor.quantization is None:
             self.assert_type_allowed(input_tensor.type)
@@ -295,8 +295,8 @@ class ConvConverter(NodeConverter):
         else:
             # Only INT8 and UINT8 quantization is supported.
             if input_tensor.type not in [TensorType.INT8, TensorType.UINT8]:
-                logger.e(logger.Code.NOT_IMPLEMENTED, 'Conversion of ONNX `Conv` quantized with type '
-                                                      f'`{name_for_type(input_tensor.type)}` is not supported.')
+                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Conv` quantized with type "
+                                                      f"`{name_for_type(input_tensor.type)}` is not supported.")
 
             # (U)INT8 Conv is basically QLinearConv -> use already prepared conversion code
             return QLinearConvConverter(self.context).convert(conv_node, t_op)
@@ -306,12 +306,11 @@ class ConvConverter(NodeConverter):
         if kernel_rank == 1:
             return self._convert_1d_conv(o_conv_attributes, t_op)
 
-        elif kernel_rank == 2:
+        if kernel_rank == 2:
             return self._convert_2d_conv(o_conv_attributes, t_op)
 
-        elif kernel_rank == 3:
+        if kernel_rank == 3:
             return self._convert_3d_conv(o_conv_attributes, t_op)
 
-        else:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX Conv with a {kernel_rank}D kernel is not possible!")
+        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
+                 f"Conversion of ONNX Conv with a {kernel_rank}D kernel is not possible!")

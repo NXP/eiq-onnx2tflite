@@ -8,27 +8,26 @@
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.add_options as tflite_add_options
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tflite_generator import tflite_model
 
 
 class QLinearAddConverter(NodeConverter):
-    node = 'QLinearAdd'
+    node = "QLinearAdd"
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime 'QLinearAdd' operator to TFLite 'Add'.
+        """Convert the ONNX Runtime 'QLinearAdd' operator to TFLite 'Add'.
 
-            :param node: ONNX `QLinearAdd` operator.
-            :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
-            :return: A list of TFLite operators, to add to the model.
+        :param node: ONNX `QLinearAdd` operator.
+        :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
+        :return: A list of TFLite operators, to add to the model.
         """
-
         t_op.builtin_options = tflite_add_options.Add()
 
         # Prepare the input and output tensors.

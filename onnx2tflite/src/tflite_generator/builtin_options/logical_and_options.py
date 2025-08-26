@@ -7,10 +7,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import LogicalAndOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class LogicalAnd(meta.BuiltinOptions):
@@ -18,7 +18,7 @@ class LogicalAnd(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.LogicalAndOptions, BuiltinOperator.LOGICAL_AND)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         LogicalAndOptions.Start(builder)
 
         return LogicalAndOptions.End(builder)

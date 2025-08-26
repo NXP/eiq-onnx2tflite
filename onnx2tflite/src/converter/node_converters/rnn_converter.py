@@ -11,21 +11,26 @@ import numpy as np
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.node_converters.shared.recurrent_utils import check_sequence_lens, \
-    ensure_correct_tensor_formatting, get_activation_function_for_name
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared.recurrent_utils import (
+    check_sequence_lens,
+    ensure_correct_tensor_formatting,
+    get_activation_function_for_name,
+)
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import rnn_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import bidirectional_sequence_rnn_options, \
-    unidirectional_sequence_rnn_options
+from onnx2tflite.src.tflite_generator.builtin_options import (
+    bidirectional_sequence_rnn_options,
+    unidirectional_sequence_rnn_options,
+)
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class RNNConverter(NodeConverter):
-    node = 'RNN'
+    node = "RNN"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/unidirectional_sequence_rnn.cc#L95
@@ -35,14 +40,13 @@ class RNNConverter(NodeConverter):
 
     def _convert_forward_rnn(self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator,
                              ops: OpsList) -> list[tflite_model.Operator]:
-        """ Convert ONNX RNN with 'forward' direction attribute to TFLite UnidirectionalSequenceRNN.
+        """Convert ONNX RNN with 'forward' direction attribute to TFLite UnidirectionalSequenceRNN.
 
         :param o_rnn: Attributes of the ONNX RNN operator.
         :param t_op: TFLite operators with inputs and outputs corresponding to the ONNX operator.
         :param ops: OpsList with operators that are the result of the conversion. May already contain some operators.
         :return: A list of TFLite operators to add to the model.
         """
-
         # Convert to TFLite 'UnidirectionalSequenceRNN'.
         t_op.builtin_options = unidirectional_sequence_rnn_options.UnidirectionalSequenceRNN(
             time_major=(o_rnn.layout == 0))
@@ -101,7 +105,7 @@ class RNNConverter(NodeConverter):
                 logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
-            b = self.builder.create_zeros_tensor([hidden_size], 'B', np.dtype('float32'), can_reuse=True)
+            b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"), can_reuse=True)
 
         # Hidden state variable tensor.
         hidden_state = self.builder.create_empty_tensor("hidden_state", TensorType.FLOAT32, [batch_size, hidden_size])
@@ -123,17 +127,16 @@ class RNNConverter(NodeConverter):
 
     def _convert_reverse_rnn(self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator,
                              ops: OpsList) -> list[tflite_model.Operator]:
-        """ Convert ONNX RNN with 'reverse' direction attribute to TFLite BidirectionalSequenceRNN.
+        """Convert ONNX RNN with 'reverse' direction attribute to TFLite BidirectionalSequenceRNN.
 
         :param o_rnn: Attributes of the ONNX RNN operator.
         :param t_op: TFLite operators with inputs and outputs corresponding to the ONNX operator.
         :param ops: OpsList with operators that are the result of the conversion. May already contain some operators.
         :return: A list of TFLite operators to add to the model.
         """
-
         # Convert to TFLite 'BidirectionalSequenceRNN'. Set 'merge_outputs = False' and use only the 2nd output tensor.
         # TODO Be careful when adding support for the second ONNX RNN output!
-        logger.internal_assert(len(t_op.tmp_outputs) == 1, 'Reverse RNN with multiple outputs is not properly handled!')
+        logger.internal_assert(len(t_op.tmp_outputs) == 1, "Reverse RNN with multiple outputs is not properly handled!")
         t_op.builtin_options = bidirectional_sequence_rnn_options.BidirectionalSequenceRNN(
             time_major=(o_rnn.layout == 0),
             merge_outputs=False)
@@ -192,7 +195,7 @@ class RNNConverter(NodeConverter):
                 logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
-            b = self.builder.create_zeros_tensor([hidden_size], 'B', np.dtype('float32'), can_reuse=True)
+            b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"), can_reuse=True)
 
         # Hidden state variable tensors.
         hidden_state = self.builder.create_empty_tensor("hidden_state", TensorType.FLOAT32, [batch_size, hidden_size])
@@ -209,9 +212,9 @@ class RNNConverter(NodeConverter):
             x,
 
             # Forward weights -> set all to 0
-            self.builder.create_zeros_tensor(w.shape.vector.copy(), 'fw_w', np.dtype('float32'), True),
-            self.builder.create_zeros_tensor(r.shape.vector.copy(), 'fw_r', np.dtype('float32'), True),
-            self.builder.create_zeros_tensor([hidden_size], 'fw_b', np.dtype('float32'), True),
+            self.builder.create_zeros_tensor(w.shape.vector.copy(), "fw_w", np.dtype("float32"), True),
+            self.builder.create_zeros_tensor(r.shape.vector.copy(), "fw_r", np.dtype("float32"), True),
+            self.builder.create_zeros_tensor([hidden_size], "fw_b", np.dtype("float32"), True),
             fw_dummy_state,
 
             # Reverse weights
@@ -222,7 +225,7 @@ class RNNConverter(NodeConverter):
         ]
 
         # We only want the second output of the TFLite BidirectionalSequenceRNN -> create a dummy tensor for the first.
-        dummy_output = self.builder.create_empty_tensor('dummy', TensorType.FLOAT32)
+        dummy_output = self.builder.create_empty_tensor("dummy", TensorType.FLOAT32)
         t_op.tmp_outputs = [dummy_output, y]
 
         # ONNX output has shape [seq_length, num_directions, batch_size, hidden_size]. TFLite BidirectionalSequenceRNN
@@ -239,14 +242,13 @@ class RNNConverter(NodeConverter):
 
     def _convert_bidirectional_rnn(self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator,
                                    ops: OpsList) -> list[tflite_model.Operator]:
-        """ Convert ONNX RNN with 'bidirectional' direction attribute to TFLite BidirectionalSequenceRNN.
+        """Convert ONNX RNN with 'bidirectional' direction attribute to TFLite BidirectionalSequenceRNN.
 
         :param o_rnn: Attributes of the ONNX RNN operator.
         :param t_op: TFLite operators with inputs and outputs corresponding to the ONNX operator.
         :param ops: OpsList with operators that are the result of the conversion. May already contain some operators.
         :return: A list of TFLite operators to add to the model.
         """
-
         # Convert to TFLite 'BidirectionalSequenceRNN'.
         t_op.builtin_options = bidirectional_sequence_rnn_options.BidirectionalSequenceRNN(
             time_major=(o_rnn.layout == 0),
@@ -287,8 +289,8 @@ class RNNConverter(NodeConverter):
             # ONNX 'W' has the shape [num_directions (2), hidden_size, input_size]. TFLite uses 2 separate tensors of
             #  shape [hidden_size, input_size].
             fw_w_data, bw_w_data = np.split(w.tmp_buffer.data, 2)
-            fw_w = self.builder.create_tensor_for_data(fw_w_data.squeeze(0), 'fw_w_')
-            bw_w = self.builder.create_tensor_for_data(bw_w_data.squeeze(0), 'bw_w_')
+            fw_w = self.builder.create_tensor_for_data(fw_w_data.squeeze(0), "fw_w_")
+            bw_w = self.builder.create_tensor_for_data(bw_w_data.squeeze(0), "bw_w_")
         else:
             logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
 
@@ -296,8 +298,8 @@ class RNNConverter(NodeConverter):
             # ONNX 'W' has the shape [num_directions (2), hidden_size, hidden_size]. TFLite uses 2 separate tensors of
             #  shape [hidden_size, hidden_size].
             fw_r_data, bw_r_data = np.split(r.tmp_buffer.data, 2)
-            fw_r = self.builder.create_tensor_for_data(fw_r_data.squeeze(0), 'fw_r_')
-            bw_r = self.builder.create_tensor_for_data(bw_r_data.squeeze(0), 'bw_r_')
+            fw_r = self.builder.create_tensor_for_data(fw_r_data.squeeze(0), "fw_r_")
+            bw_r = self.builder.create_tensor_for_data(bw_r_data.squeeze(0), "bw_r_")
         else:
             logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
 
@@ -317,14 +319,14 @@ class RNNConverter(NodeConverter):
                 fw_b_data = fw_b_w_data + fw_b_r_data
                 bw_b_data = bw_b_w_data + bw_b_r_data
 
-                fw_b = self.builder.create_tensor_for_data(fw_b_data, 'fw_b_')
-                bw_b = self.builder.create_tensor_for_data(bw_b_data, 'bw_b_')
+                fw_b = self.builder.create_tensor_for_data(fw_b_data, "fw_b_")
+                bw_b = self.builder.create_tensor_for_data(bw_b_data, "bw_b_")
 
             else:
                 logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
-            fw_b = self.builder.create_zeros_tensor([hidden_size], 'B', np.dtype('float32'),
+            fw_b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"),
                                                     can_reuse=True)
             bw_b = fw_b
 
@@ -373,8 +375,7 @@ class RNNConverter(NodeConverter):
         return ops.flatten()
 
     def convert(self, rnn_node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'RNN' operator to TFLite 'UnidirectionalSequenceRNN` or `BidirectionalSequenceRNN`. """
-
+        """Convert the ONNX 'RNN' operator to TFLite 'UnidirectionalSequenceRNN` or `BidirectionalSequenceRNN`."""
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
         ops = OpsList(middle_op=t_op)
@@ -423,15 +424,14 @@ class RNNConverter(NodeConverter):
 
         ensure_correct_tensor_formatting(t_op, self.builder, ops)
 
-        if o_rnn.direction == 'forward':
+        if o_rnn.direction == "forward":
             return self._convert_forward_rnn(o_rnn, t_op, ops)
 
-        elif o_rnn.direction == 'bidirectional':
+        if o_rnn.direction == "bidirectional":
             return self._convert_bidirectional_rnn(o_rnn, t_op, ops)
 
-        elif o_rnn.direction == 'reverse':
+        if o_rnn.direction == "reverse":
             return self._convert_reverse_rnn(o_rnn, t_op, ops)
 
-        else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX RNN has unexpected value of the direction attribute ('{o_rnn.direction}').")
+        logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                 f"ONNX RNN has unexpected value of the direction attribute ('{o_rnn.direction}').")

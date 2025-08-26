@@ -5,7 +5,6 @@
 # See the LICENSE for more details.
 #
 
-from typing import List
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
@@ -16,19 +15,18 @@ from onnx2tflite.src.tflite_generator.builtin_options.logical_not_options import
 
 
 class NotConverter(NodeConverter):
-    node = 'Not'
+    node = "Not"
 
     onnx_supported_types = [TensorType.BOOL]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L257
     tflite_supported_types = [TensorType.BOOL]
     verified_types = [TensorType.BOOL]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX `Not` operator to TFLite `LogicalNot`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX `Not` operator to TFLite `LogicalNot`."""
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `Not` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.')
+                     f"ONNX `Not` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 

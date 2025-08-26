@@ -20,7 +20,7 @@ class Preprocessor:
     model: onnx.ModelProto
     quantization_config: QuantizationConfig
 
-    def preprocess(self):
+    def preprocess(self) -> None:
         preprocessing_steps = []
         if self.quantization_config.replace_constant_with_static_tensor:
             preprocessing_steps.append(ReplaceConstantWithStaticTensor(self.model))
@@ -31,8 +31,8 @@ class Preprocessor:
             try:
                 preprocessing_step.run()
 
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.e(logger.Code.PREPROCESSING_ERROR,
-                         'An unexpected error occurred during preprocessing. Run the quantization again with the '
-                         f'flag {logger.Style.cyan + preprocessing_step.disabling_flag() + logger.Style.end} to avoid '
-                         'this.', e)
+                         "An unexpected error occurred during preprocessing. Run the quantization again with the "
+                         f"flag {logger.Style.cyan + preprocessing_step.disabling_flag() + logger.Style.end} to avoid "
+                         "this.", e)

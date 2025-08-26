@@ -4,21 +4,18 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    Sub
+"""Sub
 
 Representation of the TFLite operator 'Sub'.
 """
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
-from onnx2tflite.lib.tflite import (
-    BuiltinOptions as libBuiltinOptions,
-    BuiltinOperator as libBuiltinOperator,
-    ActivationFunctionType as libActivationFunctionType,
-    SubOptions as libSubOptions
-)
+from onnx2tflite.lib.tflite import ActivationFunctionType as libActivationFunctionType
+from onnx2tflite.lib.tflite import BuiltinOperator as libBuiltinOperator
+from onnx2tflite.lib.tflite import BuiltinOptions as libBuiltinOptions
+from onnx2tflite.lib.tflite import SubOptions as libSubOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Sub(meta.BuiltinOptions):
@@ -33,7 +30,7 @@ class Sub(meta.BuiltinOptions):
                          libBuiltinOperator.BuiltinOperator.SUB)
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libSubOptions.Start(builder)
 
         libSubOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

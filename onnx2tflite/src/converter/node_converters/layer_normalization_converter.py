@@ -12,19 +12,24 @@ from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
-from onnx2tflite.src.converter.conversion.common import uses_shape_broadcasting, try_get_input
+from onnx2tflite.src.converter.conversion.common import try_get_input, uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import layer_normalization_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import mean_options, sub_options, mul_options, add_options, \
-    square_options
+from onnx2tflite.src.tflite_generator.builtin_options import (
+    add_options,
+    mean_options,
+    mul_options,
+    square_options,
+    sub_options,
+)
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 
 # noinspection PyMethodMayBeStatic
 class LayerNormalizationConverter(NodeConverter):
-    node = 'LayerNormalization'
+    node = "LayerNormalization"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/reduce.cc#L525-L548
@@ -32,7 +37,7 @@ class LayerNormalizationConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def _axes_from_axis(self, axis: int, input_tensor: tflite_model.Tensor) -> np.ndarray:
-        """ Return all axes that are >= axis, up to the rank of the input tensor.
+        """Return all axes that are >= axis, up to the rank of the input tensor.
 
         :param axis: Index of a dimension of the input tensor.
         :param input_tensor: Input tensor of a LayerNormalization operator.
@@ -58,7 +63,7 @@ class LayerNormalizationConverter(NodeConverter):
         return np.asarray(axes, np.int32)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX 'LayerNormalization' operator to TFLite.
+        """Convert the ONNX 'LayerNormalization' operator to TFLite.
 
             There is no corresponding TFLite operator to the ONNX LayerNormalization. The only way to convert it is to
              use multiple simple operators, that carry out the internal computation of LayerNormalization, which is:
@@ -70,7 +75,6 @@ class LayerNormalizationConverter(NodeConverter):
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
         :return: A list of TFLite operators, to add to the model.
         """
-
         if len(t_op.tmp_inputs) not in {2, 3}:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'LayerNormalization' has unexpected number of inputs! "
                                                      f"Got '{len(t_op.tmp_inputs)}', expected '2' or '3'.")
@@ -166,7 +170,7 @@ class LayerNormalizationConverter(NodeConverter):
 
         # Because the LayerNormalization has to be represented using so many operators, there is sometimes a relatively
         #  large error. Notify the user of this.
-        logger.i(f'ONNX `LayerNormalization` is converted into {len(ops_to_add)} operators, which can sometimes '
-                 'introduce a numerical error.')
+        logger.i(f"ONNX `LayerNormalization` is converted into {len(ops_to_add)} operators, which can sometimes "
+                 "introduce a numerical error.")
 
         return ops_to_add

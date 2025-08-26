@@ -5,8 +5,9 @@
 # See the LICENSE for more details.
 #
 
+from collections.abc import Callable
 from copy import copy
-from typing import Callable, cast
+from typing import cast
 
 import numpy as np
 
@@ -18,24 +19,27 @@ from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes, q_linear_conv_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import concatenation_options, conv_2d_options, conv_3d_options, \
-    split_options
+from onnx2tflite.src.tflite_generator.builtin_options import (
+    concatenation_options,
+    conv_2d_options,
+    conv_3d_options,
+    split_options,
+)
 
 ConvAttributes = conv_attributes.Conv | q_linear_conv_attributes.QLinearConv
 TFTensor = tflite_model.Tensor
 TFOperator = tflite_model.Operator
 
 
-def group_conv_convertible_as_depthwise(o_conv_attributes: ConvAttributes, t_op: TFOperator, weight_tensor_index: int):
-    """
-    Check whether provided Conv/QLinearConv ONNX operator could be converted into TFLite DepthwiseConv2D.
+def group_conv_convertible_as_depthwise(o_conv_attributes: ConvAttributes, t_op: TFOperator,
+                                        weight_tensor_index: int) -> bool:
+    """Check whether provided Conv/QLinearConv ONNX operator could be converted into TFLite DepthwiseConv2D.
 
     :param o_conv_attributes: ONNX Conv/QLinearConv operator attributes.
     :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
     :param weight_tensor_index: Index of weight tensor within operator inputs ('1' for Conv, '3' for QLinearConv).
     :return: True if operator can be converted into DepthwiseConv2D.
     """
-
     input_channels = t_op.tmp_inputs[0].shape.vector[-1]
     output_channels = t_op.tmp_inputs[weight_tensor_index].shape.vector[0]
 
@@ -43,15 +47,13 @@ def group_conv_convertible_as_depthwise(o_conv_attributes: ConvAttributes, t_op:
 
 
 def group_conv_convertible_into_multiple_convolutions(o_conv_attributes: ConvAttributes, t_op: TFOperator) -> bool:
-    """
-    Check whether provided Conv/QLinearConv ONNX operator with group > 1 could be converted into
+    """Check whether provided Conv/QLinearConv ONNX operator with group > 1 could be converted into
     multiple non-group Conv2D/Conv3D operator.
 
     :param o_conv_attributes: ONNX Conv/QLinearConv operator attributes.
     :param t_op: A TFLite operator with inputs and outputs corresponding to the ONNX operator.
     :return: True if operator can be converted into multiple non-group Conv2D/Conv3D operators.
     """
-
     if isinstance(o_conv_attributes, q_linear_conv_attributes.QLinearConv):
         weight_tensor = t_op.tmp_inputs[3]
         if weight_tensor.shape.vector[0] % o_conv_attributes.group != 0:
@@ -76,8 +78,7 @@ def group_conv_convertible_into_multiple_convolutions(o_conv_attributes: ConvAtt
 
 
 class ConvConversionResult:
-    """
-    Holds references to the direct I/O tensors of the Conv operator
+    """Holds references to the direct I/O tensors of the Conv operator
     and list of surrounding operators (Quantize, Transpose, etc.).
     """
 
@@ -123,15 +124,15 @@ class _InputTensorsSplitter:
             else:
                 self._generate_dynamic_tensors(builder, groups, i[0], i[1], i[2])
 
-    def _generate_dynamic_tensors(self, builder, groups, split_tensor, axis, target_list):
+    def _generate_dynamic_tensors(self, builder, groups, split_tensor, axis, target_list) -> None:
         quantization = None
         if split_tensor.quantization is not None:
             if split_tensor.quantization.is_per_channel():
-                scale = np.split(np.array(split_tensor.quantization.scale.vector, 'float32'), groups)
-                zero_point = np.split(np.array(split_tensor.quantization.zero_point.vector, 'int32'), groups)
+                scale = np.split(np.array(split_tensor.quantization.scale.vector, "float32"), groups)
+                zero_point = np.split(np.array(split_tensor.quantization.zero_point.vector, "int32"), groups)
                 quantization = [
                     tflite_model.Quantization(scale=tflite_model.Scale(s), zero_point=tflite_model.ZeroPoint(zp))
-                    for s, zp in zip(scale, zero_point)
+                    for s, zp in zip(scale, zero_point, strict=False)
                 ]
             else:
                 quantization = [split_tensor.quantization] * groups
@@ -151,15 +152,16 @@ class _InputTensorsSplitter:
             target_list.append(conv_split_tensor)
         self.split_ops.append(split_op)
 
-    def _generate_static_tensors(self, builder, groups, split_tensor, axis, target_list):
+    # noinspection PyMethodMayBeStatic
+    def _generate_static_tensors(self, builder, groups, split_tensor, axis, target_list) -> None:
         quantization = None
         if split_tensor.quantization is not None:
             if split_tensor.quantization.is_per_channel():
-                scale = np.split(np.array(split_tensor.quantization.scale.vector, 'float32'), groups)
-                zero_point = np.split(np.array(split_tensor.quantization.zero_point.vector, 'int32'), groups)
+                scale = np.split(np.array(split_tensor.quantization.scale.vector, "float32"), groups)
+                zero_point = np.split(np.array(split_tensor.quantization.zero_point.vector, "int32"), groups)
                 quantization = [
                     tflite_model.Quantization(scale=tflite_model.Scale(s), zero_point=tflite_model.ZeroPoint(zp))
-                    for s, zp in zip(scale, zero_point)
+                    for s, zp in zip(scale, zero_point, strict=False)
                 ]
             else:
                 quantization = [split_tensor.quantization] * groups
@@ -174,8 +176,9 @@ class _InputTensorsSplitter:
 
             target_list.append(conv_input_tensor)
 
-    def _create_split_op(self, builder, groups, input_tensor, axis):
-        axis_tensor = builder.create_tensor_for_data(np.asarray([axis], np.int32), 'split_dim_')
+    # noinspection PyMethodMayBeStatic
+    def _create_split_op(self, builder, groups, input_tensor, axis) -> TFOperator:
+        axis_tensor = builder.create_tensor_for_data(np.asarray([axis], np.int32), "split_dim_")
         input_split_op = TFOperator(builtin_options=split_options.Split(groups))
         input_split_op.tmp_inputs = [axis_tensor, input_tensor]
 
@@ -195,8 +198,7 @@ class _InputTensorsSplitter:
 
 
 class _OutputTensorsCombiner:
-    """
-    Handles creation and aggregation of the TFLite Conv2D/Conv3D output tensors.
+    """Handles creation and aggregation of the TFLite Conv2D/Conv3D output tensors.
     Aggregation is done with 'Concatenation' op.
     """
 
@@ -222,17 +224,16 @@ class _OutputTensorsCombiner:
             self.output_tensors.append(output_tensor)
             self.concat_op.tmp_inputs.append(output_tensor)
 
-    def get_output_tensor(self, idx):
+    def get_output_tensor(self, idx) -> int:
         return self.output_tensors[idx]
 
-    def get_ops(self):
+    def get_ops(self) -> list[tflite_model.Operator]:
         return [self.concat_op]
 
 
 def build_input_tensor_padding(conv_attributes, t_op, builder, input_idx=0) -> tuple[
     Padding, (tflite_model.Operator | None)]:
-    """
-    Build padding for input tensor of Conv/QLinearConv op 't_op'.
+    """Build padding for input tensor of Conv/QLinearConv op 't_op'.
 
     :param conv_attributes: Attributes of converted ONNX 'Conv' operator.
     :param t_op: A TFLite 'ConvXD' operator.
@@ -240,7 +241,6 @@ def build_input_tensor_padding(conv_attributes, t_op, builder, input_idx=0) -> t
     :param input_idx: Padded input tensor index.
     :return: Tuple with Padding object and optional 'Pad' operator that should be prepended before 't_op' by caller.
     """
-
     padding, explicit_padding = translator.convert_padding(
         conv_attributes.auto_pad,
         conv_attributes.pads,
@@ -261,8 +261,7 @@ def conv_op_factory(o_conv_attributes, input_tensor: tflite_model.Tensor,
                     weight_tensor: tflite_model.Tensor, bias_tensor: tflite_model.Tensor,
                     output_tensor: tflite_model.Tensor, builder,
                     builtin_options) -> OpsList:
-    """
-    Build padded 'Conv(2D|3D)' TFLite operator. Padding is realized by 'builtin_options.padding'
+    """Build padded 'Conv(2D|3D)' TFLite operator. Padding is realized by 'builtin_options.padding'
     definition and by optional prepended 'Pad' operator.
 
     :param o_conv_attributes: Attributes attached to converted ONNX 'Conv' operator.
@@ -274,7 +273,6 @@ def conv_op_factory(o_conv_attributes, input_tensor: tflite_model.Tensor,
     :param builtin_options: Returned 'Conv(2D|3D)' op builtin options.
     :return: OpsList with definition of 'Conv(2D|3D)' operator and optional 'Pad' operator (input tensor padding).
     """
-
     conv_op = tflite_model.Operator(builtin_options=copy(builtin_options))
     conv_op.tmp_inputs = [input_tensor, weight_tensor, bias_tensor]
     conv_op.tmp_outputs = [output_tensor]
@@ -284,8 +282,7 @@ def conv_op_factory(o_conv_attributes, input_tensor: tflite_model.Tensor,
 
     if pad_op is not None:
         return OpsList(pre_ops=[pad_op], middle_op=conv_op)
-    else:
-        return OpsList(middle_op=conv_op)
+    return OpsList(middle_op=conv_op)
 
 
 def create_separated_convolutions_based_on_group(o_conv_attributes: ConvAttributes, t_op: TFOperator,
@@ -293,8 +290,7 @@ def create_separated_convolutions_based_on_group(o_conv_attributes: ConvAttribut
                                                  conv_conversion_fn: ConvConversionFn,
                                                  conv_op_factory: ConvOpFactory,
                                                  weight_out_channels_idx: int) -> list[TFOperator]:
-    """
-    Build subgraph with multiple TFLite Conv2D/Conv3D operators that replace Conv/QLinearConv
+    """Build subgraph with multiple TFLite Conv2D/Conv3D operators that replace Conv/QLinearConv
     ONNX operator with 'group' attribute higher than one. Number of new Conv2D/Conv3D operators
     correspond to number of groups. Input tensors of ONNX operator are split and distributed
     into related convolution operators. Outputs are then concatenated back.
@@ -328,7 +324,6 @@ def create_separated_convolutions_based_on_group(o_conv_attributes: ConvAttribut
     :param weight_out_channels_idx: Index of weight tensor within operator's 'tmp_inputs'.
     :return: List of TFLite operators representing subgraph.
     """
-
     groups = o_conv_attributes.group
     conversion_result = conv_conversion_fn(o_conv_attributes, t_op)
 

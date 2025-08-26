@@ -18,7 +18,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class SigmoidConverter(NodeConverter):
-    node = 'Sigmoid'
+    node = "Sigmoid"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/activations.cc#L1123-L1213
@@ -26,11 +26,11 @@ class SigmoidConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX 'Sigmoid' to TFLite 'Logistic' operator.
+        """Convert ONNX 'Sigmoid' to TFLite 'Logistic' operator.
 
-            Neither the ONNX nor TFLite variant has any attributes/parameters. The TFLite 'Logistic' doesn't even have a
-             builtin options enum value (just like to Relu). So this module must assign the 'opcode_index' directly to
-             the operator by itself.
+        Neither the ONNX nor TFLite variant has any attributes/parameters. The TFLite 'Logistic' doesn't even have a
+         builtin options enum value (just like to Relu). So this module must assign the 'opcode_index' directly to
+         the operator by itself.
         """
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]

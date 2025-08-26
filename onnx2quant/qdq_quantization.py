@@ -8,8 +8,8 @@ import itertools
 import os.path
 import tempfile
 import traceback
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 import onnx
@@ -48,10 +48,10 @@ def _get_tensor_rank(tensor_name: str, model: onnx.ModelProto) -> int | None:
 
 
 class RecognizedQDQOps:
-    """
-    Class represents categorized ops based on their relationship to
+    """Class represents categorized ops based on their relationship to
     QDQ clusters in the model.
     """
+
     # Names of 'QuantizeLinear' & 'DequantizeLinear' ops that are NOT part of QDQ cluster
     standalone_quantization_ops: list[str]
 
@@ -72,8 +72,7 @@ class RecognizedQDQOps:
 
 
 class QDQClustersRecognizer:
-    """
-    Class for detection of QDQ clusters. It categorizes ops into groups based on their
+    """Class for detection of QDQ clusters. It categorizes ops into groups based on their
     relevance to detected clusters.
     """
 
@@ -132,8 +131,7 @@ class QDQClustersRecognizer:
     ]
 
     def __init__(self, model_inspector: ONNXModelInspector, supported_qdq_ops: list[str] | None = None):
-        """
-        Create QDQClustersRecognizer instance.
+        """Create QDQClustersRecognizer instance.
 
         :param model_inspector: ONNXModelInspector object.
         :param supported_qdq_ops: List of op names that should be recognized. If None or empty,
@@ -145,7 +143,7 @@ class QDQClustersRecognizer:
 
         self._register_operator_specific_rules()
 
-    def _register_operator_specific_rules(self):
+    def _register_operator_specific_rules(self) -> None:
         self.op_specific_rules["Clip"] = self._validate_clip
         self.op_specific_rules["Concat"] = self._validate_concat
         self.op_specific_rules["Conv"] = self._validate_conv
@@ -223,8 +221,7 @@ class QDQClustersRecognizer:
                 self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0]))
 
     def _partition_quantization_ops(self) -> tuple[dict[str, onnx_model.NodeProto], dict[str, onnx_model.NodeProto]]:
-        """
-        Split model ops into q-ops ('QuantizeLinear' & 'DequantizeLinear') and others. Ops are
+        """Split model ops into q-ops ('QuantizeLinear' & 'DequantizeLinear') and others. Ops are
         returned as dictionaries with mapping from unique generated op name to 'NodeProto' object.
 
         :return: Tuple with dictionaries containing mapping from unique op name to 'NodeProto' object.
@@ -241,28 +238,24 @@ class QDQClustersRecognizer:
         return quantize_nodes, non_quantize_nodes
 
     def _node_io_tensors_quantized(self, node: onnx_model.NodeProto) -> bool:
-        """
-        Check if node's input/output tensors are quantized or non-float.
+        """Check if node's input/output tensors are quantized or non-float.
 
         :param node: Analyzed node.
         :return: True if all input and outputs are considered as quantized.
         """
-
         return (self._is_node_input_quantized(node) and
                 self._is_node_output_quantized(node) and
                 self._at_least_one_io_tensor_float(node) and
                 self._inputs_are_not_outputs_of_model(node) and
                 self._surrounding_q_ops_have_same_quant_type(node))
 
-    def _is_qdq_quantized_node(self, node: onnx_model.NodeProto):
-        """
-        Check if operator can be considered as QDQ quantized. This usually means that all IO tensors are
+    def _is_qdq_quantized_node(self, node: onnx_model.NodeProto) -> bool:
+        """Check if operator can be considered as QDQ quantized. This usually means that all IO tensors are
         surrounded by q-ops but this could be operator specific.
 
         :param node: Analyzed node.
         :return: True if node can be considered as QDQ quantized.
         """
-
         return self.op_specific_rules.get(node.op_type, lambda x: self._node_io_tensors_quantized(x))(node)
 
     def _is_node_input_quantized(self, node: onnx_model.NodeProto) -> bool:
@@ -284,7 +277,7 @@ class QDQClustersRecognizer:
 
         return all(outputs_quantized)
 
-    def _at_least_one_io_tensor_float(self, node: onnx_model.NodeProto):
+    def _at_least_one_io_tensor_float(self, node: onnx_model.NodeProto) -> bool:
         io_tensors = list(node.outputs) + list(node.inputs)
 
         # Ignore optional tensors
@@ -292,12 +285,11 @@ class QDQClustersRecognizer:
 
         return any([self.model_inspector.tensor_is_float(tensor_name) for tensor_name in io_tensors])
 
-    def _inputs_are_not_outputs_of_model(self, node: onnx_model.NodeProto):
+    def _inputs_are_not_outputs_of_model(self, node: onnx_model.NodeProto) -> bool:
         return all([not self.model_inspector.is_output_of_model(tensor_name) for tensor_name in node.inputs])
 
     def _surrounding_q_ops_have_same_quant_type(self, node: onnx_model.NodeProto) -> bool:
-        """
-        Check whether surrounding q-ops of given node have same quantization type (INT8 or UINT8).
+        """Check whether surrounding q-ops of given node have same quantization type (INT8 or UINT8).
         INT32 type is not considered, because it is used in well-defined situations.
 
         :param node: Analyzed ONNX node.
@@ -317,8 +309,7 @@ class QDQClustersRecognizer:
         return len(surrounding_q_op_types) <= 1
 
     def get_qdq_cluster_quantization_nodes(self, node) -> list[str]:
-        """
-        Collects quantization nodes of QDQ cluster. The QDQ cluster consist of preceding 'DequantizeLinear'
+        """Collects quantization nodes of QDQ cluster. The QDQ cluster consist of preceding 'DequantizeLinear'
         ops and following 'QuantizeLinear' ops.
 
         :param node: Analyzed node.
@@ -336,8 +327,7 @@ class QDQClustersRecognizer:
                 [node.unique_name for node in following_nodes if node.op_type == "QuantizeLinear"])
 
     def recognize_ops(self) -> RecognizedQDQOps | None:
-        """
-        Detect all QDQ clusters and categorize model's ops based on relationship to any
+        """Detect all QDQ clusters and categorize model's ops based on relationship to any
         of the clusters.
 
         :return: RecognizedQDQOps object or None if there isn't any q-op in the model.
@@ -362,7 +352,7 @@ class QDQClustersRecognizer:
             else:
                 recognized_ops.non_quantized_float_ops.append(node_name)
 
-        for quantization_node in quantization_nodes.keys():
+        for quantization_node in quantization_nodes:
             if quantization_node not in recognized_ops.qdq_cluster_quantization_ops:
                 recognized_ops.standalone_quantization_ops.append(quantization_node)
 
@@ -388,7 +378,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
     # noinspection PyMethodMayBeStatic
     def _generate_random_data(self, rng: np.random.Generator, shape: list[int], min_: float, max_: float) -> np.ndarray:
         range_ = max_ - min_
-        return (rng.random(shape, 'float32') * range_ + min_).astype('float32')
+        return (rng.random(shape, "float32") * range_ + min_).astype("float32")
 
     def __init__(self, inputs: dict[str, InputSpec] = None, num_samples=3, seed=42):
         self.data = []
@@ -396,7 +386,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 
         rng = np.random.default_rng(seed)
 
-        for idx in range(num_samples):
+        for _ in range(num_samples):
             sample = {}
 
             for input_name, input_metadata in inputs.items():
@@ -413,7 +403,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
                             input_shape,
                             input_metadata.min or 0.0,
                             input_metadata.max or 1.0
-                        ).astype('float32')
+                        ).astype("float32")
 
                     elif input_type == np.int64:
                         sample[input_name] = self._generate_random_data(
@@ -421,7 +411,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
                             input_shape,
                             input_metadata.min or 0.0,
                             input_metadata.max or 1000.0
-                        ).astype('int64')
+                        ).astype("int64")
 
                     elif input_type == np.bool_:
                         sample[input_name] = rng.random(input_shape, dtype=np.float32) < 0.5
@@ -434,8 +424,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
     # noinspection PyUnresolvedReferences
     @staticmethod
     def from_onnx_model(onnx_model: onnx_model.ModelProto, num_samples=3, seed=42):
-        """
-        Create RandomDataCalibrationDataReader based passed on ONNX model's inputs.
+        """Create RandomDataCalibrationDataReader based passed on ONNX model's inputs.
 
         :param onnx_model: ONNX model w
         :param num_samples: Number of input samples.
@@ -454,7 +443,7 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 
         return RandomDataCalibrationDataReader(inputs, num_samples=num_samples, seed=seed)
 
-    def to_config(self):
+    def to_config(self) -> QuantizationConfig:
         return QuantizationConfig(self)
 
     def get_next(self) -> dict:
@@ -467,15 +456,14 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 class QDQOperator(QDQOperatorBase):
     quantizer: BaseQDQQuantizer
 
-    def _can_quantize_tensor(self, tensor_name):
+    def _can_quantize_tensor(self, tensor_name) -> bool:
         if not self.quantizer.is_tensor_quantized(tensor_name):
             # Tensor was not already set for quantization
             return True
-        else:
-            quantize_info = self.quantizer.tensors_to_quantize[tensor_name]
+        quantize_info = self.quantizer.tensors_to_quantize[tensor_name]
 
-            if quantize_info is not None and not quantize_info.is_shared:
-                return True
+        if quantize_info is not None and not quantize_info.is_shared:
+            return True
 
         return False
 
@@ -491,7 +479,7 @@ class QDQOperator(QDQOperatorBase):
 
 
 class QDQClip(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Clip"
 
@@ -517,14 +505,14 @@ class QDQClip(QDQOperator):
 
 
 class QDQConcat(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Concat"
 
         if not self.disable_qdq_for_node_output:
             self.quantizer.quantize_activation_tensor(node.output[0])
 
-        for idx in range(0, len(node.input)):
+        for idx in range(len(node.input)):
             if self.quantizer.is_input_a_initializer(node.input[idx]):
                 # ORT QDQQuantizer doesn't allow q-param sharing for initializers. TFLite requires all
                 # input/output tensors of Concatenation operator to be the same. For that reason, we
@@ -537,7 +525,7 @@ class QDQConcat(QDQOperator):
 
 
 class QDQMatMul(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "MatMul"
 
@@ -567,7 +555,7 @@ class QDQMatMul(QDQOperator):
 
 
 class QDQNormalization(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type in ["InstanceNormalization", "LayerNormalization"]
 
         per_channel = self.quantizer.per_channel
@@ -582,7 +570,7 @@ class QDQNormalization(QDQOperator):
 
 
 class QDQLogSoftmax(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "LogSoftmax"
 
         super().quantize()
@@ -602,7 +590,7 @@ class QDQLogSoftmax(QDQOperator):
 
 
 class QDQMinMax(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type in ["Max", "Min"]
 
         if len(self.node.input) == 1:
@@ -613,7 +601,7 @@ class QDQMinMax(QDQOperator):
 
 
 class QDQReduceProd(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "ReduceProd"
 
         # Only INT8 supported in TFLite
@@ -622,7 +610,7 @@ class QDQReduceProd(QDQOperator):
 
 
 class QDQScatterND(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "ScatterND"
 
@@ -641,7 +629,7 @@ class QDQScatterND(QDQOperator):
 
 
 class QDQSoftmax(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "Softmax"
 
         super().quantize()
@@ -661,7 +649,7 @@ class QDQSoftmax(QDQOperator):
 
 
 class QDQTanh(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "Tanh"
         assert self.quantizer.activation_qType == TensorProto.INT8, "Quantization of Tanh supported only for INT8"
 
@@ -676,7 +664,7 @@ class QDQTanh(QDQOperator):
 
 
 class QDQPad(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Pad"
 
@@ -695,7 +683,7 @@ class QDQPad(QDQOperator):
 
 
 class QDQSigmoid(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         assert self.node.op_type == "Sigmoid"
 
         super().quantize()
@@ -714,7 +702,7 @@ class QDQSigmoid(QDQOperator):
 
 
 class QDQWhere(QDQOperator):
-    def quantize(self):
+    def quantize(self) -> None:
         node = self.node
         assert node.op_type == "Where"
 
@@ -845,7 +833,8 @@ class QDQQuantizer:
         self.op_types_to_quantize = op_types_to_quantize or self.default_op_types_to_quantize
         self._register_custom_qdq_quantizers()
 
-    def _register_custom_qdq_quantizers(self):
+    # noinspection PyMethodMayBeStatic
+    def _register_custom_qdq_quantizers(self) -> None:
         QDQRegistry["ArgMax"] = QDQOperatorBase
         QDQRegistry["ArgMin"] = QDQOperatorBase
         QDQRegistry["Clip"] = QDQClip
@@ -859,7 +848,7 @@ class QDQQuantizer:
         QDQRegistry["GreaterOrEqual"] = QDQOperatorBase
         QDQRegistry["HardSwish"] = QDQOperatorBase
         QDQRegistry["InstanceNormalization"] = QDQNormalization
-        QDQRegistry["LayerNormalization"]: QDQNormalization
+        QDQRegistry["LayerNormalization"] = QDQNormalization
         QDQRegistry["Less"] = QDQOperatorBase
         QDQRegistry["LessOrEqual"] = QDQOperatorBase
         QDQRegistry["LogSoftmax"] = QDQLogSoftmax
@@ -887,16 +876,16 @@ class QDQQuantizer:
 
         logger.e(logger.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
 
-    def _model_has_QDQ_nodes(self, model):
-        """
-        Detect if model already has QuantizeLinear or DequantizeLinear ops.
+    # noinspection PyPep8Naming,PyMethodMayBeStatic
+    def _model_has_QDQ_nodes(self, model) -> bool:  # noqa: N802
+        """Detect if model already has QuantizeLinear or DequantizeLinear ops.
         """
         return any(
             node.op_type == "QuantizeLinear" or node.op_type == "DequantizeLinear" for node in model.graph.node
         )
 
     def quantize_model(self, model_proto: onnx_model.ModelProto, quantization_config: QuantizationConfig,
-                       save_model=False, saved_model_name="quantized_model.onnx"):
+                       save_model=False, saved_model_name="quantized_model.onnx") -> onnx.ModelProto:
         if self._model_has_QDQ_nodes(model_proto):
             logger.e(logger.Code.INVALID_ONNX_MODEL,
                      "Model is already quantized. Quantization of such model can lead to infinite loop. "
@@ -956,10 +945,10 @@ class QDQQuantizer:
                 if removed_ops > 0:
                     logger.i(f"ORT model optimization step removed {removed_ops} ops.")
                 elif removed_ops == 0:
-                    logger.i(f"ORT model optimization step hasn't removed any nodes.")
+                    logger.i("ORT model optimization step hasn't removed any nodes.")
                 else:
                     logger.w(f"ORT model optimization step added {abs(removed_ops)} ops.")
-            except BaseException as e:
+            except BaseException as e: # noqa: BLE001
                 # Optimization failed - continue with non-optimized model
                 logger.w(f"Optimization step failed with: {type(e).__name__}. Skipping.")
                 logger.d(f"Optimization step failure reason: {traceback.format_exc()}")

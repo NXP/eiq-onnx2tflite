@@ -5,22 +5,20 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    TensorConverter
+"""TensorConverter
 
 Module contains high level functions to convert ONNX tensors to TFLite.
 """
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.onnx_model as onnx_model
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
-from onnx2tflite.src.onnx_parser import onnx_tensor
+from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
+from onnx2tflite.src.tflite_generator import tflite_model
 
 
 class TensorConverter:
-    """ This class provides methods to convert ONNX tensors to TFLite and create them 
-        using the provided 'ModelBuilder'.
+    """This class provides methods to convert ONNX tensors to TFLite and create them
+    using the provided 'ModelBuilder'.
     """
 
     _builder: model_builder.ModelBuilder
@@ -28,11 +26,11 @@ class TensorConverter:
     def __init__(self, builder: model_builder.ModelBuilder) -> None:
         self._builder = builder
 
-    def convert_internal_tensors(self, o_tensors: onnx_model.RepeatedValueInfoProto):
-        """ Create 'tensor' tables in the 'tensors' vector of the subGraph for oTensors.
-            The 'o_tensors' do NOT contain data. They should be the inputs and outputs of
-            operators in the graph. 
-            Designed for the 'value_info' field in ONNX 'Graph'.
+    def convert_internal_tensors(self, o_tensors: onnx_model.RepeatedValueInfoProto) -> None:
+        """Create 'tensor' tables in the 'tensors' vector of the subGraph for oTensors.
+        The 'o_tensors' do NOT contain data. They should be the inputs and outputs of
+        operators in the graph. 
+        Designed for the 'value_info' field in ONNX 'Graph'.
         """
         for o_tensor in o_tensors:
             if o_tensor.type.tensor_type is None:
@@ -46,34 +44,33 @@ class TensorConverter:
             buffer = self._builder.build_empty_buffer()
             self._builder.build_empty_tensor(o_tensor, buffer)
 
-    def convert_constant_tensors(self, o_tensors: onnx_tensor.RepeatedTensorProto):
-        """ Create 'tensor' and 'buffer' tables for the ONNX 'oTensors'.
-            The 'oTensors' should have data in them. 
-            Designed for the 'initializer' field of the ONNX 'Graph'.
+    def convert_constant_tensors(self, o_tensors: onnx_tensor.RepeatedTensorProto) -> None:
+        """Create 'tensor' and 'buffer' tables for the ONNX 'oTensors'.
+        The 'oTensors' should have data in them. 
+        Designed for the 'initializer' field of the ONNX 'Graph'.
         """
         for o_tensor in o_tensors:
             buffer = self._builder.build_buffer(o_tensor)
             self._builder.build_constant_tensor(o_tensor, buffer)
 
-    def convert_output_tensors(self, o_outputs: onnx_model.RepeatedValueInfoProto):
-        """ Create 'tensor' tables in the 'tensors' vector of the subGraph for the 'oOutputs'.
-            Also create empty buffers in the 'buffers' vector of the model. 
-            SHOULD be called before any other tensor building function!
-            Designed for the 'output' field of the ONNX 'Graph'.
+    def convert_output_tensors(self, o_outputs: onnx_model.RepeatedValueInfoProto) -> None:
+        """Create 'tensor' tables in the 'tensors' vector of the subGraph for the 'oOutputs'.
+        Also create empty buffers in the 'buffers' vector of the model. 
+        SHOULD be called before any other tensor building function!
+        Designed for the 'output' field of the ONNX 'Graph'.
         """
-
         if self._builder.buffers_size() != 0:
             logger.d("'Builder.buildOutputTensors()' should be called before any other Tensor building function!")
 
         outputs = tflite_model.SubGraphOutputs()
-        output_map = dict()
+        output_map = {}
 
         for o_output in o_outputs:
             if o_output.type.tensor_type is None:
                 logger.e(logger.Code.UNSUPPORTED_ONNX_TYPE,
                          "ONNX: Only type 'tensor_type' is supported for Outputs yet!")
 
-            if o_output.name in output_map.keys():
+            if o_output.name in output_map:
                 tensor = output_map[o_output.name]
 
             else:
@@ -85,19 +82,19 @@ class TensorConverter:
 
         self._builder.get_sub_graph().outputs = outputs
 
-    def convert_input_tensors(self, o_inputs: onnx_model.RepeatedValueInfoProto):
-        """ Create 'tensor' tables in the 'tensors' vector of the subGraph for the 'o_inputs'.
-            Also create empty buffers in the 'buffers' vector of the model. """
-
+    def convert_input_tensors(self, o_inputs: onnx_model.RepeatedValueInfoProto) -> None:
+        """Create 'tensor' tables in the 'tensors' vector of the subGraph for the 'o_inputs'.
+        Also create empty buffers in the 'buffers' vector of the model.
+        """
         inputs = tflite_model.SubGraphInputs()
-        input_map = dict()
+        input_map = {}
 
         for o_input in o_inputs:
             if o_input.type.tensor_type is None:
                 logger.e(logger.Code.UNSUPPORTED_ONNX_TYPE,
                          "ONNX: Only type 'tensor_type' is supported for Inputs yet!")
 
-            if o_input.name in input_map.keys():
+            if o_input.name in input_map:
                 tensor = input_map[o_input.name]
 
             else:

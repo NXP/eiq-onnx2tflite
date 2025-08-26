@@ -16,8 +16,7 @@ class ConversionContext:
 
     def __init__(self, tflite_builder: ModelBuilder, onnx_inspector: ONNXModelInspector,
                  conversion_config: ConversionConfig):
-        """
-        Context with data related to current conversion.
+        """Context with data related to current conversion.
 
         :param tflite_builder: TFLite model builder.
         :param onnx_inspector: Inspector of converted ONNX model.

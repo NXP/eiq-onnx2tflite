@@ -4,7 +4,7 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import onnx
@@ -21,12 +21,12 @@ class LayerNormalization(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.axis = -1
         self.epsilon = np.float32(1e-5)
         self.stash_type = 1
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "axis":
                 self.axis = attr.i

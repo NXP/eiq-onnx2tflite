@@ -4,7 +4,7 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import onnx
@@ -19,7 +19,7 @@ class QuickGelu(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         # The default `alpha` is not mentioned in the documentation and I also couldn't find it in ONNX Runtime kernels.
         # These articles:
         #   https://zeta.apac.ai/en/latest/zeta/nn/modules/quickgeluactivation/
@@ -28,7 +28,7 @@ class QuickGelu(meta.ONNXOperatorAttributes):
         #  error was the smallest. It got up to 5.e-7, which is larger than our regular absolute tolerance of 1.e-8.
         self.alpha = np.float32(1.702)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "alpha":
                 self.alpha = attr.f

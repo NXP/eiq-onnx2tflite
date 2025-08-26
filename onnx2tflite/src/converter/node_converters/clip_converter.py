@@ -5,22 +5,27 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import quantize_static_float_tensor
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor, \
-    propagate_quantization
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
-from onnx2tflite.src.converter.conversion.translator import get_min_value_for_type, get_max_value_for_type, \
-    tf_lite_type_to_numpy
+from onnx2tflite.src.converter.conversion.translator import (
+    get_max_value_for_type,
+    get_min_value_for_type,
+    tf_lite_type_to_numpy,
+)
 from onnx2tflite.src.converter.node_converter import NodeConverter
-from onnx2tflite.src.converter.tensor_utils import tensor_has_data, all_tensors_are_static
+from onnx2tflite.src.converter.quantization_utils import (
+    propagate_quantization,
+    quantize_static_float_tensor,
+    set_quantization_parameters_to_tensor,
+)
+from onnx2tflite.src.converter.tensor_utils import all_tensors_are_static, tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import clip_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -30,14 +35,14 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 
 # noinspection PyMethodMayBeStatic
 class ClipConverter(NodeConverter):
-    node = 'Clip'
+    node = "Clip"
     onnx_supported_types = FLOATS + INTS + UINTS
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8] + INTS
     verified_types = [TensorType.FLOAT32, TensorType.UINT8] + INTS
 
     def _return_as_activation_function(self, t_op: tflite_model.Operator,
-                                       builtin_operator: BuiltinOperator) -> tflite_model.Operator:
-        """ Turn 't_op' into a TFLite operator identified by 'builtin_operator'.
+                                       builtin_operator: BuiltinOperator | int) -> tflite_model.Operator:
+        """Turn 't_op' into a TFLite operator identified by 'builtin_operator'.
 
         :param t_op: TFLite operator, that will be turned into 'builtin_operator'.
         :param builtin_operator: BuiltinOperator enum value, which specifies the resulting operator.
@@ -50,7 +55,7 @@ class ClipConverter(NodeConverter):
 
     def _try_convert_as_relu(self, min_tensor: tflite_model.Tensor, max_tensor: tflite_model.Tensor,
                              t_op: tflite_model.Operator) -> list[tflite_model.Operator] | None:
-        """ Try to convert the 'Clip' into a Relu type operator. If successful, return a list of TFLite operators to add to
+        """Try to convert the 'Clip' into a Relu type operator. If successful, return a list of TFLite operators to add to
              the model. Otherwise, return None.
 
         :param min_tensor: TFLite tensor which is the second input of the ONNX Clip operator.
@@ -58,7 +63,6 @@ class ClipConverter(NodeConverter):
         :param t_op: TFLite operator with IO corresponding to the ONNX Clip operator.
         :return: A list of resulting TFLite operators, or None if the conversion into Relu is not possible.
         """
-
         if not all_tensors_are_static(min_tensor, max_tensor):
             return None
 
@@ -111,19 +115,19 @@ class ClipConverter(NodeConverter):
 
             return [self._return_as_activation_function(t_op, BuiltinOperator.RELU)]
 
-        elif min_val == zero and max_val == six:
+        if min_val == zero and max_val == six:
             return [self._return_as_activation_function(t_op, BuiltinOperator.RELU6)]
 
-        elif min_val == n_one and max_val == one:
+        if min_val == n_one and max_val == one:
             return [self._return_as_activation_function(t_op, BuiltinOperator.RELU_N1_TO_1)]
 
-        elif min_val == zero and max_val == one:
+        if min_val == zero and max_val == one:
             return [self._return_as_activation_function(t_op, BuiltinOperator.RELU_0_TO_1)]
 
         return None
 
     def _quantize_min_max_tensors(self, x, min_tensor, max_tensor) -> (tflite_model.Tensor, tflite_model.Tensor):
-        """ Return the quantized `min_tensor` and `max_tensor`. """
+        """Return the quantized `min_tensor` and `max_tensor`."""
         if x.quantization is not None:
             # Check type of min/max tensors and quantize them if necessary
             scale = x.quantization.scale.vector
@@ -156,15 +160,14 @@ class ClipConverter(NodeConverter):
 
         return min_tensor, max_tensor
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert ONNX Clip operator into TFLite.
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert ONNX Clip operator into TFLite.
 
-            There is no 'Clip' in TFLite. If the 'Clip' is representing an activation function such as Relu6..., we can
-             convert it directly to that. Otherwise, we chain the Maximum and Minimum operators together. Maximum outputs
-             the larger value from its 2 inputs (effectively clipping to a lower limit). Minimum outputs the smaller value
-             from its 2 inputs (effectively clipping to an upper limit).
+        There is no 'Clip' in TFLite. If the 'Clip' is representing an activation function such as Relu6..., we can
+         convert it directly to that. Otherwise, we chain the Maximum and Minimum operators together. Maximum outputs
+         the larger value from its 2 inputs (effectively clipping to a lower limit). Minimum outputs the smaller value
+         from its 2 inputs (effectively clipping to an upper limit).
         """
-
         o_clip = cast(clip_attributes.Clip, node.attributes)
 
         x = t_op.tmp_inputs[0]
@@ -188,8 +191,8 @@ class ClipConverter(NodeConverter):
             if len(t_op.tmp_inputs) != 1:
                 logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Clip v6 has invalid number of inputs.")
 
-            min_tensor = self.builder.create_tensor_for_data(np.array([o_clip.min], np.float32), 'min')
-            max_tensor = self.builder.create_tensor_for_data(np.array([o_clip.max], np.float32), 'max')
+            min_tensor = self.builder.create_tensor_for_data(np.array([o_clip.min], np.float32), "min")
+            max_tensor = self.builder.create_tensor_for_data(np.array([o_clip.max], np.float32), "max")
 
         else:
             # V11+ -> uses input tensors
@@ -198,11 +201,11 @@ class ClipConverter(NodeConverter):
 
             if (min_tensor := try_get_input(t_op, 1)) is None:
                 min_tensor = self.builder.create_tensor_for_data(np.array([get_min_value_for_type(np_type)], np_type),
-                                                                 'min')
+                                                                 "min")
 
             if (max_tensor := try_get_input(t_op, 2)) is None:
                 max_tensor = self.builder.create_tensor_for_data(np.array([get_max_value_for_type(np_type)], np_type),
-                                                                 'max')
+                                                                 "max")
 
             # All tensors should have the same type if it's not QDQ model (min/max tensors can be float)
             if not is_qdq_model and not all(t.type == x.type for t in [x, min_tensor, max_tensor]):

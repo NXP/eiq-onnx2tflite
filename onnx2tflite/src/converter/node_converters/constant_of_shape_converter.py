@@ -15,7 +15,7 @@ from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
-from onnx2tflite.src.onnx_parser import onnx_tensor, onnx_model
+from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
 from onnx2tflite.src.onnx_parser.builtin_attributes.constant_of_shape_attributes import ConstantOfShape
 from onnx2tflite.src.onnx_parser.onnx_tensor import TensorProto
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -24,11 +24,10 @@ from onnx2tflite.src.tflite_generator.meta.types import name_for_type
 
 
 class ConstantOfShapeConverter(NodeConverter):
-    node = 'ConstantOfShape'
+    node = "ConstantOfShape"
 
     def _validate_value_tensor(self, value: TensorProto) -> tflite_model.Tensor:
-        """ Make sure the 'value' is a valid 1 element ONNX tensor and return a corresponding TFLite tensor. """
-
+        """Make sure the 'value' is a valid 1 element ONNX tensor and return a corresponding TFLite tensor."""
         # ONNX documentation says the 'value' should always be a tensor.
         if not isinstance(value, onnx_tensor.TensorProto):
             logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX ConstantOfShape is only implemented when the "
@@ -48,10 +47,11 @@ class ConstantOfShapeConverter(NodeConverter):
 
         return self.builder.create_tensor_for_data(value.data, "value")
 
-    def _prepend_gather_operator(self, broadcast_to_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]):
-        """ Create a TFLite 'Gather' operator in front the 'broadcast_to_op' operator and add it to 'ops_to_add'.
-            The 'Gather' will permute the input data from representing the shape of a channels first tensor, to a shape of
-            a channels last tensor.
+    def _prepend_gather_operator(
+        self, broadcast_to_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]) -> None:
+        """Create a TFLite 'Gather' operator in front the 'broadcast_to_op' operator and add it to 'ops_to_add'.
+        The 'Gather' will permute the input data from representing the shape of a channels first tensor, to a shape of
+        a channels last tensor.
         """
         output_rank = broadcast_to_op.tmp_outputs[0].rank
         if output_rank == 0:
@@ -71,8 +71,7 @@ class ConstantOfShapeConverter(NodeConverter):
         ops_to_add.insert(0, gather_op)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX ConstantOfShape operator to TFLite BroadcastTo. """
-
+        """Convert the ONNX ConstantOfShape operator to TFLite BroadcastTo."""
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX ConstantOfShape has unexpected number of operators. "
                                                      f"Got '{len(t_op.tmp_inputs)}', expected '1'.")

@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
@@ -20,10 +20,10 @@ class DepthToSpace(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
-        self.mode = 'DCR'
+    def _default_values(self) -> None:
+        self.mode = "DCR"
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "blocksize":
                 self.block_size = attr.i
@@ -32,6 +32,6 @@ class DepthToSpace(meta.ONNXOperatorAttributes):
             else:
                 logger.w(f"ONNX `DepthToSpace` attribute `{attr.name}` is not supported!")
 
-        if not hasattr(self, 'block_size'):
+        if not hasattr(self, "block_size"):
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     'ONNX `DepthToSpace` is missing the required `blocksize` attribute.')
+                     "ONNX `DepthToSpace` is missing the required `blocksize` attribute.")

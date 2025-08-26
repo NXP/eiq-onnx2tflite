@@ -10,23 +10,26 @@ from typing import cast
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.concatenation_options as tflite_concatenation_options
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor, \
-    quantization_params_to_lists, re_quantize_static_tensor
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import (
+    quantization_params_to_lists,
+    re_quantize_static_tensor,
+    set_quantization_parameters_to_tensor,
+)
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.q_linear_concat_attributes import QLinearConcat
+from onnx2tflite.src.tflite_generator import tflite_model
 
 
 class QLinearConcatConverter(NodeConverter):
-    node = 'QLinearConcat'
+    node = "QLinearConcat"
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime 'QLinearConcat' operator to TFLite 'Concat'. """
+        """Convert the ONNX Runtime 'QLinearConcat' operator to TFLite 'Concat'."""
         attrs = cast(QLinearConcat, node.attributes)
 
         axis = attrs.axis

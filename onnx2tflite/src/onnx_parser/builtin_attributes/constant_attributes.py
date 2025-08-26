@@ -7,35 +7,35 @@
 #
 
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_tensor
-from onnx2tflite.src.onnx_parser.onnx_tensor import TensorProto, SparseTensor
+from onnx2tflite.src.onnx_parser.meta import meta
+from onnx2tflite.src.onnx_parser.onnx_tensor import SparseTensor, TensorProto
 
 
 class Constant(meta.ONNXOperatorAttributes):
     # V1+
-    value: Optional[TensorProto]
+    value: TensorProto | None
     # V11+
-    sparse_value: Optional[SparseTensor]
+    sparse_value: SparseTensor | None
     # V12+
-    value_float: Optional[float]
-    value_floats: Optional[meta.ONNXFloatListAttribute]
-    value_int: Optional[int]
-    value_ints: Optional[meta.ONNXIntListAttribute]
-    value_string: Optional[str]
-    value_strings: Optional[meta.ONNXStringListAttribute]
+    value_float: float | None
+    value_floats: meta.ONNXFloatListAttribute | None
+    value_int: int | None
+    value_ints: meta.ONNXIntListAttribute | None
+    value_string: str | None
+    value_strings: meta.ONNXStringListAttribute | None
 
     # I see no need to distinguish between versions.
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "value":
                 self.value = onnx_tensor.TensorProto(attr.t)

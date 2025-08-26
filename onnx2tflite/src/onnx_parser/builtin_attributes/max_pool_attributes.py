@@ -5,27 +5,27 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class MaxPool(meta.ONNXOperatorAttributes):
     auto_pad: str
     ceil_mode: int
-    dilations: Optional[meta.ONNXIntListAttribute]
-    kernel_shape: Optional[meta.ONNXIntListAttribute]
-    pads: Optional[meta.ONNXIntListAttribute]
+    dilations: meta.ONNXIntListAttribute | None
+    kernel_shape: meta.ONNXIntListAttribute | None
+    pads: meta.ONNXIntListAttribute | None
     storage_order: int  # Not necessary. Only has effect on the second output tensor, which cannot be converted anyway.
-    strides: Optional[meta.ONNXIntListAttribute]
+    strides: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.auto_pad = "NOTSET"
         self.ceil_mode = 0
         self.dilations = None
@@ -34,7 +34,7 @@ class MaxPool(meta.ONNXOperatorAttributes):
         self.storage_order = 0
         self.strides = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "auto_pad":
                 self.auto_pad = attr.s.decode("UTF-8")

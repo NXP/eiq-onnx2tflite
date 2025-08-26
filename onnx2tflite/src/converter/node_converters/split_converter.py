@@ -10,10 +10,10 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import split_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -23,7 +23,7 @@ from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
 
 # noinspection PyMethodMayBeStatic
 class SplitConverter(NodeConverter):
-    node = 'Split'
+    node = "Split"
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/split.cc#L87-L90
@@ -31,7 +31,7 @@ class SplitConverter(NodeConverter):
     verified_types = INTS + [TensorType.FLOAT32, TensorType.UINT8]
 
     def _validate_axis(self, axis: int, input_rank: int) -> int:
-        """ Make sure the 'axis' is valid for TFLite Split and return it.
+        """Make sure the 'axis' is valid for TFLite Split and return it.
 
         :param axis: The axis to validate.
         :param input_rank: The rank of the main input tensor of the Split operator.
@@ -48,13 +48,12 @@ class SplitConverter(NodeConverter):
         return axis
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Split operator to TFLite.
+        """Convert the ONNX Split operator to TFLite.
 
         :param node: ONNX Split operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
         :return: A list of TFLite operators, to add to the model.
         """
-
         if not (1 <= len(t_op.tmp_inputs) <= 2):
             logger.e(logger.Code.INVALID_ONNX_MODEL,
                      f"ONNX 'Split' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected 1 or 2.")
@@ -74,7 +73,7 @@ class SplitConverter(NodeConverter):
         if main_input.tensor_format.is_channels_last():
             # Change the 'axis' to match the input format
             axis = translator.create_channels_last_to_channels_first_permutation(rank)[axis]
-        axis_tensor = self.builder.create_tensor_for_data(np.asarray([axis], np.int32), 'split_dim_')
+        axis_tensor = self.builder.create_tensor_for_data(np.asarray([axis], np.int32), "split_dim_")
 
         if node.version < 13:
             # `split` is an operator attribute.
@@ -82,7 +81,7 @@ class SplitConverter(NodeConverter):
             if o_split_attributes.split is not None:
                 # Create a tensor for the 'size_splits' of the TFLite SplitV operator
                 size_splits = self.builder.create_tensor_for_data(np.asarray(o_split_attributes.split, np.int32),
-                                                                  'size_splits_')
+                                                                  "size_splits_")
             else:
                 size_splits = None
 

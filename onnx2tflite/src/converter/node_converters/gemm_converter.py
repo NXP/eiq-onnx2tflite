@@ -6,34 +6,38 @@
 # See the LICENSE_MIT for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.quantization_utils import get_symmetric_zero_point_for_type, \
-    quantization_params_to_lists, quantize_static_float_tensor, re_quantize_static_tensor
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import (
+    get_symmetric_zero_point_for_type,
+    quantization_params_to_lists,
+    quantize_static_float_tensor,
+    re_quantize_static_tensor,
+)
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import gemm_attributes
-from onnx2tflite.src.tflite_generator.builtin_options import (add_options, fully_connected_options, mul_options)
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import add_options, fully_connected_options, mul_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class GemmConverter(NodeConverter):
-    node = 'Gemm'
+    node = "Gemm"
 
     onnx_supported_types = FLOATS + [TensorType.INT32, TensorType.INT64, TensorType.UINT32, TensorType.UINT64]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/fully_connected.cc#L171-L196
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT8, TensorType.UINT8]
     verified_types = [TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert the ONNX Gemm operator to TFLite FullyConnected.
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX Gemm operator to TFLite FullyConnected.
 
         :param node: ONNX Gemm operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
@@ -41,7 +45,7 @@ class GemmConverter(NodeConverter):
         """
         if not (2 <= len(t_op.tmp_inputs) <= 3):
             logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f'ONNX Gemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 2 - 3.')
+                     f"ONNX Gemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 2 - 3.")
 
         ops = OpsList(middle_op=t_op)
 
@@ -49,7 +53,7 @@ class GemmConverter(NodeConverter):
         b = t_op.tmp_inputs[1]
 
         if a.type != b.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX Gemm has mismatched input types.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Gemm has mismatched input types.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(a.type)
@@ -81,8 +85,8 @@ class GemmConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList):
-        """ Handle the conversion of the 'alpha' attribute of the ONNX Gemm operator.
+    def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList) -> None:
+        """Handle the conversion of the 'alpha' attribute of the ONNX Gemm operator.
 
             Gemm carries out the following operation:
                 Y = alpha * A * B + C * beta
@@ -92,7 +96,6 @@ class GemmConverter(NodeConverter):
 
         :param t_op: TFLite operator representing the corresponding FullyConnected operator.
         """
-
         if alpha == 1.:
             return
 
@@ -114,11 +117,11 @@ class GemmConverter(NodeConverter):
                 # Create alpha tensor and quantize it based on alpha value -> it will result in scale value
                 # being quantized to "1", and no loss of information.
                 alpha_data = np.array([alpha], np.float32)
-                alpha_tensor = self.context.tflite_builder.create_tensor_for_data(alpha_data, 'alpha')
+                alpha_tensor = self.context.tflite_builder.create_tensor_for_data(alpha_data, "alpha")
                 zp = [get_symmetric_zero_point_for_type(a.type)]
                 alpha_tensor = quantize_static_float_tensor(self.builder, alpha_tensor, a.type, [alpha], zp)
 
-                mul_output = self.context.tflite_builder.duplicate_tensor(a, name_suffix='_scaled')
+                mul_output = self.context.tflite_builder.duplicate_tensor(a, name_suffix="_scaled")
                 # Mul output tensor is quantized as 'alpha * scale' because we are effectively changing the range
                 # (stretching or extending) we are quantizing.
                 mul_output.quantization.scale = tflite_model.Scale(
@@ -144,8 +147,8 @@ class GemmConverter(NodeConverter):
 
         else:
             # Insert a mul operator
-            alpha_tensor = self.context.tflite_builder.create_tensor_for_data(np.array([alpha], np.float32), 'alpha')
-            mul_output = self.context.tflite_builder.duplicate_tensor(a, name_suffix='_scaled')
+            alpha_tensor = self.context.tflite_builder.create_tensor_for_data(np.array([alpha], np.float32), "alpha")
+            mul_output = self.context.tflite_builder.duplicate_tensor(a, name_suffix="_scaled")
 
             mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
             mul_op.tmp_inputs = [a, alpha_tensor]
@@ -155,7 +158,7 @@ class GemmConverter(NodeConverter):
 
             ops.add_pre(mul_op)
 
-    def _handle_c_tensor(self, o_gemm: gemm_attributes.Gemm, t_op: tflite_model.Operator, ops: OpsList):
+    def _handle_c_tensor(self, o_gemm: gemm_attributes.Gemm, t_op: tflite_model.Operator, ops: OpsList) -> None:
         if (c := try_get_input(t_op, 2)) is None:
             return
 
@@ -178,8 +181,8 @@ class GemmConverter(NodeConverter):
             else:
                 # Prepend a Mul operator.
                 beta_tensor = self.context.tflite_builder.create_tensor_for_data(np.array([o_gemm.beta], np.float32),
-                                                                                 'beta')
-                mul_output = self.context.tflite_builder.duplicate_tensor(c, name_suffix='_scaled')
+                                                                                 "beta")
+                mul_output = self.context.tflite_builder.duplicate_tensor(c, name_suffix="_scaled")
 
                 mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
                 mul_op.tmp_inputs = [c, beta_tensor]
@@ -250,7 +253,7 @@ class GemmConverter(NodeConverter):
 
         if t.rank != 2:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f'ONNX Gemm has a main intput with {t.rank} dimensions instead of 2.')
+                     f"ONNX Gemm has a main intput with {t.rank} dimensions instead of 2.")
 
         if tensor_has_data(t):
             # Transpose statically.
@@ -260,6 +263,7 @@ class GemmConverter(NodeConverter):
             t.tmp_buffer.data = np.transpose(t.tmp_buffer.data)
             t.shape = tflite_model.Shape(list(t.tmp_buffer.data.shape))
 
+            return None
         else:
             # Dynamic tensor -> prepend a Transpose op.
             return self.context.tflite_builder.create_transpose_operator_before(t_op, input_idx, [1, 0])

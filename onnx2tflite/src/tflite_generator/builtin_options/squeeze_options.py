@@ -28,7 +28,7 @@ class Squeeze(meta.BuiltinOptions):
         else:
             self.squeeze_dims = None
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         if self.squeeze_dims is not None:
             tfl_squeeze_dims = self.squeeze_dims.gen_tflite(builder)
         else:

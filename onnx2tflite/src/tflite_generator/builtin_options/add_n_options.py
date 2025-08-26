@@ -4,20 +4,17 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    AddN
+"""AddN
 
 Representation of the TFLite operator 'AddN'.
 """
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
-from onnx2tflite.lib.tflite import (
-    BuiltinOptions as libBuiltinOptions,
-    BuiltinOperator as libBuiltinOperator,
-    AddNOptions as libAddNOptions
-)
+from onnx2tflite.lib.tflite import AddNOptions as libAddNOptions
+from onnx2tflite.lib.tflite import BuiltinOperator as libBuiltinOperator
+from onnx2tflite.lib.tflite import BuiltinOptions as libBuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class AddN(meta.BuiltinOptions):
@@ -25,6 +22,6 @@ class AddN(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.AddNOptions,
                          libBuiltinOperator.BuiltinOperator.ADD_N)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libAddNOptions.Start(builder)
         return libAddNOptions.End(builder)

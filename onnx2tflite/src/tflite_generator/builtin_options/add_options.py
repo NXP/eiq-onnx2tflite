@@ -4,21 +4,18 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    Add
+"""Add
 
 Representation of the TFLite operator 'Add'.
 """
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
-from onnx2tflite.lib.tflite import (
-    BuiltinOptions as libBuiltinOptions,
-    BuiltinOperator as libBuiltinOperator,
-    ActivationFunctionType as libActivationFunctionType,
-    AddOptions as libAddOptions
-)
+from onnx2tflite.lib.tflite import ActivationFunctionType as libActivationFunctionType
+from onnx2tflite.lib.tflite import AddOptions as libAddOptions
+from onnx2tflite.lib.tflite import BuiltinOperator as libBuiltinOperator
+from onnx2tflite.lib.tflite import BuiltinOptions as libBuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Add(meta.BuiltinOptions):
@@ -33,7 +30,7 @@ class Add(meta.BuiltinOptions):
                          libBuiltinOperator.BuiltinOperator.ADD)
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libAddOptions.Start(builder)
 
         libAddOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

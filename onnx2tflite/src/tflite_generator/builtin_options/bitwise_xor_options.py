@@ -7,10 +7,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import BitwiseXorOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class BitwiseXor(meta.BuiltinOptions):
@@ -18,7 +18,7 @@ class BitwiseXor(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.BitwiseXorOptions, BuiltinOperator.BITWISE_XOR)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         BitwiseXorOptions.Start(builder)
 
         return BitwiseXorOptions.End(builder)

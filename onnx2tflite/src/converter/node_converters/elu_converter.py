@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
@@ -20,23 +20,22 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class EluConverter(NodeConverter):
-    node = 'Elu'
+    node = "Elu"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/activations.cc#L1503-L1522
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT8]
     verified_types = [TensorType.FLOAT32]
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert ONNX `Elu`` operator into TFLite `Elu`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert ONNX `Elu`` operator into TFLite `Elu`."""
         if len(t_op.tmp_inputs) != 1 or len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `Elu` has invalid number of input and output tensors.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Elu` has invalid number of input and output tensors.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `Elu` has different input and output types.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Elu` has different input and output types.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
@@ -46,7 +45,7 @@ class EluConverter(NodeConverter):
             # TFLite only uses `alpha=1.0`. Other values could be converted into multiple operators, but it doesn't seem
             #  like a common use-case.
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f'Conversion of ONNX `Elu` with `alpha={attrs.alpha}` is not supported.')
+                     f"Conversion of ONNX `Elu` with `alpha={attrs.alpha}` is not supported.")
 
         t_op.opcode_index = self.builder.op_code_index_for_op_type(BuiltinOperator.ELU)
 

@@ -4,18 +4,19 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
+from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 
 
-def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model_builder.ModelBuilder, ops: OpsList):
-    """ Make sure that all input and output tensors of 't_op' have the correct format. 't_op' is assumed to be an LSTM
+def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model_builder.ModelBuilder,
+                                     ops: OpsList) -> None:
+    """Make sure that all input and output tensors of 't_op' have the correct format. 't_op' is assumed to be an LSTM
          or RNN operator.
 
         The LSTM/RNN may be using channels last tensors, because of the surrounding operators. LSTM/RNN requires its own
@@ -28,7 +29,6 @@ def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model
     :param builder: ModelBuilder object.
     :param ops: OpsList object, with operators to add to the model. May already contain some operators.
     """
-
     if t_op.tmp_inputs[0].tensor_format == TensorFormat.FORMATLESS:
         # Nothing to be done. All tensors should be formatless.
         return
@@ -61,10 +61,10 @@ def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model
             t_op.tmp_outputs[idx].tensor_format = TensorFormat.FORMATLESS
 
 
-def get_activation_function_for_name(name: str, op_type: str = 'LSTM') -> ActivationFunctionType:
+def get_activation_function_for_name(name: str, op_type: str = "LSTM") -> ActivationFunctionType:
     get_activation_function_for_name.map = {
-        'Tanh': ActivationFunctionType.TANH,
-        'Relu': ActivationFunctionType.RELU
+        "Tanh": ActivationFunctionType.TANH,
+        "Relu": ActivationFunctionType.RELU
     }
 
     if act_fun := get_activation_function_for_name.map.get(name, None):
@@ -75,8 +75,8 @@ def get_activation_function_for_name(name: str, op_type: str = 'LSTM') -> Activa
              f"Conversion of ONNX {op_type} with activation function '{name}' is not possible.")
 
 
-def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: str = 'LSTM'):
-    """ Check if the 'sequence_lens' operand of ONNX LSTM/RNN has an effect. If it does, exit with error.
+def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: str = "LSTM") -> None:
+    """Check if the 'sequence_lens' operand of ONNX LSTM/RNN has an effect. If it does, exit with error.
 
     :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
     :param seq_length: The first dimension of the main LSTM input.

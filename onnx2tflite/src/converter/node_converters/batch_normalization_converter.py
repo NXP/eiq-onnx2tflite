@@ -10,7 +10,6 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
@@ -18,13 +17,14 @@ from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.batch_normalization_attributes import BatchNormalization
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_options, mul_options, sub_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 
 # noinspection PyMethodMayBeStatic
 class BatchNormalizationConverter(NodeConverter):
-    node = 'BatchNormalization'
+    node = "BatchNormalization"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/reduce.cc#L525-L546
@@ -33,14 +33,14 @@ class BatchNormalizationConverter(NodeConverter):
 
     def _convert_batch_normalization_with_static_operands(self, attrs: BatchNormalization,
                                                           t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX BatchNormalization with static operands to TFLite.
+        """Convert ONNX BatchNormalization with static operands to TFLite.
 
-            The equation computed by BatchNormalization can be rewritten as:
+        The equation computed by BatchNormalization can be rewritten as:
 
-                y = x * (scale / sqrt(var + eps)) + (bias - mean * scale / sqrt(var + eps))
+            y = x * (scale / sqrt(var + eps)) + (bias - mean * scale / sqrt(var + eps))
 
-            where `scale / sqrt(var + eps)` and `bias - mean * scale / sqrt(var + eps)` are static tensors, provided the
-            ONNX operands are static as well.
+        where `scale / sqrt(var + eps)` and `bias - mean * scale / sqrt(var + eps)` are static tensors, provided the
+        ONNX operands are static as well.
         """
         x = t_op.tmp_inputs[0]
         scale = t_op.tmp_inputs[1].tmp_buffer.data
@@ -76,15 +76,15 @@ class BatchNormalizationConverter(NodeConverter):
 
     def _convert_batch_normalization_with_dynamic_operands(self, attrs: BatchNormalization,
                                                            t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX BatchNormalization with dynamic operands to TFLite.
+        """Convert ONNX BatchNormalization with dynamic operands to TFLite.
 
-            BatchNormalization computes the following equation when training mode is off:
+        BatchNormalization computes the following equation when training mode is off:
 
-                y = scale * (x - mean) / sqrt(var + eps) + bias
+            y = scale * (x - mean) / sqrt(var + eps) + bias
 
-            This function assumes that at least 1 operand of the BatchNormalization is dynamic. If some of the operands
-            are static, it might be possible to statically precompute some values and reduce the number of added operators.
-            However, as this is probably not a very common scenario, such an optimization is not yet implemented.
+        This function assumes that at least 1 operand of the BatchNormalization is dynamic. If some of the operands
+        are static, it might be possible to statically precompute some values and reduce the number of added operators.
+        However, as this is probably not a very common scenario, such an optimization is not yet implemented.
         """
         x, scale, bias, mean, var = t_op.tmp_inputs
         y = t_op.tmp_outputs[0]
@@ -133,18 +133,17 @@ class BatchNormalizationConverter(NodeConverter):
         return [add_1, rsqrt, sub, mul_1, mul_2, add_2]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX BatchNormalization to TFLite.
+        """Convert ONNX BatchNormalization to TFLite.
 
-            TFLite doesn't have a corresponding operator.
-            Since we don't need to worry about what BatchNormalization does during training it can be represented via
-            multiple simpler operators.
+        TFLite doesn't have a corresponding operator.
+        Since we don't need to worry about what BatchNormalization does during training it can be represented via
+        multiple simpler operators.
         """
-
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
         if t_op.is_quantized_without_qdq():
             # ONNX doesn't support (U)INT8. Leave this check in case the support is added in the future.
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX `AveragePool` with a quantized input is not supported.')
+                     "Conversion of ONNX `AveragePool` with a quantized input is not supported.")
 
         attrs = cast(BatchNormalization, node.attributes)
 
@@ -181,16 +180,14 @@ class BatchNormalizationConverter(NodeConverter):
                 # Make sure the operands can be correctly broadcasted with the input.
                 additional_ops = self.builder.ensure_correct_broadcasting(t_op, t_op.tmp_outputs[0])
 
-        else:
-            # All operands should be 1D
-            if any(operand.rank != 1 for operand in t_op.tmp_inputs[1:]):
-                logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX BatchNormalization should only have 1D operands!")
+        # All operands should be 1D
+        elif any(operand.rank != 1 for operand in t_op.tmp_inputs[1:]):
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX BatchNormalization should only have 1D operands!")
 
         # Convert the operator
         if all(tensor_has_data(tensor) for tensor in t_op.tmp_inputs[1:]):
             # All operands are static. The BatchNormalization can be converted to just 2 operators.
             return self._convert_batch_normalization_with_static_operands(attrs, t_op)
 
-        else:
-            # At least 1 operand is dynamic.
-            return additional_ops + self._convert_batch_normalization_with_dynamic_operands(attrs, t_op)
+        # At least 1 operand is dynamic.
+        return additional_ops + self._convert_batch_normalization_with_dynamic_operands(attrs, t_op)

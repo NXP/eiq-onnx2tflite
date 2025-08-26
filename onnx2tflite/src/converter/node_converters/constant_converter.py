@@ -18,20 +18,20 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.constant_attributes import Constant
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_options
-from onnx2tflite.src.tflite_generator.meta.types import INTS, ALL_TYPES
+from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
 
 
 class ConstantConverter(NodeConverter):
-    node = 'Constant'
+    node = "Constant"
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = INTS + [TensorType.UINT8, TensorType.FLOAT32]  # Supported by TFLite `Transpose`.
     verified_types = tflite_supported_types
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Constant operator to TFLite.
-            Since the operator simply produces a constant value, there is no need to create a TFLite counterpart. Just
-             create a static tensor in the model. Since the tensor is already in the model, just add data to it.
+        """Convert the ONNX Constant operator to TFLite.
+        Since the operator simply produces a constant value, there is no need to create a TFLite counterpart. Just
+         create a static tensor in the model. Since the tensor is already in the model, just add data to it.
         """
         attrs = cast(Constant, node.attributes)
 
@@ -84,7 +84,7 @@ class ConstantConverter(NodeConverter):
             identity = np.asarray(range(output.rank), np.int32)
             identity_tensor = self.builder.create_tensor_for_data(identity, "identity")
 
-            new_input = self.builder.duplicate_tensor(output, name_suffix='_static_')
+            new_input = self.builder.duplicate_tensor(output, name_suffix="_static_")
 
             # Now 'new_input' will hold the static data and 'output' will be computed. Remove static data from 'output'.
             output.tmp_buffer.data = np.array([])

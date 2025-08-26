@@ -25,7 +25,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 
 class InstanceNormalizationConverter(NodeConverter):
-    node = 'InstanceNormalization'
+    node = "InstanceNormalization"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/reduce.cc#L525-L548
@@ -33,46 +33,45 @@ class InstanceNormalizationConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `InstanceNormalization` operator into TFLite.
+        """Convert ONNX `InstanceNormalization` operator into TFLite.
 
-            There is no 'InstanceNormalization' in TFLite. The ONNX operator carries out the operation
+        There is no 'InstanceNormalization' in TFLite. The ONNX operator carries out the operation
 
-                y = scale * (x - mean) / sqrt(variance + epsilon) + B
+            y = scale * (x - mean) / sqrt(variance + epsilon) + B
 
-            This can be represented in TFLite as:
+        This can be represented in TFLite as:
 
-                                      X
-                           ┌──────────┼───────────┐
-                           │       ┌──▼───┐       │
-                           │       │ Mean │       │
-                           │       └─┬──┬─┘       │
-                           │         │  └─────┐   │
-                      ┌────▼─────────▼────┐  ┌▼───▼┐
-                      │ SquaredDifference │  │ Sub │
-                      └─────────┬─────────┘  └──┬──┘
-                            ┌───▼──┐         ┌──▼──┐
-                            │ Mean │         │ Mul ◄───── Scale
-                            └───┬──┘         └──┬──┘
-                             ┌──▼──┐            │
-                Epsilon ─────► Add │            │
-                             └──┬──┘            │
-                            ┌───▼───┐           │
-                            │ RSqrt │           │
-                            └───┬───┘           │
-                                └─────┐   ┌─────┘
-                                     ┌▼───▼┐
-                                     │ Mul │
-                                     └──┬──┘
-                                     ┌──▼──┐
-                                     │ Add ◄───── B
-                                     └──┬──┘
-                                        ▼
-                                        Y
+                                  X
+                       ┌──────────┼───────────┐
+                       │       ┌──▼───┐       │
+                       │       │ Mean │       │
+                       │       └─┬──┬─┘       │
+                       │         │  └─────┐   │
+                  ┌────▼─────────▼────┐  ┌▼───▼┐
+                  │ SquaredDifference │  │ Sub │
+                  └─────────┬─────────┘  └──┬──┘
+                        ┌───▼──┐         ┌──▼──┐
+                        │ Mean │         │ Mul ◄───── Scale
+                        └───┬──┘         └──┬──┘
+                         ┌──▼──┐            │
+            Epsilon ─────► Add │            │
+                         └──┬──┘            │
+                        ┌───▼───┐           │
+                        │ RSqrt │           │
+                        └───┬───┘           │
+                            └─────┐   ┌─────┘
+                                 ┌▼───▼┐
+                                 │ Mul │
+                                 └──┬──┘
+                                 ┌──▼──┐
+                                 │ Add ◄───── B
+                                 └──┬──┘
+                                    ▼
+                                    Y
         """
-
         if len(t_op.tmp_inputs) != 3:
             logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f'ONNX `InstanceNormalization` has {len(t_op.tmp_inputs)} inputs instead of 3.')
+                     f"ONNX `InstanceNormalization` has {len(t_op.tmp_inputs)} inputs instead of 3.")
 
         x = t_op.tmp_inputs[0]
         scale = t_op.tmp_inputs[1]
@@ -81,15 +80,15 @@ class InstanceNormalizationConverter(NodeConverter):
 
         if x.shape.len() < 3:
             # The input must have at least 3 dimensions.
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f'ONNX `InstanceNormalization` has main input with {x.shape.len()}'
-                                                     ' dimensions. At least 3 are expected.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX `InstanceNormalization` has main input with {x.shape.len()}"
+                                                     " dimensions. At least 3 are expected.")
 
         # The ONNX `InstanceNormalization` uses `channels_first` tensors. This should be recognized by the converter in
         #  the `tensor_format_inference.py`.
         # Since the `TensorConverter` would have already converted the format to `channels_last` before this point, we
         #  have to check for `channels_last` here.
         logger.internal_assert(x.tensor_format.is_channels_last(),
-                               'InstanceNormalization should use `channels_first` in the `tensor_format_inference.py`')
+                               "InstanceNormalization should use `channels_first` in the `tensor_format_inference.py`")
 
         self.assert_type_allowed(x.type)
 
@@ -99,8 +98,8 @@ class InstanceNormalizationConverter(NodeConverter):
         ops = []
 
         # ---- Mean(x) ----
-        mean_1_out = self.builder.duplicate_tensor(x, name_suffix='_mean')
-        axes_1 = self.builder.create_tensor_for_data(np.array(axes, np.int32), 'axes')
+        mean_1_out = self.builder.duplicate_tensor(x, name_suffix="_mean")
+        axes_1 = self.builder.create_tensor_for_data(np.array(axes, np.int32), "axes")
 
         mean_1 = tflite_model.Operator(builtin_options=Mean(True))
         mean_1.tmp_inputs = [x, axes_1]
@@ -118,8 +117,8 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(squared_diff)
 
         # ---- Mean(squared_diff_out) ----  (compute the variance)
-        mean_2_out = self.builder.duplicate_tensor(squared_diff_out, name_suffix='_mean')
-        axes_2 = self.builder.create_tensor_for_data(np.array(axes, np.int32), 'axes')
+        mean_2_out = self.builder.duplicate_tensor(squared_diff_out, name_suffix="_mean")
+        axes_2 = self.builder.create_tensor_for_data(np.array(axes, np.int32), "axes")
 
         mean_2 = tflite_model.Operator(builtin_options=Mean(True))
         mean_2.tmp_inputs = [squared_diff_out, axes_2]
@@ -128,8 +127,8 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(mean_2)
 
         # ---- Add(mean_2_out, epsilon) ----  (variance + epsilon)
-        add_1_out = self.builder.duplicate_tensor(mean_2_out, name_suffix='_plus_epsilon')
-        epsilon = self.builder.create_tensor_for_data(np.array([attrs.epsilon], np.float32), 'epsilon')
+        add_1_out = self.builder.duplicate_tensor(mean_2_out, name_suffix="_plus_epsilon")
+        epsilon = self.builder.create_tensor_for_data(np.array([attrs.epsilon], np.float32), "epsilon")
 
         add_1 = tflite_model.Operator(builtin_options=Add())
         add_1.tmp_inputs = [mean_2_out, epsilon]
@@ -138,7 +137,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(add_1)
 
         # ---- RSqrt(add_1_out) ----  (1 / sqrt(variance + epsilon))
-        rsqrt_out = self.builder.duplicate_tensor(add_1_out, name_suffix='_reverse_square_root')
+        rsqrt_out = self.builder.duplicate_tensor(add_1_out, name_suffix="_reverse_square_root")
 
         rsqrt = tflite_model.Operator(builtin_options=None,
                                       opcode_index=self.builder.op_code_index_for_op_type(BuiltinOperator.RSQRT))
@@ -148,7 +147,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(rsqrt)
 
         # ---- Sub(x, mean_1_out) ----  (x - mean(x))
-        sub_out = self.builder.duplicate_tensor(x, name_suffix='_minus_mean')
+        sub_out = self.builder.duplicate_tensor(x, name_suffix="_minus_mean")
 
         sub = tflite_model.Operator(builtin_options=Sub())
         sub.tmp_inputs = [x, mean_1_out]
@@ -157,7 +156,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(sub)
 
         # ---- Mul(sub_out, scale) ----  (scale * (x - mean))
-        mul_1_out = self.builder.duplicate_tensor(sub_out, name_suffix='_scaled')
+        mul_1_out = self.builder.duplicate_tensor(sub_out, name_suffix="_scaled")
 
         mul_1 = tflite_model.Operator(builtin_options=Mul())
         mul_1.tmp_inputs = [sub_out, scale]
@@ -166,7 +165,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(mul_1)
 
         # ---- Mul(mul_1_out, rsqrt_out) ----  (scale * (x - mean) / sqrt(variance + epsilon))
-        mul_2_out = self.builder.duplicate_tensor(x, name_suffix='_normalized')
+        mul_2_out = self.builder.duplicate_tensor(x, name_suffix="_normalized")
 
         mul_2 = tflite_model.Operator(builtin_options=Mul())
         mul_2.tmp_inputs = [mul_1_out, rsqrt_out]

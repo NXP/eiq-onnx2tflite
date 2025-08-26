@@ -4,19 +4,18 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    LogSoftmax
+"""LogSoftmax
 
 Representation of an ONNX 'LogSoftmax' operator.
 Initialized from a protobuf descriptor object.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class LogSoftmax(meta.ONNXOperatorAttributes):
@@ -25,10 +24,10 @@ class LogSoftmax(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.axis = -1
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "axis":
                 self.axis = attr.i

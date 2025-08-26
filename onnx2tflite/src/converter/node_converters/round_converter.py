@@ -14,7 +14,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class RoundConverter(NodeConverter):
-    node = 'Round'
+    node = "Round"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/round.cc#L40

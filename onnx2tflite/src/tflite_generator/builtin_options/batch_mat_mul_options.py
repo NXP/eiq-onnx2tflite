@@ -4,15 +4,14 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    batch_mat_mul_options
+"""batch_mat_mul_options
 
 Representation of the TFLite operator 'BatchMatMul'.
 """
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
-from onnx2tflite.lib.tflite import BuiltinOperator, BuiltinOptions, BatchMatMulOptions
+from onnx2tflite.lib.tflite import BatchMatMulOptions, BuiltinOperator, BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class BatchMatMul(meta.BuiltinOptions):
@@ -27,7 +26,7 @@ class BatchMatMul(meta.BuiltinOptions):
         self.adj_y = adj_y
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         BatchMatMulOptions.Start(builder)
 
         BatchMatMulOptions.AddAdjX(builder, self.adj_x)

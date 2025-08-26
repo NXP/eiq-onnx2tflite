@@ -8,10 +8,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import GeluOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Gelu(meta.BuiltinOptions):
@@ -21,7 +21,7 @@ class Gelu(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.GeluOptions, BuiltinOperator.GELU)
         self.approximate = approximate
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         GeluOptions.Start(builder)
 
         GeluOptions.AddApproximate(builder, self.approximate)

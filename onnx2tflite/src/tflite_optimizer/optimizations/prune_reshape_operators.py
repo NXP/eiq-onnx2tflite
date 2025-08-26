@@ -11,28 +11,28 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import RuleOr, TensorIsNotMod
 
 
 class FuseReshapeOperators(BaseOptimization):
-    """ Remove some `Reshape` operator in the following pattern.
+    """Remove some `Reshape` operator in the following pattern.
 
-              │  'x'
-         ┌────▼────┐
-         │ Reshape │
-         └────┬────┘                                              │  'x'
-          ┌───┴─── ... ───────┐  'y'        ─────►            ┌───┴─── ... ───────┐   ('y' is not in the model anymore)
-     ┌────▼────┐         ┌────▼────┐                     ┌────▼────┐         ┌────▼────┐
-     │ Reshape │   ...   │ Reshape │                     │ Reshape │   ...   │ Reshape │
-     └────┬────┘         └────┬────┘                     └────┬────┘         └────┬────┘
-          │                   │  'z'                          │                   │  'z'
-     """
+             │  'x'
+        ┌────▼────┐
+        │ Reshape │
+        └────┬────┘                                              │  'x'
+         ┌───┴─── ... ───────┐  'y'        ─────►            ┌───┴─── ... ───────┐   ('y' is not in the model anymore)
+    ┌────▼────┐         ┌────▼────┐                     ┌────▼────┐         ┌────▼────┐
+    │ Reshape │   ...   │ Reshape │                     │ Reshape │   ...   │ Reshape │
+    └────┬────┘         └────┬────┘                     └────┬────┘         └────┬────┘
+         │                   │  'z'                          │                   │  'z'
+    """
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Reshape'], outputs=['y']),
-                MultipleSameOps(['Reshape'], ['y', ...])  # Nothing other than `Reshape` ops can use `y`.
+                Op(["Reshape"], outputs=["y"]),
+                MultipleSameOps(["Reshape"], ["y", ...])  # Nothing other than `Reshape` ops can use `y`.
             ],
             [
-                TensorIsNotModelOutput('y')
+                TensorIsNotModelOutput("y")
             ]
         )
 
@@ -51,26 +51,26 @@ class FuseReshapeOperators(BaseOptimization):
 
 
 class RemoveReshapeOperatorsWithNoEffect(BaseOptimization):
-    """ Remove operators that match the following pattern.
+    """Remove operators that match the following pattern.
 
-                    │  'x'
-               ┌────▼────┐
-               │ Reshape │
-               └────┬────┘
-                    │  'y'  (same shape as 'x')
+         │  'x'
+    ┌────▼────┐
+    │ Reshape │
+    └────┬────┘
+         │  'y'  (same shape as 'x')
     """
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Reshape'], ['x', ...], ['y'])
+                Op(["Reshape"], ["x", ...], ["y"])
             ],
             [
-                TensorsHaveSameShape(['x', 'y']),
+                TensorsHaveSameShape(["x", "y"]),
                 RuleOr(
-                    TensorIsNotModelOutput('x'),
-                    TensorIsNotModelOutput('y')
+                    TensorIsNotModelOutput("x"),
+                    TensorIsNotModelOutput("y")
                     # If both 'x' and 'y' are model outputs, the `Reshape` cannot be removed. If the op was removed, its
                     #  input and output would be combined into 1 tensor, which would have to represent 2 model outputs
                     #  with 2 different names, which is not possible.
@@ -82,8 +82,8 @@ class RemoveReshapeOperatorsWithNoEffect(BaseOptimization):
             if not self._builder.operator_can_be_skipped(reshape):
                 continue
 
-            x = tensor_map['x']
-            y = tensor_map['y']
+            x = tensor_map["x"]
+            y = tensor_map["y"]
             model_outputs = self._builder.get_sub_graph().outputs.tmp_outputs
 
             # Replace `y` with `x` in the inputs of all following operators.

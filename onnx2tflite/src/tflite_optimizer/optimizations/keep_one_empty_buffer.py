@@ -12,10 +12,9 @@ from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import Bas
 class KeepOneEmptyBuffer(BaseOptimization):
 
     def __call__(self) -> bool:
-        """ Create a single empty `Buffer` object and assign it to all tensors in the model that don't have static data.
-            :return: True, if any tensors had their buffer changed. Otherwise, False.
+        """Create a single empty `Buffer` object and assign it to all tensors in the model that don't have static data.
+        :return: True, if any tensors had their buffer changed. Otherwise, False.
         """
-
         made_changes = False
         empty_buffer = self._builder.get_first_empty_buffer()
 

@@ -9,11 +9,11 @@
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.FullyConnectedOptions as libFullyConnectedOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.FullyConnectedOptionsWeightsFormat import FullyConnectedOptionsWeightsFormat
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class FullyConnected(meta.BuiltinOptions):
@@ -33,7 +33,7 @@ class FullyConnected(meta.BuiltinOptions):
         self.keep_num_dims = keep_num_dims
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libFullyConnectedOptions.Start(builder)
 
         libFullyConnectedOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

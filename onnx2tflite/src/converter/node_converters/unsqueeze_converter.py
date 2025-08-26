@@ -7,21 +7,21 @@
 
 from typing import cast
 
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.quantization_utils import propagate_quantization
-from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
+from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import unsqueeze_attributes
+from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
 
 
 class UnsqueezeConverter(NodeConverter):
-    node = 'Unsqueeze'
+    node = "Unsqueeze"
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
@@ -29,7 +29,7 @@ class UnsqueezeConverter(NodeConverter):
                                       TensorType.BOOL]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `Unsqueeze` to TFLite `Reshape`. """
+        """Convert ONNX `Unsqueeze` to TFLite `Reshape`."""
         attrs = cast(unsqueeze_attributes.Unsqueeze, node.attributes)
 
         if attrs.axes is not None and len(t_op.tmp_inputs) > 1:

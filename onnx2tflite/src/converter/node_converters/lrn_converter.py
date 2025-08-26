@@ -7,9 +7,9 @@
 #
 from typing import cast
 
-import onnx2tflite.src.logger as logger
 import onnx2tflite.src.tflite_generator.builtin_options.lrn_options as tfl_lrn_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import lrn_attributes
@@ -18,7 +18,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class LRNConverter(NodeConverter):
-    node = 'LRN'
+    node = "LRN"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/local_response_norm.cc#L73-L94
@@ -26,8 +26,7 @@ class LRNConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX 'LRN' to TFLite 'LocalResponseNormalization'. """
-
+        """Convert ONNX 'LRN' to TFLite 'LocalResponseNormalization'."""
         attrs = cast(lrn_attributes.LRN, node.attributes)
 
         if attrs.alpha <= 0.0:

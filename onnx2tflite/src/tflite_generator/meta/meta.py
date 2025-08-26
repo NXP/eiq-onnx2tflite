@@ -5,25 +5,23 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    meta
+"""meta
 
 Implementations of classes that all classes in /src/tflite_generator/ inherit from.
 """
-
-from typing import Callable, List, Union, Iterator
+from collections.abc import Callable, Iterator
 
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.BuiltinOperator as bOp
 import onnx2tflite.lib.tflite.BuiltinOptions as bOpt
-import onnx2tflite.src.logger as logger
+from onnx2tflite.src import logger
 
 """ This file contains parent classes for simple classes used in the '/model' directory. """
 
 
 class TFLiteObject:
-    """ Parent class for all tflite objects. That is all objects in the 'tflite_generator' directory. """
+    """Parent class for all tflite objects. That is all objects in the 'tflite_generator' directory."""
 
     """ Generates tflite representation for this object. MUST be overridden! """
 
@@ -33,10 +31,11 @@ class TFLiteObject:
 
 
 class TFLiteVector(TFLiteObject):
-    """ Represents a TFLite vector of TFLiteObjects. Provides interface for storing data
-        and generating output TFLite code. """
+    """Represents a TFLite vector of TFLiteObjects. Provides interface for storing data
+    and generating output TFLite code.
+    """
 
-    vector: List[Union[TFLiteObject, int, float, bool]]
+    vector: list[TFLiteObject | int | float | bool]
 
     """ Indicates if an empty vector should be generated if 'vector' attribute is
     empty, or to not generate anything in that case. """
@@ -50,7 +49,7 @@ class TFLiteVector(TFLiteObject):
     as argument """
     prepend_function: Callable[[fb.Builder], Callable[[int], None]]
 
-    def __init__(self, vector: List[Union[TFLiteObject, int, float, bool]],
+    def __init__(self, vector: list[TFLiteObject | int | float | bool],
                  start_function: Callable[[fb.Builder, int], None],
                  prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda
                          builder: builder.PrependUOffsetTRelative,
@@ -62,30 +61,30 @@ class TFLiteVector(TFLiteObject):
         self.prepend_function = prepend_function
         self.gen_empty = gen_empty
 
-    def append(self, item):
+    def append(self, item) -> None:
         self.vector.append(item)
 
-    def insert(self, index: int, item):
+    def insert(self, index: int, item) -> None:
         self.vector.insert(index, item)
 
     def index(self, item) -> int:
         return self.vector.index(item)
 
-    def remove(self, item):
+    def remove(self, item) -> None:
         self.vector.remove(item)
 
-    def get(self, index: int):
+    def get(self, index: int) -> type[TFLiteObject] | int | float | bool:
         return self.vector[index]
 
-    def get_last(self):
+    def get_last(self) -> TFLiteObject | int | float | bool | None:
         if len(self.vector) > 0:
             return self.vector[-1]
         return None
 
-    def len(self):
+    def len(self) -> int:
         return self.vector.__len__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.vector.__str__()
 
     def __iter__(self) -> Iterator:
@@ -94,14 +93,13 @@ class TFLiteVector(TFLiteObject):
     def __getitem__(self, index):
         return self.vector[index]
 
-    def gen_tflite(self, builder: fb.Builder):
-        """ Generates TFLite code for the vector """
-
+    def gen_tflite(self, builder: fb.Builder) -> int | None:
+        """Generates TFLite code for the vector"""
         if (not self.gen_empty) and (len(self.vector) == 0):
             # Nothing to generate
-            return
+            return None
 
-        # IMPORTANT! tflite MUST be generated for list items in REVERSE ORDER! 
+        # IMPORTANT! tflite MUST be generated for list items in REVERSE ORDER!
         # Otherwise, the order will be wrong.
         tfl_vector = [item.gen_tflite(builder) for item in reversed(self.vector)]
 
@@ -114,7 +112,7 @@ class TFLiteVector(TFLiteObject):
 
 
 class TFLiteAtomicVector(TFLiteVector):
-    def __init__(self, vector: List[Union[int, float, bool]],
+    def __init__(self, vector: list[int | float | bool],
                  start_function: Callable[[fb.Builder, int], None],
                  prepend_function: Callable[[fb.Builder], Callable[[int], None]],
                  gen_empty: bool = True) -> None:
@@ -123,16 +121,15 @@ class TFLiteAtomicVector(TFLiteVector):
     def __eq__(self, other):
         return self.vector == other.vector
 
-    def gen_tflite(self, builder: fb.Builder):
-        """ Generates TFLite code for the vector """
-
+    def gen_tflite(self, builder: fb.Builder) -> int | None:
+        """Generates TFLite code for the vector"""
         if (not self.gen_empty) and (len(self.vector) == 0):
             # Nothing to generate
-            return
+            return None
 
         self.start_function(builder, len(self.vector))
 
-        # IMPORTANT! tflite MUST be generated for list items in REVERSE ORDER! 
+        # IMPORTANT! tflite MUST be generated for list items in REVERSE ORDER!
         # Otherwise, the order will be wrong.
         for val in reversed(self.vector):
             self.prepend_function(builder)(val)
@@ -141,10 +138,11 @@ class TFLiteAtomicVector(TFLiteVector):
 
 
 class FloatVector(TFLiteAtomicVector):
-    """ Class represents a TFLite vector of float values. Provides interface for storing data
-        and generating output TFLite code. """
+    """Class represents a TFLite vector of float values. Provides interface for storing data
+    and generating output TFLite code.
+    """
 
-    def __init__(self, float_list: List[float],
+    def __init__(self, float_list: list[float],
                  start_function: Callable[[fb.Builder, int], None],
                  prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda
                          builder: builder.PrependFloat32,
@@ -153,11 +151,13 @@ class FloatVector(TFLiteAtomicVector):
 
 
 class IntVector(TFLiteAtomicVector):
-    """ Class represents a TFLite vector of integer values. Provides interface for storing data
-        and generating output TFLite code. """
-    vector: List[int]
+    """Class represents a TFLite vector of integer values. Provides interface for storing data
+    and generating output TFLite code.
+    """
 
-    def __init__(self, int_list: List[int],
+    vector: list[int]
+
+    def __init__(self, int_list: list[int],
                  start_function: Callable[[fb.Builder, int], None],
                  prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependInt32,
                  gen_empty: bool = True) -> None:
@@ -165,11 +165,13 @@ class IntVector(TFLiteAtomicVector):
 
 
 class BoolVector(TFLiteAtomicVector):
-    """ Class represents a TFLite vector of boolean values. Provides interface for storing data
-        and generating output TFLite code. """
-    vector: List[bool]
+    """Class represents a TFLite vector of boolean values. Provides interface for storing data
+    and generating output TFLite code.
+    """
 
-    def __init__(self, bool_list: List[bool],
+    vector: list[bool]
+
+    def __init__(self, bool_list: list[bool],
                  start_function: Callable[[fb.Builder, int], None],
                  prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependBool,
                  gen_empty: bool = True) -> None:
@@ -177,13 +179,13 @@ class BoolVector(TFLiteAtomicVector):
 
 
 class BuiltinOptions(TFLiteObject):
-    """ Class represents 'BuiltinOptions' for an Operator. Used in 'model/Operators.py'.
-        Provides interface for work with any BuiltinOptions table. 
-        This class alone does NOT generate any TFLite.
-        Subclasses do NOT generate TFLite for the 'builtinOptionsType', only for the exact options.
-        'builtinOptionsType' is merely stored here for convenience and an 'Operator' object
-        generates its TFLite representation (as it is the child of the 'operator' table in 'operators'). 
-        """
+    """Class represents 'BuiltinOptions' for an Operator. Used in 'model/Operators.py'.
+    Provides interface for work with any BuiltinOptions table. 
+    This class alone does NOT generate any TFLite.
+    Subclasses do NOT generate TFLite for the 'builtinOptionsType', only for the exact options.
+    'builtinOptionsType' is merely stored here for convenience and an 'Operator' object
+    generates its TFLite representation (as it is the child of the 'operator' table in 'operators'). 
+    """
 
     """ The type of parameters of this operator. """
     builtin_options_type: bOpt.BuiltinOptions
@@ -191,8 +193,8 @@ class BuiltinOptions(TFLiteObject):
     """ The type of this operator. """
     operator_type: bOp.BuiltinOperator
 
-    def __init__(self, builtin_options_type: bOpt.BuiltinOptions,
-                 operator_type: bOp.BuiltinOperator) -> None:
+    def __init__(self, builtin_options_type: bOpt.BuiltinOptions | int,
+                 operator_type: bOp.BuiltinOperator | int) -> None:
         if builtin_options_type is None:
             logger.d("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'builtinOptionsType'!")
         if operator_type is None:
@@ -202,16 +204,18 @@ class BuiltinOptions(TFLiteObject):
 
     """ Function has to be overwritten """
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         logger.w(f"BuiltinOperator '{self.builtin_options_type}':genTFLite() is not defined!")
+        raise NotImplementedError
 
 
 class CustomOptions(bytearray):
-    """ Class represents a `custom_options` object in the TFLite model, i.e. a bytearray form of the parameters of a
-         `custom` TFLite operator.
+    """Class represents a `custom_options` object in the TFLite model, i.e. a bytearray form of the parameters of a
+     `custom` TFLite operator.
 
-        Currently, this is being used for `Flex Delegate` operators / `SELECT_TF_OPS`.
+    Currently, this is being used for `Flex Delegate` operators / `SELECT_TF_OPS`.
     """
+
     operator_type = bOp.BuiltinOperator.CUSTOM
     custom_code: str
 

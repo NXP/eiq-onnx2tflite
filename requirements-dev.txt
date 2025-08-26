@@ -8,3 +8,4 @@ coverage
 py-cpuinfo
 pyc_wheel<1.3.0
 build
+ruff

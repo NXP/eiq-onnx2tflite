@@ -5,8 +5,7 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    onnx2tflite
+"""onnx2tflite
 
 This module provides a CLI for the converter of ONNX models to TFLite.
 """
@@ -14,41 +13,42 @@ This module provides a CLI for the converter of ONNX models to TFLite.
 import argparse
 import logging
 import ntpath
+from argparse import Namespace
 
-import onnx2tflite.src.converter.convert as convert
 import onnx2tflite.src.logger as context_logger
 from onnx2tflite.src.conversion_config import ConversionConfig
+from onnx2tflite.src.converter import convert
 
 logger = logging.getLogger("onnx2tflite")
 syslog = logging.StreamHandler()
 syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
 logger.addHandler(syslog)
 
-def _get_user_choice_parser():
-    """ Return a parser, which handles options used to let the user provide additional information for the
-         conversion. Without this information, the converter wouldn't be able to guarantee accurate conversion. This
-         way, the user chooses to convert the model anyway, and the validity of the model is on the user's
-         responsibility.
+def _get_user_choice_parser() -> argparse.ArgumentParser:
+    """Return a parser, which handles options used to let the user provide additional information for the
+    conversion. Without this information, the converter wouldn't be able to guarantee accurate conversion. This
+    way, the user chooses to convert the model anyway, and the validity of the model is on the user's
+    responsibility.
     """
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--guarantee-non-negative-indices', action=argparse.BooleanOptionalAction, default=False,
+    parser.add_argument("--guarantee-non-negative-indices", action=argparse.BooleanOptionalAction, default=False,
                         help="Guarantee that an 'indices' input tensor will always contain non-negative values. This "
                              "applies to operators: 'Gather', 'GatherND', 'OneHot' and 'ScatterND'.")
-    parser.add_argument('--cast-int64-to-int32', action=argparse.BooleanOptionalAction, default=False,
+    parser.add_argument("--cast-int64-to-int32", action=argparse.BooleanOptionalAction, default=False,
                         help="Cast some nodes with type INT64 to INT32 when TFLite doesn't support INT64. Such nodes "
                              "are often used in ONNX to calculate shapes/indices, so full range of INT64 isn't "
                              "necessary. This applies to operators: `Abs` and `Div`.")
-    parser.add_argument('--accept-resize-rounding-error', action=argparse.BooleanOptionalAction, default=False,
+    parser.add_argument("--accept-resize-rounding-error", action=argparse.BooleanOptionalAction, default=False,
                         help="Accept the error caused by a different rounding approach of the ONNX 'Resize' and TFLite "
                              "'ResizeNearestNeighbor' operators, and convert the model anyway.")
-    parser.add_argument('--skip-opset-version-check', action=argparse.BooleanOptionalAction, default=False,
-                        help='Ignore the checks for supported opset versions of the ONNX model and try to convert it '
-                             'anyway. This can result in an invalid output TFLite model.')
+    parser.add_argument("--skip-opset-version-check", action=argparse.BooleanOptionalAction, default=False,
+                        help="Ignore the checks for supported opset versions of the ONNX model and try to convert it "
+                             "anyway. This can result in an invalid output TFLite model.")
 
     return parser
 
 
-def _get_conversion_parser():
+def _get_conversion_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--allow-inputs-stripping", action=argparse.BooleanOptionalAction, default=True,
                         help="Model inputs will be removed if they are not necessary for inference and "
@@ -65,12 +65,12 @@ def _get_conversion_parser():
                              "converted into optimized variant with QDQ pairs represented as tensors' "
                              "quantization parameters.")
     parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
-                        type=str, action='extend', nargs='*',
+                        type=str, action="extend", nargs="*",
                         help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
                              "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
                              "can be used multiple times.")
     parser.add_argument("-m", "--set-input-shape", dest="input_shapes_mapping",
-                        type=str, action='extend', nargs='*',
+                        type=str, action="extend", nargs="*",
                         help="Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,"
                              "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
                              "times.")
@@ -91,7 +91,7 @@ def _get_conversion_parser():
     return parser
 
 
-def parse_arguments():
+def parse_arguments() -> Namespace:
     parser = argparse.ArgumentParser(
         prog="onnx2tflite", parents=[_get_conversion_parser(), _get_user_choice_parser()],
         description="""
@@ -109,8 +109,8 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def run_conversion():
-    """ Create argument parser """
+def run_conversion() -> None:
+    """Create argument parser"""
     args = parse_arguments()
     output_tflite = args.output
 
@@ -132,14 +132,14 @@ def run_conversion():
         try:
             args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
                 args.symbolic_dimensions_mapping)
-        except Exception as err:
+        except Exception as err: # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 
     if args.input_shapes_mapping:
         assert isinstance(args.input_shapes_mapping, list)
         try:
             args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
-        except Exception as err:
+        except Exception as err: # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 
     """ Convert the model """

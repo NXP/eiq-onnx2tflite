@@ -6,30 +6,32 @@
 #
 
 import math
-from typing import Tuple, cast
+from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
 import onnx2tflite.src.onnx_parser.builtin_attributes.q_linear_softmax_attributes as onnx_ql_softmax_attribs
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
+from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
-from onnx2tflite.src.converter.conversion.common import try_get_input, OpsList
+from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import (
+    reshape_options as tfl_reshape_options,
+)
 from onnx2tflite.src.tflite_generator.builtin_options import (
     softmax_options as tfl_softmax_options,
-    reshape_options as tfl_reshape_options,
 )
 
 
 # noinspection PyMethodMayBeStatic
 class QLinearSoftmaxConverter(NodeConverter):
-    node = 'QLinearSoftmax'
+    node = "QLinearSoftmax"
 
     def _move_last_dimension_to_idx(self, shape, dim_index) -> list:
         new_shape = list(shape)
@@ -38,7 +40,7 @@ class QLinearSoftmaxConverter(NodeConverter):
 
         return new_shape
 
-    def _normalize_axis(self, axis, rank):
+    def _normalize_axis(self, axis, rank) -> int:
         if axis < -rank or axis > rank - 1:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
                      f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
@@ -113,9 +115,8 @@ class QLinearSoftmaxConverter(NodeConverter):
 
     def _wrap_in_reshape(self, op_ql_softmax: tflite_model.Operator,
                          reshape_inner_shape, reshape_outer_shape
-                         ) -> Tuple[tflite_model.Operator, tflite_model.Operator]:
-        """
-        Surround passed QLinearSoftmax operator by Reshape operators.
+                         ) -> tuple[tflite_model.Operator, tflite_model.Operator]:
+        """Surround passed QLinearSoftmax operator by Reshape operators.
     
         (reshape_outer_shape)
                   ↓
@@ -182,16 +183,15 @@ class QLinearSoftmaxConverter(NodeConverter):
         if x.tensor_format == TensorFormat.FORMATLESS and axis == rank - 1:
             # We don't need to reshape/transpose input when we compute over last dimension with formatless
             return OpsList(middle_op=t_op)
-        elif x.tensor_format.is_channels_last() and axis == 1:
+        if x.tensor_format.is_channels_last() and axis == 1:
             # Input internally in ONNX reshaped to [d0, d1-dn] -> shape is the same also for TFLite
             return self._convert_v1_reshaped(t_op, axis)
-        elif x.tensor_format.is_channels_last():
+        if x.tensor_format.is_channels_last():
             # We have to reshape and also transpose because channel dimension is not represented by same axis
             return self._convert_v1_transposed_and_reshaped(t_op, axis)
-        else:
-            return self._convert_v1_reshaped(t_op, axis)
+        return self._convert_v1_reshaped(t_op, axis)
 
-    def _ensure_correct_output_quant_params(self, ops):
+    def _ensure_correct_output_quant_params(self, ops) -> None:
         t_op = ops.middle_op
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -210,13 +210,12 @@ class QLinearSoftmaxConverter(NodeConverter):
             ops.post_ops.insert(0, quantize_op)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert the ONNX Runtime QLinearSoftmax operator to TFLite Softmax.
+        """Convert the ONNX Runtime QLinearSoftmax operator to TFLite Softmax.
 
         :param node: ONNX QLinearSoftmax operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator
         :return: A list of TFLite operators to be added to the TFLite model.
         """
-
         t_op.builtin_options = tfl_softmax_options.Softmax(1.0)
 
         # quantize stage

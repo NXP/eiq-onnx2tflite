@@ -4,8 +4,7 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    depthwise_conv_2d_options
+"""depthwise_conv_2d_options
 
 Representation of the TFLite operator 'DepthwiseConv2D'.
 """
@@ -13,11 +12,11 @@ Representation of the TFLite operator 'DepthwiseConv2D'.
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.DepthwiseConv2DOptions as libDepthwiseConv2DOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.Padding import Padding
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class DepthwiseConv2D(meta.BuiltinOptions):
@@ -44,7 +43,7 @@ class DepthwiseConv2D(meta.BuiltinOptions):
         self.dilation_h_factor = dilation_h_factor
         self.depth_multiplier = depth_multiplier
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libDepthwiseConv2DOptions.Start(builder)
 
         libDepthwiseConv2DOptions.AddPadding(builder, self.padding)

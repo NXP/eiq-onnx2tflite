@@ -4,20 +4,19 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    BatchNormalization
+"""BatchNormalization
 
 Representation of an ONNX 'BatchNormalization' operator. 
 Initialized from a protobuf descriptor object.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import onnx
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
 from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class BatchNormalization(meta.ONNXOperatorAttributes):
@@ -30,11 +29,11 @@ class BatchNormalization(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.epsilon = np.float32(1e-5)
         self.spatial = 1
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "epsilon":
                 self.epsilon = attr.f

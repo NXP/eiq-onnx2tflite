@@ -9,11 +9,11 @@
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.Conv2DOptions as libConv2DOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.Padding import Padding
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Conv2D(meta.BuiltinOptions):
@@ -36,7 +36,7 @@ class Conv2D(meta.BuiltinOptions):
         self.dilation_h_factor = dilation_h_factor
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libConv2DOptions.Start(builder)
 
         libConv2DOptions.AddPadding(builder, self.padding)

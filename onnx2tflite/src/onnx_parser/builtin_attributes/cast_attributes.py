@@ -14,13 +14,13 @@ from onnx2tflite.src.onnx_parser.meta import meta
 
 class Cast(meta.ONNXOperatorAttributes):
     saturate: int  # Only used for float8
-    to: Optional[TensorProto.DataType.values]
+    to: Optional[TensorProto.DataType.values]  # noqa: UP045
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.saturate = 1
         self.to = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "saturate":
                 self.saturate = attr.i
@@ -30,10 +30,10 @@ class Cast(meta.ONNXOperatorAttributes):
                     self.to = TensorProto.DataType.Value(enum_name)
                 except ValueError as e:
                     logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                             'Failed to parse the `to` attribute of ONNX `Cast`.',
+                             "Failed to parse the `to` attribute of ONNX `Cast`.",
                              exception=e)
             else:
                 logger.w(f"ONNX Cast attribute '{attr.name}' is not supported!")
 
         if self.to is None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, 'ONNX `Cast` is missing the required attribute `to`.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX `Cast` is missing the required attribute `to`.")

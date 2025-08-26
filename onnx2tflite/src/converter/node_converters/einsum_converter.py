@@ -5,7 +5,7 @@
 # See the LICENSE for more details.
 #
 
-from typing import List, cast
+from typing import cast
 
 import numpy as np
 
@@ -20,11 +20,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import einsum_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.custom_options import flex_einsum_options
-from onnx2tflite.src.tflite_generator.meta.types import FLOATS, UINTS, INTS
+from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 
 
 class EinsumConverter(NodeConverter):
-    node = 'EinSum'
+    node = "EinSum"
 
     onnx_supported_types = FLOATS + INTS + UINTS
     verified_types = [TensorType.FLOAT32, TensorType.FLOAT64, TensorType.INT32, TensorType.INT64]
@@ -32,7 +32,7 @@ class EinsumConverter(NodeConverter):
     # noinspection PyMethodMayBeStatic
     def _validate_equation(self, equation: str) -> str:
 
-        if '...' in equation:
+        if "..." in equation:
             # ONNX allows this `ellipsis` in the equation. TFLite has no equivalent system. Not sure if conversion is
             #  possible.
             logger.e(logger.Code.NOT_IMPLEMENTED,
@@ -40,21 +40,21 @@ class EinsumConverter(NodeConverter):
 
         equation = equation.replace(" ", "")  # ONNX allows spaces, TF doesn't.
 
-        if '->' not in equation:
+        if "->" not in equation:
             # ONNX allows default output shape. Taken from the ONNX doc:
             # "output indices are (implicitly) set to the alphabetically sorted sequence of indices appearing exactly
             #   once in the equation"
 
-            used_dims = [char for char in equation if char != ',']
+            used_dims = [char for char in equation if char != ","]
 
             # Remove those, which are used more than once.
             used_dims = [char for char in used_dims if used_dims.count(char) == 1]
 
-            equation += '->' + ''.join(sorted(used_dims))
+            equation += "->" + "".join(sorted(used_dims))
 
         return equation
 
-    def _handle_tensor_formats(self, t_op: tflite_model.Operator, ops: OpsList):
+    def _handle_tensor_formats(self, t_op: tflite_model.Operator, ops: OpsList) -> None:
         for index, inpt in enumerate(t_op.tmp_inputs):
             if inpt.tensor_format.is_channels_last():
                 # Transpose the input to channels_first to match the ONNX model.
@@ -63,7 +63,7 @@ class EinsumConverter(NodeConverter):
                 if tensor_has_data(inpt):
                     data = np.transpose(inpt.tmp_buffer.data, perm)
                     new_shape = translator.apply_permutation_to(inpt.shape.vector.copy(), perm)
-                    logger.internal_assert(all([s1 == s2 for s1, s2 in zip(data.shape, new_shape)]))
+                    logger.internal_assert(all([s1 == s2 for s1, s2 in zip(data.shape, new_shape, strict=False)]))
                     inpt.tmp_buffer.data = data
                     inpt.tensor_format = TensorFormat.CHANNELS_FIRST
 
@@ -75,12 +75,11 @@ class EinsumConverter(NodeConverter):
             perm = translator.create_channels_first_to_channels_last_permutation(output.shape.len(), True)
             ops.add_post(self.builder.create_transpose_operator_after(t_op, 0, perm))
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> List[tflite_model.Operator]:
-        """ Convert ONNX `Einsum` operator into the SELECT_TF_OP `FlexEinsum`. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert ONNX `Einsum` operator into the SELECT_TF_OP `FlexEinsum`."""
         if not self.context.conversion_config.allow_select_ops:
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     'Conversion of ONNX `Einsum` without SELECT_TF_OPS is not possible. ' +
+                     "Conversion of ONNX `Einsum` without SELECT_TF_OPS is not possible. " +
                      logger.Message.ALLOW_SELECT_OPS)
 
         num_inputs = len(t_op.tmp_inputs)
@@ -88,17 +87,17 @@ class EinsumConverter(NodeConverter):
             # The `FlexEinsum` requires 1 or 2 operands in the equation.
             # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/core/util/einsum_op_util.cc#L42-L46
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f'Conversion of ONNX `Einsum` with {num_inputs} inputs is not possible.')
+                     f"Conversion of ONNX `Einsum` with {num_inputs} inputs is not possible.")
 
         first_input = t_op.tmp_inputs[0]
         if any(i.type != first_input.type for i in t_op.tmp_inputs):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, 'ONNX `Einsum` uses a combination of input types.')
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Einsum` uses a combination of input types.")
 
         if first_input.type == TensorType.FLOAT16:
             # Seems that this type is not supported by the TensorFlow DataType
             #  (see translator.tflite_type_to_tensor_flow_data_type())
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     'Conversion of ONNX `Einsum` with input type FLOAT16 is not possible.')
+                     "Conversion of ONNX `Einsum` with input type FLOAT16 is not possible.")
 
         self.assert_type_allowed(first_input.type)
 

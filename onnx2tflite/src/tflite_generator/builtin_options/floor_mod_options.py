@@ -7,10 +7,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import FloorModOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class FloorMod(meta.BuiltinOptions):
@@ -18,7 +18,7 @@ class FloorMod(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.FloorModOptions, BuiltinOperator.FLOOR_MOD)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         FloorModOptions.Start(builder)
 
         return FloorModOptions.End(builder)

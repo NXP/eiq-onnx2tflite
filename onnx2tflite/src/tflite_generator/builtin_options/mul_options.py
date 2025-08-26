@@ -8,11 +8,11 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import MulOptions
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Mul(meta.BuiltinOptions):
@@ -22,7 +22,7 @@ class Mul(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.MulOptions, BuiltinOperator.MUL)
         self.fused_activation_function = fused_activation_function
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         MulOptions.Start(builder)
 
         MulOptions.AddFusedActivationFunction(builder, self.fused_activation_function)

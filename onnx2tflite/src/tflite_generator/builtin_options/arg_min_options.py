@@ -7,11 +7,11 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import ArgMinOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class ArgMin(meta.BuiltinOptions):
@@ -21,7 +21,7 @@ class ArgMin(meta.BuiltinOptions):
         super().__init__(BuiltinOptions.ArgMinOptions, BuiltinOperator.ARG_MIN)
         self.output_type = output_type
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         ArgMinOptions.Start(builder)
 
         ArgMinOptions.AddOutputType(builder, self.output_type)

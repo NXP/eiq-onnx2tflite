@@ -4,34 +4,33 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    slice_attributes
+"""slice_attributes
 
-    Representation of an ONNX 'Slice' operator.
+Representation of an ONNX 'Slice' operator.
 """
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.onnx_parser.meta.meta as meta
 from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Slice(meta.ONNXOperatorAttributes):
-    starts: Optional[meta.ONNXIntListAttribute]
-    ends: Optional[meta.ONNXIntListAttribute]
-    axes: Optional[meta.ONNXIntListAttribute]
+    starts: meta.ONNXIntListAttribute | None
+    ends: meta.ONNXIntListAttribute | None
+    axes: meta.ONNXIntListAttribute | None
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.starts = None
         self.ends = None
         self.axes = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "starts":
                 self.starts = meta.ONNXIntListAttribute(attr)

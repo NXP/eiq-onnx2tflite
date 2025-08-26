@@ -10,24 +10,22 @@ from typing import cast
 
 import numpy as np
 
-import onnx2tflite.src.logger as logger
 import onnx2tflite.src.onnx_parser.builtin_attributes.average_pool_attributes as onnx_average_pool_attributes
-import onnx2tflite.src.tflite_generator.tflite_model as tflite_model
 from onnx2tflite.lib.tflite.Padding import Padding
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.converter.conversion import translator, common
+from onnx2tflite.src import logger
+from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
-from onnx2tflite.src.tflite_generator.builtin_options import (
-    average_pool_2d_options as tfl_average_pool_2d_options,
-    reshape_options as tfl_reshape_options
-)
+from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options as tfl_average_pool_2d_options
+from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class AveragePoolConverter(NodeConverter):
-    node = 'AveragePool'
+    node = "AveragePool"
 
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/pooling.cc#L390-L407
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT64, TensorType.INT8, TensorType.INT16]
@@ -35,14 +33,13 @@ class AveragePoolConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]  # INT8 not supported by ORT
 
     def _convert_1d_average_pool(self, node: onnx_model.NodeProto,
-                                 t_op: tflite_model.Operator) -> [tflite_model.Operator]:
-        """ Convert the ONNX 'AveragePool' operator with a 1D kernel to TFLite 'AveragePool2D'.
-             TFLite doesn't support 1D AveragePool, but this behaviour can be represented using
-                    Reshape -> AveragePool2D -> Reshape.
-             The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary
-              dimension.
+                                 t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX 'AveragePool' operator with a 1D kernel to TFLite 'AveragePool2D'.
+        TFLite doesn't support 1D AveragePool, but this behaviour can be represented using
+               Reshape -> AveragePool2D -> Reshape.
+        The first reshape introduces a 4th dimension with size 1. The second Reshape removes the temporary
+         dimension.
         """
-
         attrs = cast(onnx_average_pool_attributes.AveragePool, node.attributes)
 
         for dim in t_op.tmp_inputs[0].shape.vector:
@@ -91,9 +88,8 @@ class AveragePoolConverter(NodeConverter):
         return [reshape1] + converted_average_pool_ops + [reshape2]
 
     def _convert_2d_average_pool(self, node: onnx_model.NodeProto,
-                                 t_op: tflite_model.Operator) -> [tflite_model.Operator]:
-        """ Convert the ONNX 'AveragePool' operator with a 2D kernel to TFLite 'AveragePool2D'. """
-
+                                 t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX 'AveragePool' operator with a 2D kernel to TFLite 'AveragePool2D'."""
         attrs = cast(onnx_average_pool_attributes.AveragePool, node.attributes)
 
         if attrs.dilations is not None:
@@ -152,7 +148,7 @@ class AveragePoolConverter(NodeConverter):
                                                                                 y.shape.vector, attrs.strides,
                                                                                 attrs.dilations)
                 start_padding = padding
-                end_padding = [p + o for p, o in zip(padding, offset)]
+                end_padding = [p + o for p, o in zip(padding, offset, strict=False)]
                 onnx_padding = start_padding + end_padding
                 tflite_padding = translator.onnx_pads_to_tflite_explicit_padding(onnx_padding)
 
@@ -164,15 +160,14 @@ class AveragePoolConverter(NodeConverter):
 
         return ops.flatten()
 
-    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> [tflite_model.Operator]:
-        """ Convert the ONNX 'AveragePool' operator to TFLite 'AveragePool2D' and 'Reshape' operators. """
-
+    def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+        """Convert the ONNX 'AveragePool' operator to TFLite 'AveragePool2D' and 'Reshape' operators."""
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)
         elif t_op.is_quantized_without_qdq():
             # ONNX doesn't support (U)INT8. Leave this check in case the support is added in the future.
             logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX `AveragePool` with a quantized input is not supported.')
+                     "Conversion of ONNX `AveragePool` with a quantized input is not supported.")
 
         attrs = cast(onnx_average_pool_attributes.AveragePool, node.attributes)
 
@@ -180,17 +175,16 @@ class AveragePoolConverter(NodeConverter):
         if kernel_rank == 1:
             return self._convert_1d_average_pool(node, t_op)
 
-        elif kernel_rank == 2:
+        if kernel_rank == 2:
             return self._convert_2d_average_pool(node, t_op)
 
-        else:
-            num_ones = attrs.kernel_shape.count(1)
-            if kernel_rank - num_ones <= 2:
-                # TODO Enough dimensions are '1', so the input can be reshaped to 4D and a AveragePool2D can be applied.
-                #  Not sure if this is a realistic scenario and worth putting time into.
-                logger.e(logger.Code.NOT_IMPLEMENTED, f"Conversion of ONNX AveragePool with kernel shape "
-                                                      f"'{attrs.kernel_shape}' is not yet implemented.")
+        num_ones = attrs.kernel_shape.count(1)
+        if kernel_rank - num_ones <= 2:
+            # TODO Enough dimensions are '1', so the input can be reshaped to 4D and a AveragePool2D can be applied.
+            #  Not sure if this is a realistic scenario and worth putting time into.
+            logger.e(logger.Code.NOT_IMPLEMENTED, f"Conversion of ONNX AveragePool with kernel shape "
+                                                  f"'{attrs.kernel_shape}' is not yet implemented.")
 
-            else:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not possible!")
+        else:
+            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
+                     f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not possible!")

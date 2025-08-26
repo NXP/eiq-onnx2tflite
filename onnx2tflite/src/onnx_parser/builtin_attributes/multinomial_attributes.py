@@ -12,23 +12,23 @@ from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Multinomial(meta.ONNXOperatorAttributes):
-    dtype: TensorProto.DataType
+    dtype: TensorProto.DataType | int
     sample_size: int
     seed: float | None
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.dtype = TensorProto.INT32
         self.sample_size = 1
         self.seed = None
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             match attr.name:
-                case 'dtype':
+                case "dtype":
                     self.dtype = attr.i
-                case 'sample_size':
+                case "sample_size":
                     self.sample_size = attr.i
-                case 'seed':
+                case "seed":
                     self.seed = attr.f
                 case _:
                     logger.w(f"ONNX `Multinomial` attribute '{attr.name}' is not supported!")

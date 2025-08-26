@@ -9,11 +9,13 @@ from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.node_converters.shared import reduce_utils
-from onnx2tflite.src.converter.node_converters.shared.reduce_utils import convert_axes_from_input_tensor, \
-    convert_axes_from_attribute
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.converter.node_converters.shared import reduce_utils
+from onnx2tflite.src.converter.node_converters.shared.reduce_utils import (
+    convert_axes_from_attribute,
+    convert_axes_from_input_tensor,
+)
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_prod_attributes import ReduceProd
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -22,7 +24,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 
 class ReduceProdConverter(NodeConverter):
-    node = 'ReduceProd'
+    node = "ReduceProd"
 
     onnx_supported_types = FLOATS + [TensorType.INT32, TensorType.INT64, TensorType.UINT32, TensorType.UINT64]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/reduce.cc#L874-L905
@@ -31,9 +33,9 @@ class ReduceProdConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.INT64]
 
     def _convert_v_13(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceProd version 1 / 11 / 12 / 13 to TFLite ReduceProd.
+        """Convert ONNX ReduceProd version 1 / 11 / 12 / 13 to TFLite ReduceProd.
 
-            The `axes` is in the form of an attribute.
+        The `axes` is in the form of an attribute.
         """
         attrs = cast(ReduceProd, node.attributes)
 
@@ -47,9 +49,9 @@ class ReduceProdConverter(NodeConverter):
         return ops.flatten()
 
     def _convert_v_18(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceProd version 18+ to TFLite ReduceProd.
+        """Convert ONNX ReduceProd version 18+ to TFLite ReduceProd.
 
-            The `axes` are an optional input tensor.
+        The `axes` are an optional input tensor.
         """
         attrs = cast(ReduceProd, node.attributes)
 
@@ -64,10 +66,9 @@ class ReduceProdConverter(NodeConverter):
         return ops.flatten()
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX ReduceProd operator to TFLite ReduceProd. """
-
+        """Convert ONNX ReduceProd operator to TFLite ReduceProd."""
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, 'ONNX `ReduceProd` has unexpected number of inputs.')
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceProd` has unexpected number of inputs.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)
@@ -76,6 +77,5 @@ class ReduceProdConverter(NodeConverter):
             # Version 1 / 11 / 12 / 13 -> axes are passed as attribute.
             return self._convert_v_13(node, t_op)
 
-        else:
-            # Version 18+ -> axes are an optional input tensor.
-            return self._convert_v_18(node, t_op)
+        # Version 18+ -> axes are an optional input tensor.
+        return self._convert_v_18(node, t_op)

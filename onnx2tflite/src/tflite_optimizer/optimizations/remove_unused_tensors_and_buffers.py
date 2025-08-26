@@ -11,7 +11,7 @@ from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import Bas
 class RemoveUnusedTensorsAndBuffers(BaseOptimization):
 
     def _get_used_tensors_and_buffers(self) -> (set[tflite_model.Tensor], set[tflite_model.Buffer]):
-        """ Get a set of all tensors used by the operators in the model, and a set of all buffers used by these tensors.
+        """Get a set of all tensors used by the operators in the model, and a set of all buffers used by these tensors.
         """
         used_tensors = set()
         used_buffers = set()
@@ -25,10 +25,9 @@ class RemoveUnusedTensorsAndBuffers(BaseOptimization):
         return used_tensors, used_buffers
 
     def __call__(self) -> bool:
-        """ Remove all tensors and buffers from the model, that are not used.
-            :return: True, if any tensors/buffers were removed. Otherwise, False.
+        """Remove all tensors and buffers from the model, that are not used.
+        :return: True, if any tensors/buffers were removed. Otherwise, False.
         """
-
         used_tensors, used_buffers = self._get_used_tensors_and_buffers()
 
         made_changes = False

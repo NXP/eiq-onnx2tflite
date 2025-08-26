@@ -17,7 +17,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 
 class PReluConverter(NodeConverter):
-    node = 'PRelu'
+    node = "PRelu"
 
     onnx_supported_types = FLOATS + [TensorType.INT32, TensorType.INT64, TensorType.UINT32, TensorType.UINT64]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/activations.cc#L1462-L1549
@@ -25,7 +25,7 @@ class PReluConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, _, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `PRelu` to TFLite `PRelu`. """
+        """Convert ONNX `PRelu` to TFLite `PRelu`."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR,
                      f"ONNX 'PRelu' has '{len(t_op.tmp_inputs)}' inputs! Expected '2'.")

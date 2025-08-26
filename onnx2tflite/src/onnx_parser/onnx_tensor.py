@@ -5,15 +5,14 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    Module contains the internal representation of an onnx TensorProto and SparseProto.
+"""Module contains the internal representation of an onnx TensorProto and SparseProto.
 
-    MUST be separate from the 'onnx_model.py' module, because of cyclical imports.
-        'NodeProto' needs to import 'onnx_parser/builtin_attributes/Constant', which needs 'TensorProto' and
-        'SparseProto'. If 'NodeProto' and 'TensorProto' are in the same module, we get an import cycle.
-        So either all 3 are in the same module, or they are all in separate modules.
+MUST be separate from the 'onnx_model.py' module, because of cyclical imports.
+'NodeProto' needs to import 'onnx_parser/builtin_attributes/Constant', which needs 'TensorProto' and
+'SparseProto'. If 'NodeProto' and 'TensorProto' are in the same module, we get an import cycle.
+So either all 3 are in the same module, or they are all in separate modules.
 
-        'NodeProto' can be a part of 'onnx_model.py', but 'TensorProto' needs its own module.
+'NodeProto' can be a part of 'onnx_model.py', but 'TensorProto' needs its own module.
 """
 
 import typing
@@ -21,22 +20,20 @@ import typing
 import numpy as np
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
-import onnx2tflite.src.onnx_parser.meta.types as types
-from onnx2tflite.src import tensor_formatting
+from onnx2tflite.src import logger, tensor_formatting
+from onnx2tflite.src.onnx_parser.meta import meta, types
 
 
 class Dimension(meta.ONNXObject):
     _descriptor: onnx.TensorShapeProto.Dimension  # Specify parent '_descriptor' type
 
-    value: typing.Union[int, str]
+    value: int | str
     denotation: str
 
     def __init__(self, descriptor: onnx.TensorShapeProto.Dimension) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.denotation = self._descriptor.denotation
 
         if self._descriptor.HasField("dim_value"):
@@ -48,12 +45,12 @@ class Dimension(meta.ONNXObject):
 
 
 class TensorShapeProto(meta.ONNXObject):
-    dims: typing.List[Dimension]
+    dims: list[Dimension]
 
     def __init__(self, descriptor: onnx.TensorShapeProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.dims = []
         for item in self._descriptor.dim:
             self.dims.append(Dimension(item))
@@ -71,7 +68,7 @@ class SparseTensor(meta.ONNXObject):
     def __init__(self, descriptor: onnx.SparseTensorProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         # noinspection PyTypeChecker
         self.elem_type = self._descriptor.elem_type  # Warning is probably OK. See 'elem_type' declaration above.
         self.shape = TensorShapeProto(self._descriptor.shape)
@@ -86,22 +83,22 @@ class Segment(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TensorProto.Segment) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.begin = self._descriptor.begin
         self.end = self._descriptor.end
 
 
-def _has_data(field):
-    """ Determine if given repeated field has data stored in it. """
+def _has_data(field) -> bool:
+    """Determine if given repeated field has data stored in it."""
     return (field is not None) and (len(field) != 0)
 
 
 class TensorProto(meta.ONNXObject):
-    dims: typing.List[int]
+    dims: list[int]
     data_type: onnx.TensorProto.DataType  # Schema defines as int32, but comment says value must be valid for the enum.
     # 'onnx-ml.proto' line '517'
     segment: Segment
-    data: typing.Optional[np.ndarray]
+    data: np.ndarray | None
     name: str
     doc_string: str
     # TODO externalData
@@ -112,7 +109,7 @@ class TensorProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TensorProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.dims = list(self._descriptor.dims)
         self.data_type = self._descriptor.data_type  # Warning is probably fine. See 'dataType' declaration above.
         self.segment = Segment(self._descriptor.segment)
@@ -132,15 +129,14 @@ class TensorProto(meta.ONNXObject):
             # Some models use empty tensor with dimension [0]. Avoid reshaping.
             if self.dims != [0]:
                 self.data = np.reshape(self.data, self.dims)
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             logger.e(logger.Code.INTERNAL_ERROR,
                      f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'", exception=e)
 
-    def _assign_data(self):
-        """ Assign tensor's data to the 'data' attribute from any initialized array in the descriptor.
-             Also check that the data type used is allowed in the schema for the particular array.
+    def _assign_data(self) -> None:
+        """Assign tensor's data to the 'data' attribute from any initialized array in the descriptor.
+        Also check that the data type used is allowed in the schema for the particular array.
         """
-
         self.data = None
 
         # Raw data
@@ -220,12 +216,12 @@ class TensorProto(meta.ONNXObject):
 
             self.data = np.fromiter(self._descriptor.uint64_data, types.to_numpy_type(self.data_type))
 
-    def _assert_type_allowed(self, allowed_types: typing.List, for_field: str) -> bool:
-        """ Check that 'self.dataType' is in 'allowedTypes'. If it isn't,
-            print warning message.
-            'allowedTypes' is a list of 'onnx.TensorProto.DataType' values.
-            Return 'True' if type is allowed. """
-
+    def _assert_type_allowed(self, allowed_types: list, for_field: str) -> bool:
+        """Check that 'self.dataType' is in 'allowedTypes'. If it isn't,
+        print warning message.
+        'allowedTypes' is a list of 'onnx.TensorProto.DataType' values.
+        Return 'True' if type is allowed.
+        """
         if self.data_type not in allowed_types:
             logger.w(f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! "
                      f"MUST be one of '{allowed_types}'.")
@@ -233,11 +229,11 @@ class TensorProto(meta.ONNXObject):
 
         return True
 
-    def _assert_type_not_banned(self, banned_types: typing.List, for_field: str) -> bool:
-        """ Check that 'self.dataType' is NOT in 'bannedTypes'. If it IS, print warning message.
-            'bannedTypes' is a list of 'onnx.TensorProto.DataType' values.
-            Return 'True' if type is not banned. """
-
+    def _assert_type_not_banned(self, banned_types: list, for_field: str) -> bool:
+        """Check that 'self.dataType' is NOT in 'bannedTypes'. If it IS, print warning message.
+        'bannedTypes' is a list of 'onnx.TensorProto.DataType' values.
+        Return 'True' if type is not banned.
+        """
         if self.data_type in banned_types:
             logger.w(f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! must NOT be "
                      f"one of '{banned_types}'.")
@@ -246,7 +242,7 @@ class TensorProto(meta.ONNXObject):
         return True
 
 
-class RepeatedTensorProto(typing.List[TensorProto]):
+class RepeatedTensorProto(list[TensorProto]):
     def __init__(self, descriptor_iterable: typing.MutableSequence[onnx.TensorProto]):
         super().__init__()
         for descriptor in descriptor_iterable:

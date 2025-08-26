@@ -13,16 +13,16 @@ class ReverseSequence(meta.ONNXOperatorAttributes):
     batch_axis: int
     time_axis: int
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.batch_axis = 1
         self.time_axis = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             match attr.name:
-                case 'batch_axis':
+                case "batch_axis":
                     self.batch_axis = attr.i
-                case 'time_axis':
+                case "time_axis":
                     self.time_axis = attr.i
                 case _:
-                    logger.w(f'ONNX `ReverseSequence` attribute `{attr.name}` is not supported!')
+                    logger.w(f"ONNX `ReverseSequence` attribute `{attr.name}` is not supported!")

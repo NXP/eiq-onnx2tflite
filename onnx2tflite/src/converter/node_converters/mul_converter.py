@@ -20,7 +20,7 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 
 
 class MulConverter(NodeConverter):
-    node = 'Mul'
+    node = "Mul"
 
     onnx_supported_types = FLOATS + INTS + UINTS
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/mul.cc#L390-L406
@@ -29,7 +29,7 @@ class MulConverter(NodeConverter):
 
     # noinspection PyMethodMayBeStatic
     def _is_ones_tensor(self, tensor: tflite_model.Tensor) -> bool:
-        """ Determine if 'tensor' contains static data that is all the value 1.
+        """Determine if 'tensor' contains static data that is all the value 1.
 
         :param tensor: TFLite tensor.
         :return: True, if 'tensor' holds static data that is all 1.
@@ -42,7 +42,7 @@ class MulConverter(NodeConverter):
         return False
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX 'Mul' operator to TFLite. """
+        """Convert ONNX 'Mul' operator to TFLite."""
         if len(t_op.tmp_inputs) != 2:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'Mul' has unexpected number of inputs. "
                                                      f"Got '{len(t_op.tmp_inputs)}', expected '2'.")

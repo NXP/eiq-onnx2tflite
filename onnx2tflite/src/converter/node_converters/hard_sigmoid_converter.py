@@ -15,12 +15,12 @@ from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import hard_sigmoid_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import mul_options, add_options, minimum_options
+from onnx2tflite.src.tflite_generator.builtin_options import add_options, minimum_options, mul_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 
 class HardSigmoidConverter(NodeConverter):
-    node = 'HardSigmoid'
+    node = "HardSigmoid"
 
     onnx_supported_types = FLOATS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/maximum_minimum.cc#L176-L252
@@ -28,7 +28,7 @@ class HardSigmoidConverter(NodeConverter):
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
-        """ Convert ONNX `HardSigmoid` operator into TFLite.
+        """Convert ONNX `HardSigmoid` operator into TFLite.
 
             The HardSigmoid function is :
 
@@ -55,7 +55,6 @@ class HardSigmoidConverter(NodeConverter):
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
         :return: A list of TFLite operators to add to the model.
         """
-
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -76,7 +75,7 @@ class HardSigmoidConverter(NodeConverter):
             mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
             mul_op.tmp_inputs = [
                 x,
-                self.builder.create_tensor_for_data(np.array([hs_attributes.alpha], np.float32), 'alpha')
+                self.builder.create_tensor_for_data(np.array([hs_attributes.alpha], np.float32), "alpha")
             ]
             mul_op.tmp_outputs = [mul_output]
 
@@ -93,7 +92,7 @@ class HardSigmoidConverter(NodeConverter):
             add_op = tflite_model.Operator(builtin_options=add_options.Add())
             add_op.tmp_inputs = [
                 mul_output,
-                self.builder.create_tensor_for_data(np.array([hs_attributes.beta], np.float32), 'beta')
+                self.builder.create_tensor_for_data(np.array([hs_attributes.beta], np.float32), "beta")
             ]
             add_op.tmp_outputs = [add_output]
 
@@ -106,7 +105,7 @@ class HardSigmoidConverter(NodeConverter):
         min_op = tflite_model.Operator(builtin_options=minimum_options.Minimum())
         min_op.tmp_inputs = [
             add_output,
-            self.builder.create_tensor_for_data(np.array([1.0], np.float32), 'one')
+            self.builder.create_tensor_for_data(np.array([1.0], np.float32), "one")
         ]
         min_op.tmp_outputs = [min_output]
 

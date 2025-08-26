@@ -4,33 +4,32 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-"""
-    QLinearSoftmax
+"""QLinearSoftmax
 
-    Representation of an ONNX 'QLinearSoftmax' operator.
-    Initialized from a protobuf descriptor object.
+Representation of an ONNX 'QLinearSoftmax' operator.
+Initialized from a protobuf descriptor object.
 """
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class QLinearSoftmax(meta.ONNXOperatorAttributes):
-    axis: Optional[int]
+    axis: int | None
     opset: int
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.axis = -1
         self.opset = -1
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "axis":
                 self.axis = attr.i

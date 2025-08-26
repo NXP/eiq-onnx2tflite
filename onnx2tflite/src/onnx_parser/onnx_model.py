@@ -13,10 +13,9 @@ import typing
 import google.protobuf.message
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
-from onnx2tflite.src import tensor_formatting
+from onnx2tflite.src import logger, tensor_formatting
 from onnx2tflite.src.onnx_parser import builtin_attributes, onnx_tensor
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Tensor(meta.ONNXObject):
@@ -31,7 +30,7 @@ class Tensor(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Tensor) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         # noinspection PyTypeChecker
         self.elem_type = self._descriptor.elem_type  # Warning is probably OK. See 'elem_type' declaration above.
         self.shape = onnx_tensor.TensorShapeProto(self._descriptor.shape)
@@ -59,7 +58,7 @@ class Map(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Map) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         # noinspection PyTypeChecker
         self.key_type = self._descriptor.key_type  # Warning is probably OK. See 'key_type' declaration above.
         self.value_type = TypeProto(self._descriptor.value_type)
@@ -73,7 +72,7 @@ class Optional(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Optional) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.elem_type = TypeProto(self._descriptor.elem_type)
 
 
@@ -86,7 +85,7 @@ class Opaque(meta.ONNXObject):
     def __init__(self, descriptor: onnx.TypeProto.Opaque) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.domain = self._descriptor.domain
         self.name = self._descriptor.name
 
@@ -99,26 +98,27 @@ class TypeProto(meta.ONNXObject):
     """ The 'Type' object MUST have exactly 1 of these types.
         All unused types are 'None'. 
     """
-    tensor_type: typing.Optional[Tensor]
-    sequence_type: typing.Optional[Sequence]
-    map_type: typing.Optional[Map]
-    optional_type: typing.Optional[Optional]
-    sparse_tensor_type: typing.Optional[onnx_tensor.SparseTensor]
-    opaque_type: typing.Optional[Opaque]
+    tensor_type: Tensor | None
+    sequence_type: Sequence | None
+    map_type: Map | None
+    optional_type: Optional | None
+    sparse_tensor_type: onnx_tensor.SparseTensor | None
+    opaque_type: Opaque | None
 
     def __init__(self, descriptor: onnx.TypeProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
-        """ Initialize attributes. Called by parent constructor. """
+    def _init_attributes(self) -> None:
+        """Initialize attributes. Called by parent constructor."""
         self.denotation = self._descriptor.denotation
         # Initialize the types. Only 1 will have a value, others are 'None'.
         self._reset_types()
         self.__init_used_type()
 
-    def __init_used_type(self):
-        """ Find out which 'type' field was used in the model and initialize the
-            corresponding attribute. """
+    def __init_used_type(self) -> None:
+        """Find out which 'type' field was used in the model and initialize the
+        corresponding attribute.
+        """
         if self._descriptor.HasField("tensor_type"):
             self.tensor_type = Tensor(self._descriptor.tensor_type)
         elif self._descriptor.HasField("sequence_type"):
@@ -132,8 +132,8 @@ class TypeProto(meta.ONNXObject):
         elif self._descriptor.HasField("opaque_type"):
             self.opaque_type = Opaque(self._descriptor.opaque_type)
 
-    def _reset_types(self):
-        """ Set all 'type' attributes to 'None'. """
+    def _reset_types(self) -> None:
+        """Set all 'type' attributes to 'None'."""
         self.tensor_type = None
         self.sequence_type = None
         self.map_type = None
@@ -152,7 +152,7 @@ class ValueInfoProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.ValueInfoProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.name = self._descriptor.name
         self.type = TypeProto(self._descriptor.type)
         self.doc_string = self._descriptor.doc_string
@@ -160,7 +160,7 @@ class ValueInfoProto(meta.ONNXObject):
         self.tensor_format = tensor_formatting.TensorFormat.NONE
 
 
-class RepeatedValueInfoProto(typing.List[ValueInfoProto]):
+class RepeatedValueInfoProto(list[ValueInfoProto]):
     def __init__(self, descriptor_iterable: typing.MutableSequence[onnx.ValueInfoProto]):
         super().__init__()
         for descriptor in descriptor_iterable:
@@ -176,12 +176,12 @@ class OperatorSetIdProto(meta.ONNXObject):
     def __init__(self, descriptor: onnx.OperatorSetIdProto) -> None:
         super().__init__(descriptor)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         self.domain = self._descriptor.domain
         self.version = self._descriptor.version
 
 
-class RepeatedOperatorSetIdProto(typing.List[OperatorSetIdProto]):
+class RepeatedOperatorSetIdProto(list[OperatorSetIdProto]):
     def __init__(self, descriptor_iterable: typing.MutableSequence[onnx.OperatorSetIdProto]) -> None:
         super().__init__()
         for descriptor in descriptor_iterable:
@@ -197,23 +197,23 @@ class NodeProto(meta.ONNXObject):
     op_type: str
     domain: str
     version: int
-    attributes: typing.Optional[meta.ONNXOperatorAttributes]
+    attributes: meta.ONNXOperatorAttributes | None
     doc_string: str
 
     # Dictionary which maps an ONNX operator type to a constructor of an onnx_parser attributes class, or None.
     # noinspection SpellCheckingInspection
-    op_type_to_attribute_constructor_map: dict[str, typing.Optional[typing.Callable]] = {
-        'Abs': None,
-        'Add': None,
-        'And': None,
-        'ArgMax': builtin_attributes.ArgMax,
-        'ArgMin': builtin_attributes.ArgMin,
-        'AveragePool': builtin_attributes.AveragePool,
-        'BatchNormalization': builtin_attributes.BatchNormalization,
-        'Cast': builtin_attributes.Cast,
-        'Ceil': None,
-        'Clip': builtin_attributes.Clip,
-        'Concat': builtin_attributes.Concat,
+    op_type_to_attribute_constructor_map: dict[str, typing.Callable | None] = {
+        "Abs": None,
+        "Add": None,
+        "And": None,
+        "ArgMax": builtin_attributes.ArgMax,
+        "ArgMin": builtin_attributes.ArgMin,
+        "AveragePool": builtin_attributes.AveragePool,
+        "BatchNormalization": builtin_attributes.BatchNormalization,
+        "Cast": builtin_attributes.Cast,
+        "Ceil": None,
+        "Clip": builtin_attributes.Clip,
+        "Concat": builtin_attributes.Concat,
         "Constant": builtin_attributes.Constant,
         "ConstantOfShape": builtin_attributes.ConstantOfShape,
         "Conv": builtin_attributes.Conv,
@@ -319,9 +319,8 @@ class NodeProto(meta.ONNXObject):
         super().__init__(descriptor)
         self.version = version
 
-    def _init_attributes(self):
-        """ Initialize attributes. Called from parent constructor. """
-
+    def _init_attributes(self) -> None:
+        """Initialize attributes. Called from parent constructor."""
         self.inputs = self._descriptor.input
         self.outputs = self._descriptor.output
         self.name = self._descriptor.name
@@ -334,7 +333,7 @@ class NodeProto(meta.ONNXObject):
             self.unique_name = f"{self.name}_{self.index}"
 
         if self._init_node_attributes:
-            if self.op_type not in NodeProto.op_type_to_attribute_constructor_map.keys():
+            if self.op_type not in NodeProto.op_type_to_attribute_constructor_map:
                 logger.e(logger.Code.UNSUPPORTED_OPERATOR, f"ONNX operator '{self.op_type}' is not yet supported!")
 
             get_attributes_fn = NodeProto.op_type_to_attribute_constructor_map[self.op_type]
@@ -350,7 +349,7 @@ class NodeProto(meta.ONNXObject):
         return hash(self.unique_name)
 
 
-class RepeatedNodeProto(typing.List[NodeProto]):
+class RepeatedNodeProto(list[NodeProto]):
     def __init__(self, descriptor_iterable: typing.MutableSequence[onnx.NodeProto],
                  opset_imports: RepeatedOperatorSetIdProto,
                  init_node_attributes: bool):
@@ -395,8 +394,8 @@ class GraphProto(meta.ONNXObject):
         self._init_node_attributes = init_node_attributes
         super().__init__(descriptor)
 
-    def _init_attributes(self):
-        """ Initialize attributes. Called from parent constructor. """
+    def _init_attributes(self) -> None:
+        """Initialize attributes. Called from parent constructor."""
         self.name = self._descriptor.name
         self.nodes = RepeatedNodeProto(self._descriptor.node, self._opset_imports, self._init_node_attributes)
         self.initializers = onnx_tensor.RepeatedTensorProto(self._descriptor.initializer)
@@ -422,12 +421,12 @@ class ModelProto(meta.ONNXObject):
     # TODO training_info
     # TODO functions
 
-    def __init__(self, source: typing.Union[str, onnx.ModelProto], init_node_attributes: bool = True) -> None:
-        """ Initialize an internal representation of on ONNX model either from an .onnx file or from an
-            onnx.ModelProto object.
-            :param source: Either a string name of an .onnx file to parse, or a ModelProto object holding model data.
-            :param init_node_attributes: Initialize operator attributes. If False, skips and only loads the model structure.
-                                        Useful when need to parse models with unsupported ONNX operators.
+    def __init__(self, source: str | onnx.ModelProto, init_node_attributes: bool = True) -> None:
+        """Initialize an internal representation of on ONNX model either from an .onnx file or from an
+        onnx.ModelProto object.
+        :param source: Either a string name of an .onnx file to parse, or a ModelProto object holding model data.
+        :param init_node_attributes: Initialize operator attributes. If False, skips and only loads the model structure.
+                                    Useful when need to parse models with unsupported ONNX operators.
         """
         self._init_node_attributes = init_node_attributes
 
@@ -446,8 +445,8 @@ class ModelProto(meta.ONNXObject):
             logger.e(logger.Code.INVALID_INPUT, f"Cannot initialize ONNX model from object of type '{type(source)}'! "
                                                 f"Expected type 'onnx.ModelProto' or 'string'.")
 
-    def _init_attributes(self):
-        """ Initialize object attributes from the '_descriptor' attribute of the parent object. """
+    def _init_attributes(self) -> None:
+        """Initialize object attributes from the '_descriptor' attribute of the parent object."""
         self.ir_version = self._descriptor.ir_version
         self.opset_imports = RepeatedOperatorSetIdProto(self._descriptor.opset_import)
         self.producer_name = self._descriptor.producer_name

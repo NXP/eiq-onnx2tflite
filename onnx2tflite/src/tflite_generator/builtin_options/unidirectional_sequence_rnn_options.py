@@ -26,7 +26,7 @@ class UnidirectionalSequenceRNN(meta.BuiltinOptions):
         self.fused_activation_function = fused_activation_function
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libUSRNNOptions.Start(builder)
 
         libUSRNNOptions.AddTimeMajor(builder, self.time_major)

@@ -16,47 +16,46 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorHasOneConsumer, 
 
 
 class MoveActivationBeforeConcatenation(BaseOptimization):
-    """
-        Move some operators around in the following pattern.
-        This is a common pattern that emerges from the conversion of separable convolutions.
+    """Move some operators around in the following pattern.
+    This is a common pattern that emerges from the conversion of separable convolutions.
 
-              │                │                            │                │
-          ┌───▼────┐       ┌───▼────┐                   ┌───▼────┐       ┌───▼────┐
-          │ Conv2D │  ...  │ Conv2D │                   │ Conv2D │  ...  │ Conv2D │
-          └───┬────┘       └───┬────┘                   └───┬────┘       └───┬────┘
-              └──┐          ┌──┘                            │                │
-              ┌──▼──────────▼─┐                          ┌──▼───┐         ┌──▼───┐
-              │ Concatenation │           ─────►         │ Relu │   ...   │ Relu │
-              └───────┬───────┘                          └──┬───┘         └──┬───┘
-                      │  'x'                                └──┐          ┌──┘
-                   ┌──▼───┐                                 ┌──▼──────────▼─┐
-                   │ Relu │                                 │ Concatenation │
-                   └──┬───┘                                 └───────┬───────┘
-                      │  'y'                                        │
+          │                │                            │                │
+      ┌───▼────┐       ┌───▼────┐                   ┌───▼────┐       ┌───▼────┐
+      │ Conv2D │  ...  │ Conv2D │                   │ Conv2D │  ...  │ Conv2D │
+      └───┬────┘       └───┬────┘                   └───┬────┘       └───┬────┘
+          └──┐          ┌──┘                            │                │
+          ┌──▼──────────▼─┐                          ┌──▼───┐         ┌──▼───┐
+          │ Concatenation │           ─────►         │ Relu │   ...   │ Relu │
+          └───────┬───────┘                          └──┬───┘         └──┬───┘
+                  │  'x'                                └──┐          ┌──┘
+               ┌──▼───┐                                 ┌──▼──────────▼─┐
+               │ Relu │                                 │ Concatenation │
+               └──┬───┘                                 └───────┬───────┘
+                  │  'y'                                        │
     """
 
-    activations = ['Relu', 'ReluN1To1', 'Relu6', 'Tanh', 'Sign']
+    activations = ["Relu", "ReluN1To1", "Relu6", "Tanh", "Sign"]
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
             [
-                Op(['Concatenation'], None, ['x'], [AllInputsComeFrom('Conv2D')]),
-                Op(self.activations, ['x'], ['y'])
+                Op(["Concatenation"], None, ["x"], [AllInputsComeFrom("Conv2D")]),
+                Op(self.activations, ["x"], ["y"])
             ],
             [
-                TensorHasOneConsumer('x'),
+                TensorHasOneConsumer("x"),
 
                 # If the activation function is not changing the quantization parameters, it can be moved without
                 #  messing with the quantization elsewhere.
-                TensorsHaveSameQuantization(['x', 'y'])
+                TensorsHaveSameQuantization(["x", "y"])
             ])
 
         to_remove = []
 
         # Mapping an operator to a list of operators. These operators (value) will later be added into the TFLite
         #  model's `operators` in front of the specified operator (key).
-        to_add: dict[tflite_model.Operator, list[tflite_model.Operator]] = defaultdict(lambda: [])
+        to_add: dict[tflite_model.Operator, list[tflite_model.Operator]] = defaultdict(list)
 
         for [concat, activation], _, _, _ in matcher.match_patterns():
             new_concat_inputs = []

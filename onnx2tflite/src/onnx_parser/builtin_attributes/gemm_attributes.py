@@ -4,37 +4,36 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    Gemm
+"""Gemm
 
 Representation of an ONNX 'Gemm' operator.
 Initialized from a protobuf descriptor object.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Gemm(meta.ONNXOperatorAttributes):
     alpha: float
     beta: float
-    transA: int
-    transB: int
+    transA: int  # noqa: N815
+    transB: int  # noqa: N815
 
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.alpha = 1.0
         self.beta = 1.0
         self.transA = 0
         self.transB = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "alpha":
                 self.alpha = attr.f

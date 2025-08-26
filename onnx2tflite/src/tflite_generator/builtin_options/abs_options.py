@@ -7,10 +7,10 @@
 
 import flatbuffers as fb
 
-import onnx2tflite.src.tflite_generator.meta.meta as meta
 from onnx2tflite.lib.tflite import AbsOptions
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Abs(meta.BuiltinOptions):
@@ -18,7 +18,7 @@ class Abs(meta.BuiltinOptions):
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.AbsOptions, BuiltinOperator.ABS)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         AbsOptions.Start(builder)
 
         return AbsOptions.End(builder)

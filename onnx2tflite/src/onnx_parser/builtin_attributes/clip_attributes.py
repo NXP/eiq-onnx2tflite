@@ -4,7 +4,7 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
@@ -20,12 +20,12 @@ class Clip(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         # All parsed Clip versions will have these default attributes. Use node.version to distinguish between versions.
         self.max = 3.402823e+38
         self.min = -3.402823e+38
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "max":
                 self.max = attr.f

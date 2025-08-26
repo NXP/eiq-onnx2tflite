@@ -6,13 +6,13 @@
 # See the LICENSE_MIT for more details.
 #
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import numpy as np
 import onnx
 
-import onnx2tflite.src.logger as logger
-import onnx2tflite.src.onnx_parser.meta.meta as meta
+from onnx2tflite.src import logger
+from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class LeakyRelu(meta.ONNXOperatorAttributes):
@@ -21,10 +21,10 @@ class LeakyRelu(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.alpha = np.float32(0.01)
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "alpha":
                 self.alpha = attr.f

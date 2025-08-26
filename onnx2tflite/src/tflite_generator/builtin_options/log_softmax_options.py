@@ -4,8 +4,7 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
-"""
-    LogSoftmax
+"""LogSoftmax
 
 Representation of the TFLite operator 'LogSoftmax'.
 """
@@ -15,7 +14,7 @@ import flatbuffers as fb
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
 import onnx2tflite.lib.tflite.BuiltinOptions as libBuiltinOptions
 import onnx2tflite.lib.tflite.LogSoftmaxOptions as libLogSoftmaxOptions
-import onnx2tflite.src.tflite_generator.meta.meta as meta
+from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class LogSoftmax(meta.BuiltinOptions):
@@ -23,6 +22,6 @@ class LogSoftmax(meta.BuiltinOptions):
         super().__init__(libBuiltinOptions.BuiltinOptions.LogSoftmaxOptions,
                          libBuiltinOperator.BuiltinOperator.LOG_SOFTMAX)
 
-    def gen_tflite(self, builder: fb.Builder):
+    def gen_tflite(self, builder: fb.Builder) -> int:
         libLogSoftmaxOptions.Start(builder)
         return libLogSoftmaxOptions.End(builder)

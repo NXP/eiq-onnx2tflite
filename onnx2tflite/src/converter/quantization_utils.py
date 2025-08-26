@@ -5,16 +5,16 @@
 # See the LICENSE for more details.
 #
 import copy
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 import numpy as np
 from onnx import TensorProto
 from onnxruntime.quantization import quant_utils
 
-import onnx2tflite.src.converter.builder.model_builder as model_builder
 from onnx2tflite.lib.tflite import TensorType as tflTensorType
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger as logger
+from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
@@ -22,7 +22,7 @@ from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
 
 def quantization_is_equal(x_scale: np.ndarray, x_zp: np.ndarray, x_type: TensorType, y_scale: np.ndarray,
                           y_zp: np.ndarray, y_type: TensorType) -> bool:
-    """ Determine if provided quantization parameters of tensors 'x' and 'y' are the same.
+    """Determine if provided quantization parameters of tensors 'x' and 'y' are the same.
 
     :param x_scale: Scale of the 'x' tensor.
     :param x_zp: Zero point of the 'x' tensor.
@@ -41,10 +41,10 @@ def quantization_is_equal(x_scale: np.ndarray, x_zp: np.ndarray, x_type: TensorT
     x_scale, x_zp = quantization_params_to_lists(x_scale, x_zp)
     y_scale, y_zp = quantization_params_to_lists(y_scale, y_zp)
 
-    return all(x_s == y_s and x_z == y_z for x_s, y_s, x_z, y_z in zip(x_scale, y_scale, x_zp, y_zp))
+    return all(x_s == y_s and x_z == y_z for x_s, y_s, x_z, y_z in zip(x_scale, y_scale, x_zp, y_zp, strict=False))
 
 
-def quantization_params_to_lists(scale: np.ndarray, zero_point: np.ndarray) -> (List[float], List[int]):
+def quantization_params_to_lists(scale: np.ndarray, zero_point: np.ndarray) -> (list[float], list[int]):
     if (scale is None) or (zero_point is None):
         logger.e(logger.Code.INTERNAL_ERROR,
                  "Missing zero_point and/or scale quantization params when converting to list!")
@@ -64,19 +64,19 @@ def quantization_params_to_lists(scale: np.ndarray, zero_point: np.ndarray) -> (
     return scale, zero_point
 
 
-def is_quantization_valid(scale, zero_point):
+def is_quantization_valid(scale, zero_point) -> bool:
     return scale.size == zero_point.size
 
 
-def is_per_tensor_quantized(scale, zero_point):
+def is_per_tensor_quantized(scale, zero_point) -> bool:
     return (scale.size == 1) and (zero_point.size == 1)
 
 
-def is_per_channel_quantized(scale, zero_point):
+def is_per_channel_quantized(scale, zero_point) -> bool:
     return is_quantization_valid(scale, zero_point) and not is_per_tensor_quantized(scale, zero_point)
 
 
-def get_symmetric_zero_point_for_type(tensor_type: TensorType):
+def get_symmetric_zero_point_for_type(tensor_type: TensorType) -> int:
     match tensor_type:
         case TensorType.INT8:
             return 0
@@ -88,8 +88,7 @@ def get_symmetric_zero_point_for_type(tensor_type: TensorType):
 
 def re_compute_q_params_for_type(tensor: tflite_model.Tensor, new_type: TensorType,
                                  symmetric=False) -> tuple[list[float], list[int]]:
-    """
-    Compute new quantization parameters (MinMax quantization method) based on static tensor's data.
+    """Compute new quantization parameters (MinMax quantization method) based on static tensor's data.
 
     :param tensor: Static & quantized analyzed TFLite tensor.
     :param new_type: Base type for new q-params. One of [TensorProto.INT8, TensorProto.UINT8].
@@ -111,16 +110,16 @@ def re_compute_q_params_for_type(tensor: tflite_model.Tensor, new_type: TensorTy
 
     match new_type:
         case TensorType.INT8:
-            qType = TensorProto.INT8
+            q_type = TensorProto.INT8
         case TensorType.UINT8:
-            qType = TensorProto.UINT8
+            q_type = TensorProto.UINT8
         case _:
             logger.e(logger.Code.INTERNAL_ERROR, f"Attempt to get zero point definition for type: {new_type}")
 
     data = dequantize(tensor.tmp_buffer.data, scale, zp)
     r_min = np.min(data)
     r_max = np.max(data)
-    q_min, q_max = quant_utils.get_qmin_qmax_for_qType(qType, reduce_range=False, symmetric=symmetric)
+    q_min, q_max = quant_utils.get_qmin_qmax_for_qType(q_type, reduce_range=False, symmetric=symmetric)
     zero_point, scale = quant_utils.compute_scale_zp(r_min, r_max, q_min, q_max, symmetric)
 
     return [scale], [zero_point]
@@ -128,14 +127,12 @@ def re_compute_q_params_for_type(tensor: tflite_model.Tensor, new_type: TensorTy
 
 def _validate_or_set_quant_params(tensor: tflite_model.Tensor,
                                   quant: tflite_model.Quantization) -> bool:
-    """
-    Set quantization parameters 'quant' in the tensor. If tensor already has any quantization parameters,
+    """Set quantization parameters 'quant' in the tensor. If tensor already has any quantization parameters,
     checks if equals to quant
     :param tensor: tensor where to set the quantization parameters
     :param quant: Quantization parameters
     :return: False if validation failed, True otherwise
     """
-
     if tensor.quantization is not None:
         return tensor.quantization == quant
     tensor.quantization = copy.copy(quant)
@@ -144,13 +141,11 @@ def _validate_or_set_quant_params(tensor: tflite_model.Tensor,
 
 
 def propagate_quantization(from_tensor: tflite_model.Tensor,
-                           to_tensor: tflite_model.Tensor):
-    """
-    Propagates quantization parameters from from_tensor to to_tensor. If to_tensor already has the params set
+                           to_tensor: tflite_model.Tensor) -> None:
+    """Propagates quantization parameters from from_tensor to to_tensor. If to_tensor already has the params set
     checks the consistency.
     :raises: logger.Error - INVALID_ONNX_MODEL
     """
-
     if from_tensor.quantization is not None and from_tensor.quantization.is_per_channel():
         # Note: For simplicity the quantization propagation is allowed only for per tensor quantized tensors.
         # Typically, operator inputs and outputs are per-tensor quantized. Per channel is only for weights.
@@ -164,15 +159,15 @@ def propagate_quantization(from_tensor: tflite_model.Tensor,
 
 
 def set_quantization_parameters_to_tensor(tflite_tensor: tflite_model.Tensor, scale: np.ndarray,
-                                          zero_point: np.ndarray, quantized_dimension: int = 0):
-    """ Create a TFLite QuantizationParameters object, initialize it from given parameters and add it to the
-        'tflite_tensor'.
-        :param tflite_tensor: The TFLite tensor in the model, to add the quantization to.
-        :param scale: The data of the tensor, which is an input of a quantized ONNX operator and represents the
-                      quantization scale.
-        :param zero_point: The data of the tensor, which is an input of a quantized ONNX operator and represents the
-                           quantization zero point.
-        :param quantized_dimension: The quantized dimension attribute of TFLite QuantizationParameters.
+                                          zero_point: np.ndarray, quantized_dimension: int = 0) -> None:
+    """Create a TFLite QuantizationParameters object, initialize it from given parameters and add it to the
+    'tflite_tensor'.
+    :param tflite_tensor: The TFLite tensor in the model, to add the quantization to.
+    :param scale: The data of the tensor, which is an input of a quantized ONNX operator and represents the
+                  quantization scale.
+    :param zero_point: The data of the tensor, which is an input of a quantized ONNX operator and represents the
+                       quantization zero point.
+    :param quantized_dimension: The quantized dimension attribute of TFLite QuantizationParameters.
     """
     if (scale is None) or (zero_point is None):
         logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX quantized operators is only supported when "
@@ -217,8 +212,7 @@ def set_quantization_parameters_to_tensor(tflite_tensor: tflite_model.Tensor, sc
 
 def calculate_uint_to_int_re_quantization_zero_point(data_type_byte_size: int,
                                                      old_zero_point: Iterable[int]) -> np.ndarray:
-    """
-        Calculate the new zero points, after a quantized tensor with an unsigned int data type is re-quantized to
+    """Calculate the new zero points, after a quantized tensor with an unsigned int data type is re-quantized to
         a signed type.
     :param data_type_byte_size: Size of the data type that is used, in Bytes. For example 1 for INT8.
     :param old_zero_point: The zero point quantisation parameter, of the original data, before re-quantization.
@@ -230,38 +224,38 @@ def calculate_uint_to_int_re_quantization_zero_point(data_type_byte_size: int,
 
 
 def _re_quantize_uint8_to_int8(tensor_data: np.ndarray) -> np.ndarray:
-    """ Re-quantize static uint8 data to int8. """
+    """Re-quantize static uint8 data to int8."""
     int16_data = np.asarray(tensor_data, np.int16)
     return np.array(int16_data - 128, np.int8)
 
 
-def quantize_int8(data: np.ndarray, scale: List[float], zero_point: List[int]) -> np.ndarray:
+def quantize_int8(data: np.ndarray, scale: list[float], zero_point: list[int]) -> np.ndarray:
     new_data = np.add(np.round(np.divide(data, scale)), zero_point)
     return np.clip(new_data, -128, 127).astype(np.int8)
 
 
-def quantize_uint8(data: np.ndarray, scale: List[float], zero_point: List[int]) -> np.ndarray:
+def quantize_uint8(data: np.ndarray, scale: list[float], zero_point: list[int]) -> np.ndarray:
     new_data = np.add(np.round(np.divide(data, scale)), zero_point)
     return np.clip(new_data, 0, 255).astype(np.uint8)
 
 
-def quantize_int32(data: np.ndarray, scale: List[float], zero_point: List[int]) -> np.ndarray:
+def quantize_int32(data: np.ndarray, scale: list[float], zero_point: list[int]) -> np.ndarray:
     new_data = np.add(np.round(np.divide(data, scale)), zero_point)
     return np.clip(new_data, -2_147_483_648, 2_147_483_648).astype(np.int32)
 
 
-def dequantize(data: np.ndarray, scale: List[float], zero_point: List[int]) -> np.ndarray:
+def dequantize(data: np.ndarray, scale: list[float] | np.ndarray, zero_point: list[int] | np.ndarray) -> np.ndarray:
     return np.multiply(np.subtract(np.array(data, dtype=np.float32), zero_point), scale, dtype=np.float32)
 
 
 def re_quantize_static_tensor(
-        builder: 'model_builder.ModelBuilder',
+        builder: "model_builder.ModelBuilder",
         tflite_tensor: tflite_model.Tensor,
-        to_type: tflTensorType.TensorType,
-        new_scale: Optional[List[float]] = None,
-        new_zero_point: Optional[List[int]] = None,
+        to_type: tflTensorType.TensorType | int,
+        new_scale: list[float] | None = None,
+        new_zero_point: list[int] | None = None,
 ) -> tflite_model.Tensor:
-    """ Create a new TFLite Tensor with new quantization parameters, type and data.
+    """Create a new TFLite Tensor with new quantization parameters, type and data.
 
     :param builder: A ModelBuilder instance.
     :param tflite_tensor: TFLite tensor to re-quantize.
@@ -357,14 +351,14 @@ def re_quantize_static_tensor(
 
 
 def quantize_static_float_tensor(
-        builder: 'model_builder.ModelBuilder',
+        builder: "model_builder.ModelBuilder",
         tflite_tensor: tflite_model.Tensor,
         to_type: tflTensorType.TensorType,
-        scale: List[float],
-        zero_point: List[int],
+        scale: list[float],
+        zero_point: list[int],
         quantized_dimension: int = 0,
 ) -> tflite_model.Tensor:
-    """ Quantize tensor 'tflite_tensor' with passed quantization params.
+    """Quantize tensor 'tflite_tensor' with passed quantization params.
 
     :param builder: A ModelBuilder instance.
     :param tflite_tensor: TFLite tensor to quantize.

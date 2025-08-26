@@ -4,7 +4,7 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from typing import Iterable
+from collections.abc import Iterable
 
 import onnx
 
@@ -20,12 +20,12 @@ class ReduceMean(meta.ONNXOperatorAttributes):
     def __init__(self, descriptor: Iterable[onnx.AttributeProto]) -> None:
         super().__init__(descriptor)
 
-    def _default_values(self):
+    def _default_values(self) -> None:
         self.axes = None
         self.keepdims = 1
         self.noop_with_empty_axes = 0
 
-    def _init_attributes(self):
+    def _init_attributes(self) -> None:
         for attr in self._descriptor:
             if attr.name == "axes":
                 self.axes = meta.ONNXIntListAttribute(attr)
