@@ -10,6 +10,7 @@ alexnet_reduced.*
 tests/artifacts/downloaded/*
 !tests/artifacts/downloaded/.keep
 tests/artifacts/mltec-onnx-models
+!SBOM.spdx.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
