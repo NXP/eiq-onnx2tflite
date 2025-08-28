@@ -279,7 +279,12 @@ def e(err_code: Code, msg: str, exception: Exception | None = None) -> NoReturn:
     :param exception: (Optional) Exception object to print before the program exits.
     """
     error = Error(err_code, msg, exception)
-    logger.exception(f"[{err_code}] - {msg}", exc_info=exception)
+    if MIN_OUTPUT_IMPORTANCE.value <= MessageImportance.INFO.value:
+        # Log error message with stacktrace
+        logger.exception(f"[{err_code}] - {msg}", exc_info=exception)
+    else:
+        # Provide only simple error message
+        logger.error(f"[{err_code}] - {msg}")
     conversion_log.add_log(MessageImportance.ERROR, str(error), error_code=err_code)
 
     raise error
