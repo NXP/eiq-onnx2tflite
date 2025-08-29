@@ -12,7 +12,7 @@ from onnx2tflite.src.onnx_parser.meta import meta
 
 
 class Multinomial(meta.ONNXOperatorAttributes):
-    dtype: TensorProto.DataType | int
+    dtype: TensorProto.DataType
     sample_size: int
     seed: float | None
 

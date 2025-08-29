@@ -224,7 +224,8 @@ class OperatorConverter:
 
             if has_inconvertible_node:
                 raise logger.Error(logger.Code.CONVERSION_IMPOSSIBLE,
-                                   "Model contains nodes that are not convertible or not supported.")
+                                   "Some nodes in the model are not supported or cannot be converted. Please "
+                                   "review the console output above for more information and possible solutions.")
 
         def convert_all_ops(node: onnx_model.NodeProto) -> None:
             def _tensors_are_formatless(onnx_tensors: list[str]) -> bool:

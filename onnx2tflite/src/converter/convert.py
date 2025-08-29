@@ -243,6 +243,7 @@ def convert_model(
         except Exception as e: # noqa: BLE001
             logger.d(f"Generic conversion exception caught ({type(e).__name__}). {traceback.format_exc()}")
             logger.e(logger.Code.INTERNAL_ERROR,
-                     f"Unexpected internal error: {type(e).__name__}. Please report this issue.")
+                     f"Unexpected internal error: '[{type(e).__name__}] {str(e)}'. Please report this issue on "
+                     f"https://github.com/NXP/eiq-onnx2tflite/issues.")
 
         return flatbuffer_model
