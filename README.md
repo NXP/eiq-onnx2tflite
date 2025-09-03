@@ -14,7 +14,8 @@ in models suitable for subsequent conversion into TFLite.
 ## Installation
 
 ```commandline
-pip install --extra-index-url https://eiq.nxp.com/repository/ eiq-onnx2tflite
+pip install -r requirements.txt
+pip install --index-url https://eiq.nxp.com/repository/ eiq-onnx2tflite
 ```
 
 ## ONNX2TFLite converter
