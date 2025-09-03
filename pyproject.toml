@@ -21,7 +21,7 @@ authors = [
 dynamic = ["version", "dependencies"]
 description = "ONNX2TFLite project offers tools for ONNX models quantization and their conversion into TFLite"
 license = { text = "PROPRIETARY" }
-keywords = ["nxp", "eiq", "toolkit", "converter", "quantizer", "onnx", "tflite"]
+keywords = ["onnx2tflite", "onnx2quant", "nxp", "eiq", "toolkit", "converter", "quantizer", "onnx", "tflite"]
 requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3.10",
