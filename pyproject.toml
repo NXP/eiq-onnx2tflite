@@ -12,7 +12,6 @@ dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools.dynamic.optional-dependencies]
 dev = { file = ["requirements-dev.txt"] }
-accuracy = { file = ["requirements-accuracy.txt"] }
 
 [project]
 name = "eiq-onnx2tflite"
