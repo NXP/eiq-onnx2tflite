@@ -32,8 +32,8 @@ classifiers = [
 url = "https://www.nxp.com"
 
 [project.entry-points.console_scripts]
-onnx2tflite = "onnx2tflite.__main__:run_conversion"
-onnx2quant = "onnx2quant.__main__:run_quantization"
+onnx2tflite = "onnx2tflite.__main__:run_conversion_wrapper"
+onnx2quant = "onnx2quant.__main__:run_quantization_wrapper"
 
 [tool.ruff]
 line-length = 120

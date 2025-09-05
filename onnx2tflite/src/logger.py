@@ -287,7 +287,7 @@ def e(err_code: Code, msg: str, exception: Exception | None = None) -> NoReturn:
         logger.error(f"[{err_code}] - {msg}")
     conversion_log.add_log(MessageImportance.ERROR, str(error), error_code=err_code)
 
-    raise error
+    raise error from exception
 
 
 def expect_type(obj, expected_type, msg: str = "") -> None:

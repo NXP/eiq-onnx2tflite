@@ -24,6 +24,7 @@ syslog = logging.StreamHandler()
 syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
 logger.addHandler(syslog)
 
+
 def _get_user_choice_parser() -> argparse.ArgumentParser:
     """Return a parser, which handles options used to let the user provide additional information for the
     conversion. Without this information, the converter wouldn't be able to guarantee accurate conversion. This
@@ -132,14 +133,14 @@ def run_conversion() -> None:
         try:
             args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
                 args.symbolic_dimensions_mapping)
-        except Exception as err: # noqa: BLE001
+        except Exception as err:  # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 
     if args.input_shapes_mapping:
         assert isinstance(args.input_shapes_mapping, list)
         try:
             args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
-        except Exception as err: # noqa: BLE001
+        except Exception as err:  # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 
     """ Convert the model """
@@ -151,8 +152,12 @@ def run_conversion() -> None:
     logger.info(f"Successfully converted '{args.onnx_file}' model to '{output_tflite}'.")
 
 
-if __name__ == "__main__":
+def run_conversion_wrapper() -> None:
     try:
         run_conversion()
     except context_logger.Error as e:
         exit(e.error_code.value)
+
+
+if __name__ == "__main__":
+    run_conversion_wrapper()
