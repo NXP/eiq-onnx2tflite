@@ -46,7 +46,7 @@ def test_convert_concat_qdq_dynamic(qdq_model_concat_dynamic, intermediate_tflit
         1: np.arange(np.prod((2, 4, 4, 5))).reshape((2, 4, 4, 5)).astype(np.float32),
     }
 
-    executors.convert_run_compare(qdq_model_concat_dynamic, input_data, atol=0.006, save_models=True)
+    executors.convert_run_compare(qdq_model_concat_dynamic, input_data, atol=0.006)
 
     ops = intermediate_tflite_model_provider.get_operators()
     assert len(ops) == 4

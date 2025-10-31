@@ -1,10 +1,10 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-
+import builtins
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -79,6 +79,7 @@ class TensorHasData(TensorRule):
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
         return self.tensor in tensor_map
 
+
 @dataclass
 class TensorsHaveData(MultipleTensorRule):
     def __init__(self, tensors: list[str]):
@@ -94,29 +95,46 @@ class TensorHasStaticValue(TensorRule):
     # Rule assures that the tensor has a single static value, which is equal to the provided `value`.
 
     tensor: str
-    value: int | float
+    value: int | float | list[int] | list[float]
 
     def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
                  output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 data = tensor_map[self.tensor].tmp_buffer.data
-                if data is None or data.size > 1:
+                if data is None:
                     return False
 
-                return np.allclose(data, np.asarray([self.value], data.dtype))
+                required_data = self._value_as_np(data.dtype)
+                if len(required_data) != len(data):
+                    return False
+
+                return np.allclose(data, required_data)
 
             case list():
                 for t in tensor_map[self.tensor]:
                     data = t.tmp_buffer.data
-                    if data is None or data.size > 1:
+                    if data is None:
                         return False
 
-                    if not np.allclose(data, np.asarray([self.value], data.dtype)):
+                    required_data = self._value_as_np(data.dtype)
+                    if len(required_data) != len(data):
+                        return False
+
+                    if not np.allclose(data, required_data):
                         return False
 
                 return True
 
+            case _:
+                raise ValueError
+
+    def _value_as_np(self, dtype) -> np.ndarray:
+        match type(self.value):
+            case builtins.int | builtins.float:
+                return np.asarray([self.value], dtype)
+            case builtins.list:
+                return np.asarray(self.value, dtype)
             case _:
                 raise ValueError
 
@@ -210,6 +228,10 @@ class TensorDimensionsMatch(TensorRule):
             raise NotImplementedError("Tensor rule `TensorDimensionsMatch` is not implemented for sets of tensors.")
 
         if (not t1.shape.is_well_defined()) or (not t2.shape.is_well_defined()):
+            return False
+
+        # Check we're not accessing out of range index in shape array
+        if t1.shape.len() < (self.dim_idx_1 + 1) or t2.shape.len() < (self.dim_idx_2 + 1):
             return False
 
         return t1.shape[self.dim_idx_1] == t2.shape[self.dim_idx_2]

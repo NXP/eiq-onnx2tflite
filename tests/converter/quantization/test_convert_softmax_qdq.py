@@ -40,7 +40,7 @@ def test_convert_softmax_qdq(qdq_softmax_model, intermediate_tflite_model_provid
 
     input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
-    executors.convert_run_compare(qdq_softmax_model, input_data, save_models=True)
+    executors.convert_run_compare(qdq_softmax_model, input_data)
 
     ops = intermediate_tflite_model_provider.get_operators()
     assert len(ops) == 3
