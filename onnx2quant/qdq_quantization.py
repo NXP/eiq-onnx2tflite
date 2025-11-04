@@ -821,6 +821,7 @@ class QDQQuantizer:
         "Squeeze",
         "Sub",
         "Sum",
+        # "Tan",  # Implemented as Sin + Cos + Div. Not supported in TFLite.
         "Tanh",
         "Tile",
         "Transpose",

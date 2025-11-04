@@ -304,6 +304,7 @@ class NodeProto(meta.ONNXObject):
         "Squeeze": builtin_attributes.Squeeze,
         "Sub": None,
         "Sum": None,
+        "Tan": None,
         "Tanh": None,
         "Tile": None,
         "Transpose": builtin_attributes.Transpose,
