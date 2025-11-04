@@ -1,9 +1,10 @@
 #
-# Copyright 2024 NXP
+# Copyright 2025 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
+from typing import Sequence
 
 import numpy as np
 import onnx
@@ -13,6 +14,7 @@ from onnx import TensorProto
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
+from onnx2tflite.src.tflite_generator.builtin_options import add_options
 from tests import executors
 
 
@@ -27,7 +29,7 @@ from tests import executors
 @pytest.mark.parametrize("_type", [
     TensorProto.INT32, TensorProto.INT64
 ], ids=name_for_onnx_type)
-def test_convert_mod(shape: [int], _type: TensorProto.DataType):
+def test_convert_mod(shape: Sequence[int], _type: TensorProto.DataType):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node('Mod', ['a', 'b'], ['y'])],
         'Mod test',
@@ -75,7 +77,7 @@ def test_convert_mod__invalid_type():
     ([2, 4, 6, 8], [6, 1]),
     ([4, 1, 8], [2, 1, 6, 1]),
 ])
-def test_convert_mod__broadcasting(a_shape: [int], b_shape: [int]):
+def test_convert_mod__broadcasting(a_shape: Sequence[int], b_shape: Sequence[int]):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node('Mod', ['a', 'b'], ['y'])],
         'Mod test',
@@ -143,3 +145,28 @@ def test_convert_mod__quantized(type_: TensorProto.DataType):
 
     error_code = logger.Code.NOT_IMPLEMENTED if type_ == TensorProto.INT8 else logger.Code.CONVERSION_IMPOSSIBLE
     assert logger.conversion_log.get_node_error_code(2) == error_code
+
+
+def test_convert_mod__static_removed(intermediate_tflite_model_provider):
+    shape = [1]
+    _type = TensorProto.INT32
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('Mod', ['a', 'b'], ['c']),
+            onnx.helper.make_node('Add', ['x', 'c'], ['y'])
+        ],
+        'Mod test',
+        [onnx.helper.make_tensor_value_info('x', _type, shape)],
+        [onnx.helper.make_tensor_value_info('y', _type, shape)],
+        [
+            onnx.helper.make_tensor('a', _type, shape, [3]),
+            onnx.helper.make_tensor('b', _type, shape, [2])
+        ]
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    input_data = np.array([10], dtype=np.int32)
+    executors.convert_run_compare(onnx_model, input_data)
+
+    # Mod op with static inputs should be pre-computed and removed
+    assert len(intermediate_tflite_model_provider.get_operators()) == 1

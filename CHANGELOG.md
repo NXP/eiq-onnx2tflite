@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- [onnx2tflite|onnx2quant] Mod op with static inputs is now pre-computed and removed from model
+
 ## [0.7.0] - 2025-08-18
 
 ### Added

@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -60,6 +60,7 @@ class ModelShapeInference(SymbolicShapeInference):
         self.dispatcher_["Expand"] = self._infer_Expand
         self.dispatcher_["Flatten"] = self._infer_Flatten
         self.dispatcher_["Identity"] = self._infer_Identity
+        self.dispatcher_["Mod"] = self._infer_Mod
         self.dispatcher_["OneHot"] = self._infer_OneHot
         self.dispatcher_["QGemm"] = self._infer_QGemm
         self.dispatcher_["QLinearAdd"] = self._infer_QLinearAdd
@@ -578,6 +579,24 @@ class ModelShapeInference(SymbolicShapeInference):
         if values is not None:
             np_type = to_numpy_type(vi.type.tensor_type.elem_type)
             self.sympy_data_[node.output[0]] = np.array(values).astype(np_type)
+
+    def _infer_Mod(self, node: onnx.NodeProto) -> None:  # noqa: N802
+        # Reference: https://github.com/onnx/onnx/blob/abc7068dcae5f14e8a1f99589a58d9b954823493/onnx/reference/ops/op_mod.py
+
+        fmod = get_attribute(node, "fmod")
+
+        a = self._try_get_value(node, 0)
+        b = self._try_get_value(node, 1)
+
+        if a is not None and b is not None:
+            if fmod:
+                computed_output = np.fmod(a, b)
+            elif a.dtype in [np.float16, np.float32, np.float64]:
+                computed_output = np.nan_to_num(np.fmod(a, b))
+            else:
+                computed_output = np.nan_to_num(np.mod(a, b))
+
+            self.sympy_data_[node.output[0]] = computed_output
 
     def _infer_Resize(self, node: onnx.NodeProto) -> None:  # noqa: N802
         vi = self.known_vi_[node.output[0]]
