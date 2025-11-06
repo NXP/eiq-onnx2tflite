@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -16,6 +16,7 @@ from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul
     CombineHardSigmoidAndMulIntoHardSwish,
 )
 from onnx2tflite.src.tflite_optimizer.optimizations.eliminate_dead_branches import EliminateDeadBranches
+from onnx2tflite.src.tflite_optimizer.optimizations.remove_cancelling_transposes import RemoveCancellingTransposes
 from onnx2tflite.src.tflite_optimizer.optimizations.fuse_activation_functions import FuseActivationFunctions
 from onnx2tflite.src.tflite_optimizer.optimizations.fuse_fully_connected_and_add_operators import (
     FuseFullyConnectedAndAddOperators,
@@ -54,27 +55,22 @@ class Optimization(Enum):
     KEEP_ONE_EMPTY_BUFFER = 0
     FUSE_ACTIVATION_FUNCTIONS = 1
     FUSE_FULLY_CONNECTED_AND_ADD = 2
-
     FUSE_RESHAPE_OPERATORS = 3
     REMOVE_RESHAPE_OPERATORS_WITH_NO_EFFECT = 4
-
     FUSE_TRANSPOSE_OPERATORS = 5
     REMOVE_IDENTITY_TRANSPOSE_OPERATORS = 6
-
     PRUNE_QUANTIZE_OPERATORS = 7
     FUSE_PARALLEL_QUANTIZE_OPERATORS = 8
     FUSE_QUANTIZE_INTO_PRECEDING_OPS = 9
-
     REMOVE_UNUSED_TENSORS = 10
     ELIMINATE_DEAD_BRANCHES = 11
     PERMUTE_FULLY_CONNECTED_WEIGHTS_AFTER_RESHAPE = 12
-
     FUSE_CAST_OPERATORS = 13
     REMOVE_CAST_OPERATORS_WITH_NO_EFFECT = 14
-
     MOVE_ACTIVATION_BEFORE_CONCAT = 15
     COMBINE_HARD_SIGMOID_AND_MUL_INTO_HARD_SWISH = 16
     REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM = 17
+    REMOVE_CANCELLING_TRANSPOSES = 18
 
 
 class Optimizer:
@@ -101,33 +97,28 @@ class Optimizer:
             Optimization.KEEP_ONE_EMPTY_BUFFER: KeepOneEmptyBuffer(builder, conversion_config),
             Optimization.FUSE_ACTIVATION_FUNCTIONS: FuseActivationFunctions(builder, conversion_config),
             Optimization.FUSE_FULLY_CONNECTED_AND_ADD: FuseFullyConnectedAndAddOperators(builder, conversion_config),
-
             Optimization.FUSE_RESHAPE_OPERATORS: FuseReshapeOperators(builder, conversion_config),
             Optimization.REMOVE_RESHAPE_OPERATORS_WITH_NO_EFFECT:
                 RemoveReshapeOperatorsWithNoEffect(builder, conversion_config),
-
             Optimization.FUSE_TRANSPOSE_OPERATORS: FuseTransposeOperators(builder, conversion_config),
             Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS:
                 RemoveIdentityTransposeOperators(builder, conversion_config),
-
             Optimization.PRUNE_QUANTIZE_OPERATORS: PruneQuantizeOperators(builder, conversion_config),
             Optimization.FUSE_PARALLEL_QUANTIZE_OPERATORS: FuseParallelQuantizeOperators(builder, conversion_config),
             Optimization.FUSE_QUANTIZE_INTO_PRECEDING_OPS: FuseQuantizeIntoPrecedingOps(builder, conversion_config),
-
             Optimization.REMOVE_UNUSED_TENSORS: RemoveUnusedTensorsAndBuffers(builder, conversion_config),
             Optimization.ELIMINATE_DEAD_BRANCHES: EliminateDeadBranches(builder, conversion_config),
             Optimization.PERMUTE_FULLY_CONNECTED_WEIGHTS_AFTER_RESHAPE:
                 PermuteFullyConnectedWeightsAfterReshape(builder, conversion_config),
-
             Optimization.FUSE_CAST_OPERATORS: FuseCastOperators(builder, conversion_config),
             Optimization.REMOVE_CAST_OPERATORS_WITH_NO_EFFECT:
                 RemoveCastOperatorsWithNoEffect(builder, conversion_config),
-
             Optimization.MOVE_ACTIVATION_BEFORE_CONCAT: MoveActivationBeforeConcatenation(builder, conversion_config),
             Optimization.COMBINE_HARD_SIGMOID_AND_MUL_INTO_HARD_SWISH:
                 CombineHardSigmoidAndMulIntoHardSwish(builder, conversion_config),
             Optimization.REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM:
-                ReplaceAveragePoolBeforeFullyConnectedWithSum(builder, conversion_config)
+                ReplaceAveragePoolBeforeFullyConnectedWithSum(builder, conversion_config),
+            Optimization.REMOVE_CANCELLING_TRANSPOSES: RemoveCancellingTransposes(builder, conversion_config),
         }
 
     def optimize(self, optimization_whitelist: list[Optimization] | None = None,
