@@ -1,5 +1,5 @@
 #
-# Copyright 2023 NXP
+# Copyright 2023-2025 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -353,9 +353,9 @@ def re_quantize_static_tensor(
 def quantize_static_float_tensor(
         builder: "model_builder.ModelBuilder",
         tflite_tensor: tflite_model.Tensor,
-        to_type: tflTensorType.TensorType,
-        scale: list[float],
-        zero_point: list[int],
+        to_type: tflTensorType.TensorType | int,
+        scale: list[float] | np.ndarray,
+        zero_point: list[int] | np.ndarray,
         quantized_dimension: int = 0,
 ) -> tflite_model.Tensor:
     """Quantize tensor 'tflite_tensor' with passed quantization params.

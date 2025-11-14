@@ -240,6 +240,7 @@ class NodeProto(meta.ONNXObject):
         "GlobalMaxPool": None,
         "Greater": None,
         "GreaterOrEqual": None,
+        "GRU": builtin_attributes.GRU,
         "HardSigmoid": builtin_attributes.HardSigmoid,
         "HardSwish": None,
         "Identity": None,

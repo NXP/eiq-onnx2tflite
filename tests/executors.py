@@ -209,7 +209,8 @@ def compare_output_arrays(tfl_output: np.ndarray, onnx_output: np.ndarray, outpu
     onnx_output = onnx_output.astype(np.float32)
 
     if tfl_output.dtype != np.bool_ and tfl_output.size != 0:
-        logger.d(f"Maximum output difference of the `{output_name}`tensor: {np.max(np.abs(tfl_output - onnx_output))}")
+        logger.i(f"Maximum output difference of the `{output_name}`tensor: {np.max(np.abs(tfl_output - onnx_output))}. "
+                 f"(atol={atol}, rtol={rtol})")
 
     assert tfl_output.shape == onnx_output.shape, "Output shapes don't match!"
 

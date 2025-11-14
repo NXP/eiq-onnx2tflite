@@ -41,6 +41,7 @@ from .global_average_pool_converter import GlobalAveragePoolConverter
 from .global_max_pool_converter import GlobalMaxPoolConverter
 from .greater_converter import GreaterConverter
 from .greater_or_equal_converter import GreaterOrEqualConverter
+from .gru_converter import GRUConverter
 from .hard_sigmoid_converter import HardSigmoidConverter
 from .hard_swish_converter import HardSwishConverter
 from .identity_converter import IdentityConverter
@@ -104,8 +105,8 @@ from .sqrt_converter import SqrtConverter
 from .squeeze_converter import SqueezeConverter
 from .sub_converter import SubConverter
 from .sum_converter import SumConverter
-from .tanh_converter import TanhConverter
 from .tan_converter import TanConverter
+from .tanh_converter import TanhConverter
 from .tile_converter import TileConverter
 from .transpose_converter import TransposeConverter
 from .unsqueeze_converter import UnsqueezeConverter
@@ -120,7 +121,8 @@ __all__ = [
     DepthToSpaceConverter, DequantizeLinearConverter, DivConverter, DropoutConverter, EinsumConverter, EluConverter,
     EqualConverter, ErfConverter, ExpConverter, ExpandConverter, FlattenConverter, FloorConverter, GatherConverter,
     GatherNDConverter, GeluConverter, GemmConverter, GlobalAveragePoolConverter, GlobalMaxPoolConverter,
-    GreaterConverter, GreaterOrEqualConverter, HardSigmoidConverter, HardSwishConverter, IdentityConverter,
+    GreaterConverter, GreaterOrEqualConverter, GRUConverter, HardSigmoidConverter, HardSwishConverter,
+    IdentityConverter,
     InstanceNormalizationConverter, LayerNormalizationConverter, LeakyReluConverter, LessConverter,
     LessOrEqualConverter, LogConverter, LRNConverter, LSTMConverter, MatMulConverter, MaxConverter, MaxPoolConverter,
     MinConverter, ModConverter, MulConverter, MultinomialConverter, NegConverter, NotConverter, OneHotConverter,
@@ -134,4 +136,3 @@ __all__ = [
     SqueezeConverter, SubConverter, SumConverter, TanhConverter, TanConverter, TileConverter, TransposeConverter,
     UnsqueezeConverter, UpsampleConverter, WhereConverter, XorConverter
 ]
-

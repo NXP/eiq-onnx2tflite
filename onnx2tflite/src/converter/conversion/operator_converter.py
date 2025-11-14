@@ -69,6 +69,7 @@ class OperatorConverter:
         "GlobalMaxPool": node_converters.GlobalMaxPoolConverter,
         "Greater": node_converters.GreaterConverter,
         "GreaterOrEqual": node_converters.GreaterOrEqualConverter,
+        "GRU": node_converters.GRUConverter,
         "HardSigmoid": node_converters.HardSigmoidConverter,
         "HardSwish": node_converters.HardSwishConverter,
         "Identity": node_converters.IdentityConverter,

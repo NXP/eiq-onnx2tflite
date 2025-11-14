@@ -55,6 +55,7 @@ class TensorFormatInference:
         "Flatten",
         "Gather",
         "GatherND",
+        "GRU",
         "OneHot",
         "ReduceL2",
         "ReduceMax",
@@ -153,6 +154,8 @@ class TensorFormatInference:
                 self._assign_format_to_tensors([node.inputs[0], node.inputs[1], node.outputs[0]],
                                                TensorFormat.FORMATLESS)
 
+            elif node.op_type == "GRU":
+                self._assign_format_to_tensors(list(node.inputs) + list(node.outputs), TensorFormat.FORMATLESS)
 
             elif node.op_type in ("LSTM", "RNN"):
                 self._assign_format_to_tensors(list(node.outputs), TensorFormat.FORMATLESS)
@@ -426,4 +429,4 @@ class TensorFormatInference:
                 tensors_without_inferred_format.add(tensor.name)
 
         if len(tensors_without_inferred_format) != 0:
-            logger.w(f"Tensors without inferred format: {''.join(tensors_without_inferred_format)}")
+            logger.w(f"Tensors without inferred format: {', '.join(tensors_without_inferred_format)}.")

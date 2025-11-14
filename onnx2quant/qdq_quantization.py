@@ -96,6 +96,7 @@ class QDQClustersRecognizer:
         "GlobalMaxPool",
         "Greater",
         "GreaterOrEqual",
+        "GRU",
         "HardSwish",
         "LeakyRelu",
         "Less",
@@ -148,6 +149,7 @@ class QDQClustersRecognizer:
         self.op_specific_rules["Concat"] = self._validate_concat
         self.op_specific_rules["Conv"] = self._validate_conv
         self.op_specific_rules["ConvTranspose"] = self._validate_conv_transpose
+        self.op_specific_rules["GRU"] = self._validate_gru
         self.op_specific_rules["MatMul"] = self._validate_mat_mul
         self.op_specific_rules["Sum"] = self._validate_sum
         self.op_specific_rules["Pad"] = self._validate_pad
@@ -183,6 +185,19 @@ class QDQClustersRecognizer:
                 self._at_least_one_io_tensor_float(node) and
                 self._inputs_are_not_outputs_of_model(node))
 
+    def _validate_gru(self, node: onnx_model.NodeProto) -> bool:
+        # 'x', 'w', 'r' are quantized
+        inputs_quantized = [
+            self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(tensor_name)
+            for tensor_name in node.inputs[:3]]
+
+        # 'y' is quantized
+        first_output_quantized = (self.model_inspector.tensor_leads_to_quantize_op(node.outputs[0]) and
+                not self.model_inspector.is_output_of_model(node.outputs[0]))
+
+        return all(inputs_quantized) and first_output_quantized
+
+
     def _validate_conv_transpose(self, node: onnx_model.NodeProto) -> bool:
         if not self._surrounding_q_ops_have_same_quant_type(node):
             logger.w(f"QDQ quantized ONNX operator '{node.op_type}' has it's inputs quantized with different "
@@ -215,7 +230,7 @@ class QDQClustersRecognizer:
 
     def _validate_resize(self, node: onnx_model.NodeProto) -> bool:
         # First input and output quantized
-        # There might be float input tensors ('roi', 'scales ') that are not quantized
+        # There might be float input tensors ('roi', 'scales') that are not quantized
         return (self._is_node_output_quantized(node) and
                 self._surrounding_q_ops_have_same_quant_type(node) and
                 self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0]))
@@ -271,8 +286,8 @@ class QDQClustersRecognizer:
     def _is_node_output_quantized(self, node: onnx_model.NodeProto) -> bool:
         outputs_quantized = [
             self.model_inspector.tensor_not_float(tensor_name) or (
-                    self.model_inspector.tensor_leads_to_quantize_op(tensor_name) and
-                    not self.model_inspector.is_output_of_model(tensor_name))
+                self.model_inspector.tensor_leads_to_quantize_op(tensor_name) and
+                not self.model_inspector.is_output_of_model(tensor_name))
             for tensor_name in node.outputs]
 
         return all(outputs_quantized)
@@ -366,7 +381,7 @@ class QDQClustersRecognizer:
 
 @dataclass
 class InputSpec:
-    shape: list[int]
+    shape: list[int] | tuple[int, ...]
     type: np.dtype | type = None
     min: float = None
     max: float = None
@@ -522,6 +537,54 @@ class QDQConcat(QDQOperator):
             elif not self.quantizer.is_tensor_quantized(node.input[idx]):
                 # Intentionally shared q-params from output
                 self.quantizer.quantize_output_same_as_input(node.input[idx], node.output[0], node.name)
+
+
+class QDQGRU(QDQOperator):
+    def quantize(self) -> None:
+        node = self.node
+        assert node.op_type == "GRU"
+
+        x = node.input[0]
+        w = node.input[1]
+        r = node.input[2]
+
+        if not self.quantizer.is_input_a_initializer(w):
+            logger.w(f"GRU node '{node.name}' not quantized because input tensor 'w' is not initializer.")
+            return
+
+        if not self.quantizer.is_input_a_initializer(r):
+            logger.w(f"GRU node '{node.name}' not quantized because input tensor 'r' is not initializer.")
+            return
+
+        if len(node.input) > 5 and not self.quantizer.is_input_a_initializer(node.input[5]):
+            logger.w(f"GRU node '{node.name}' not quantized because input tensor 'initial_h' is not initializer.")
+            return
+
+        y_h_consumed = node.output[1] in self.quantizer.model.input_name_to_nodes()
+        if y_h_consumed or self.quantizer.model.is_graph_output(node.output[1]):
+            logger.w(f"GRU node '{node.name}' not quantized because 'y_h' consumed by other op or is model output.")
+            return
+
+        if not self.quantizer.is_tensor_quantized(x):
+            self.quantizer.quantize_activation_tensor(x)
+
+        # GRU must be always quantized per-channel
+        is_per_channel = self.quantizer.is_per_channel()
+        self.quantizer.per_channel = True
+
+        self.quantizer.quantize_weight_tensor_per_channel(w, 1)
+        self.quantizer.quantize_weight_tensor_per_channel(r, 1)
+
+        # 'bias' tensor is quantized during conversion because it depends on two weight tensors ('w', 'r')
+        # 'initial_h' tensor is quantized during conversion because it depends on output tensor
+
+        self.quantizer.per_channel = is_per_channel
+
+        if not self.disable_qdq_for_node_output:
+            # Quantize only first output. Second is sharing q-params with the first one but quantizer
+            # API doesn't support sharing between outputs. For that reason, q-params are assigned to
+            # second output during conversion to TFLite.
+            self.quantizer.quantize_activation_tensor(node.output[0])
 
 
 class QDQMatMul(QDQOperator):
@@ -772,6 +835,7 @@ class QDQQuantizer:
         "GlobalMaxPool",
         "Greater",
         "GreaterOrEqual",
+        "GRU",
         # "HardSigmoid",  # Represented by multiple operators. Quantization can introduce large errors.
         "HardSwish",
         # "Identity",  # Represented by single tensor in TFLite.
@@ -847,6 +911,7 @@ class QDQQuantizer:
         QDQRegistry["GlobalMaxPool"] = QDQDirect8BitOp
         QDQRegistry["Greater"] = QDQOperatorBase
         QDQRegistry["GreaterOrEqual"] = QDQOperatorBase
+        QDQRegistry["GRU"] = QDQGRU
         QDQRegistry["HardSwish"] = QDQOperatorBase
         QDQRegistry["InstanceNormalization"] = QDQNormalization
         QDQRegistry["LayerNormalization"] = QDQNormalization
@@ -949,7 +1014,7 @@ class QDQQuantizer:
                     logger.i("ORT model optimization step hasn't removed any nodes.")
                 else:
                     logger.w(f"ORT model optimization step added {abs(removed_ops)} ops.")
-            except BaseException as e: # noqa: BLE001
+            except BaseException as e:  # noqa: BLE001
                 # Optimization failed - continue with non-optimized model
                 logger.w(f"Optimization step failed with: {type(e).__name__}. Skipping.")
                 logger.d(f"Optimization step failure reason: {traceback.format_exc()}")
@@ -958,6 +1023,7 @@ class QDQQuantizer:
                 "DedicatedQDQPair": True,
                 "ForceQuantizeNoInputCheck": True,
                 "ActivationSymmetric": False,  # False by default. Necessary to have correct q-params for Softmax.
+                "QDQDisableWeightAdjustForInt32Bias": True,
             }
 
             onnxruntime.quantization.quantize_static(

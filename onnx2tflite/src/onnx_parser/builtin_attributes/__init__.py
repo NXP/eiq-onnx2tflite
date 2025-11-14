@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -27,6 +27,7 @@ from .gather_attributes import Gather
 from .gather_nd_attributes import GatherND
 from .gelu_attributes import Gelu
 from .gemm_attributes import Gemm
+from .gru_attributes import GRU
 from .hard_sigmoid_attributes import HardSigmoid
 from .instance_normalization_attributes import InstanceNormalization
 from .layer_normalization_attributes import LayerNormalization
@@ -73,10 +74,10 @@ from .where_attributes import Where
 
 __all__ = [
     ArgMax, ArgMin, AveragePool, BatchNormalization, Cast, Clip, Concat, Constant, ConstantOfShape, Conv, ConvTranspose,
-    CumSum, DepthToSpace, DequantizeLinear, Dropout, Einsum, Elu, Flatten, Gather, GatherND, Gelu, Gemm, HardSigmoid,
-    InstanceNormalization, LayerNormalization, LeakyRelu, LogSoftmax, LRN, LSTM, MatMul, MaxPool, Mod, Multinomial,
-    OneHot, Pad, QGemm, QLinearAveragePool, QLinearConcat, QLinearConv, QLinearGlobalAveragePool, QLinearSoftmax,
-    QuantizeLinear, QuickGelu, ReduceL2, ReduceMax, ReduceMean, ReduceMin, ReduceProd, ReduceSum, Relu, Reshape, Resize,
-    ReverseSequence, RNN, ScatterND, Shape, Slice, Softmax, SpaceToDepth, Split, Squeeze, Transpose, Unsqueeze,
-    Upsample, Where
+    CumSum, DepthToSpace, DequantizeLinear, Dropout, Einsum, Elu, Flatten, Gather, GatherND, Gelu, Gemm, GRU,
+    HardSigmoid, InstanceNormalization, LayerNormalization, LeakyRelu, LogSoftmax, LRN, LSTM, MatMul, MaxPool, Mod,
+    Multinomial, OneHot, Pad, QGemm, QLinearAveragePool, QLinearConcat, QLinearConv, QLinearGlobalAveragePool,
+    QLinearSoftmax, QuantizeLinear, QuickGelu, ReduceL2, ReduceMax, ReduceMean, ReduceMin, ReduceProd, ReduceSum, Relu,
+    Reshape, Resize, ReverseSequence, RNN, ScatterND, Shape, Slice, Softmax, SpaceToDepth, Split, Squeeze, Transpose,
+    Unsqueeze, Upsample, Where
 ]
