@@ -128,7 +128,7 @@ def test_convert_gather_nd__channels_first__indices():
     data = np.random.random(shape).astype('float32')
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, data, conversion_config=config)
 
 
@@ -211,7 +211,7 @@ def test_convert_gather_nd__dynamic_indices__flag():
     }
 
     config = SkipShapeInferenceConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, data, conversion_config=config)
 
 

@@ -107,7 +107,7 @@ def test_convert_split_v2_with_attribute_split():
 
     input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 

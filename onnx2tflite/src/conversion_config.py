@@ -27,10 +27,10 @@ class ConversionConfig:
         self.optimization_whitelist: list | None = None
         self.optimization_blacklist: list | None = None
 
-        self.non_negative_indices: bool = False
+        self.guarantee_non_negative_indices: bool = False
         self.cast_int64_to_int32: bool = False
         self.accept_resize_rounding_error: bool = False
-        self.ignore_opset_version: bool = False
+        self.skip_opset_version_check: bool = False
 
         self.tflite_quantization_integrity_check: bool = True
 

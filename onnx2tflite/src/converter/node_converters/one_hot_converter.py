@@ -180,7 +180,7 @@ class OneHotConverter(NodeConverter):
 
         if data is None:
             # Cannot check for non-negative indices.
-            if self.context.conversion_config.non_negative_indices:
+            if self.context.conversion_config.guarantee_non_negative_indices:
                 # User guarantees that the indices are not negative.
                 pass
 

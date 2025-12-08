@@ -130,7 +130,7 @@ def test_convert_gather__dynamic_indices(input_shape: List[int], indices: List[i
     }
 
     executors.convert_run_compare(onnx_model, input_data,
-                                  conversion_config=ConversionConfig({'non_negative_indices': True}))
+                                  conversion_config=ConversionConfig({'guarantee_non_negative_indices': True}))
 
 
 @pytest.mark.parametrize(
@@ -163,7 +163,7 @@ def test_convert_gather__dynamic_indices_and_channels_first(input_shape: List[in
     }
 
     executors.convert_run_compare(onnx_model, input_data,
-                                  conversion_config=ConversionConfig({'non_negative_indices': True}))
+                                  conversion_config=ConversionConfig({'guarantee_non_negative_indices': True}))
 
 
 def test_convert_gather__dynamic_indices_without_required_flag():

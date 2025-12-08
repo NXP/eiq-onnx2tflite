@@ -288,7 +288,7 @@ class ScatterNDConverter(NodeConverter):
 
         else:
             # Dynamic cast.
-            if not self.context.conversion_config.non_negative_indices:
+            if not self.context.conversion_config.guarantee_non_negative_indices:
                 logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
                          "Conversion of ONNX `ScatterND` with dynamic `indices` is not supported, because they may "
                          "contain negative values, which is not supported by TFLite. " +
