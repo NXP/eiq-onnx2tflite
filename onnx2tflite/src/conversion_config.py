@@ -14,7 +14,7 @@ class ConversionConfig:
 
         :param args: Optional dictionary with conversion arguments. Unknown arguments are ignored.
         """
-        self.keep_io_format: bool = True
+        self.keep_io_tensors_format: bool = True
         self.skip_shape_inference: bool = False
         self.allow_inputs_stripping: bool = True
         self.qdq_aware_conversion: bool = True

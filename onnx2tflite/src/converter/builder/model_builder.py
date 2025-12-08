@@ -349,7 +349,7 @@ class ModelBuilder:
         At least one of 'optimization_whitelist' and 'optimization_blacklist' must be 'None'.
         :return: The final TFLite model.
         """
-        if self.conversion_config.keep_io_format:
+        if self.conversion_config.keep_io_tensors_format:
             # If the input or output is channels last, add a Transpose operator, to make is channels first.
             self._make_inputs_channels_first()
             self._make_outputs_channels_first()
