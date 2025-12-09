@@ -114,7 +114,7 @@ def test_convert_clip_v6(min: float, max: float):
 
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 6)])
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, x_data, conversion_config=config)
 
 
@@ -453,7 +453,7 @@ def test_convert_clip_v6_default_values():
 
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 6)])
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, x_data, conversion_config=config)
 
 

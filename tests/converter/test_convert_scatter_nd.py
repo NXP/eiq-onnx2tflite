@@ -49,7 +49,7 @@ def test_convert_scatter_nd__dynamic_inputs(x_shape, indices_shape, updates_shap
         2: np.array(indices, np.int64)
     }
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
@@ -89,7 +89,7 @@ def test_convert_scatter_nd__channels_first__main_input():
         2: np.array(indices, np.int64)
     }
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -124,7 +124,7 @@ def test_convert_scatter_nd__channels_first__updates():
         2: np.array(indices, np.int64)
     }
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -159,7 +159,7 @@ def test_convert_scatter_nd__channels_first__indices():
         2: indices
     }
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -272,7 +272,7 @@ def test_convert_scatter_nd__types(type_: TensorProto.DataType):
     }
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -295,7 +295,7 @@ def test_convert_scatter_nd__invalid_type():
     onnx_model = onnx.helper.make_model(graph)
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model, conversion_config=config)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
@@ -409,7 +409,7 @@ def test_convert_scatter_nd__quantized__dynamic_inputs(type_: TensorProto.DataTy
     }
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -447,5 +447,5 @@ def test_convert_scatter_nd__quantized__static_inputs(type_: TensorProto.DataTyp
     }
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)

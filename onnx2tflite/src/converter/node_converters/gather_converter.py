@@ -158,7 +158,7 @@ class GatherConverter(NodeConverter):
         if not tensor_has_data(indices_tensor):
             # ONNX supports negative indices, but TFLite doesn't.
 
-            if self.context.conversion_config.non_negative_indices:
+            if self.context.conversion_config.guarantee_non_negative_indices:
                 # User guarantees, that the indices are not negative.
                 pass
 

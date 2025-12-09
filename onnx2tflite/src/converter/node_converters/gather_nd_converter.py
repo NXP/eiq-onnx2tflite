@@ -125,7 +125,7 @@ class GatherNDConverter(NodeConverter):
                 t_op.tmp_inputs[1] = indices
 
         # Dynamic indices.
-        elif self.context.conversion_config.non_negative_indices:
+        elif self.context.conversion_config.guarantee_non_negative_indices:
             # User guarantees that the indices are not negative.
             pass
 

@@ -14,7 +14,7 @@ class ConversionConfig:
 
         :param args: Optional dictionary with conversion arguments. Unknown arguments are ignored.
         """
-        self.keep_io_format: bool = True
+        self.keep_io_tensors_format: bool = True
         self.skip_shape_inference: bool = False
         self.allow_inputs_stripping: bool = True
         self.qdq_aware_conversion: bool = True
@@ -27,10 +27,10 @@ class ConversionConfig:
         self.optimization_whitelist: list | None = None
         self.optimization_blacklist: list | None = None
 
-        self.non_negative_indices: bool = False
+        self.guarantee_non_negative_indices: bool = False
         self.cast_int64_to_int32: bool = False
         self.accept_resize_rounding_error: bool = False
-        self.ignore_opset_version: bool = False
+        self.skip_opset_version_check: bool = False
 
         self.tflite_quantization_integrity_check: bool = True
 

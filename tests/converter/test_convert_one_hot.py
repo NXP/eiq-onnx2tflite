@@ -258,7 +258,7 @@ def test_convert_one_hot__channels_first_input(axis):
     onnx_model = onnx.helper.make_model(graph)
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, {}, conversion_config=config)
 
 
@@ -328,5 +328,5 @@ def test_convert_one_hot__channels_first_inputs_and_outputs(axis):
     onnx_model = onnx.helper.make_model(graph)
 
     config = ConversionConfig()
-    config.non_negative_indices = True
+    config.guarantee_non_negative_indices = True
     executors.convert_run_compare(onnx_model, {}, conversion_config=config)

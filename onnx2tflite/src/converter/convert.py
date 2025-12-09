@@ -35,7 +35,7 @@ MAXIMUM_VERIFIED_OPSET = 22  # Corresponding to ONNX 1.17.
 
 def _assert_supported_opset(model: onnx_model.ModelProto, conversion_context: ConversionContext) -> None:
     """Check that the onnx opset version of `model` is in the supported range."""
-    if conversion_context.conversion_config.ignore_opset_version:
+    if conversion_context.conversion_config.skip_opset_version_check:
         return
 
     opset_map = {opset.domain: opset.version for opset in model.opset_imports}

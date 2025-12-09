@@ -35,7 +35,7 @@ def test_convert_pad__types(type_: TensorProto.DataType):
 
     input_data = (np.random.random(shape) * 1).astype(to_numpy_type(type_))
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -53,7 +53,7 @@ def test_convert_pad__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model, conversion_config=config)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
@@ -79,7 +79,7 @@ def test_convert_pad_v2_with_constant_zero(shape: list[int], pads: list[int]):
 
     input_data = np.arange(np.prod(shape)).reshape(shape).astype(np.float32)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -94,7 +94,7 @@ def test_convert_pad_v2_with_negative_pads():
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 2)])
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model, conversion_config=config)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
@@ -120,7 +120,7 @@ def test_convert_pad_v2_with_constant(shape: list[int], pads: list[int], value: 
 
     input_data = np.arange(np.prod(shape)).reshape(shape).astype(np.float32)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -146,7 +146,7 @@ def test_convert_pad_v2_with_channels_first_format(shape: list[int], pads: list[
 
     input_data = np.arange(np.prod(shape)).reshape(shape).astype(np.float32)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -166,7 +166,7 @@ def test_convert_pad_v2_skipping(intermediate_tflite_model_provider):
 
     input_data = np.arange(np.prod(shape)).reshape(shape).astype(np.float32)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
     ops = intermediate_tflite_model_provider.get_operators()
@@ -185,7 +185,7 @@ def test_convert_pad_v2_bugged_reflect():
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 2)])
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model, conversion_config=config)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
@@ -210,7 +210,7 @@ def test_convert_pad_v2_reflect(shape, pads):
 
     input_data = np.arange(np.prod(shape)).reshape(shape).astype(np.float32)
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
@@ -225,7 +225,7 @@ def test_convert_pad_v2_edge():
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 2)])
 
-    config = ConversionConfig({"ignore_opset_version": True})
+    config = ConversionConfig({"skip_opset_version_check": True})
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model, conversion_config=config)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
