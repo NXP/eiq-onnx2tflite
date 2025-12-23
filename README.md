@@ -1,6 +1,6 @@
 # ONNX2TFLite converter & ONNX2Quant quantizer
 
-[![latest-version](https://img.shields.io/badge/eiq--onnx2tflite-0.7.0-brightgreen)](https://eiq.nxp.com/repository/eiq-onnx2tflite/)
+[![latest-version](https://img.shields.io/badge/eiq--onnx2tflite-0.8.0-brightgreen)](https://eiq.nxp.com/repository/eiq-onnx2tflite/)
 ![python-badge](https://img.shields.io/badge/Python-3.10.11-green)
 ![tensorflow-badge](https://img.shields.io/badge/TensorFlow-2.18.1-FF6F00?logo=tensorflow)
 ![onnx-badge](https://img.shields.io/badge/ONNX-1.17.0-005CED?logo=onnx)
