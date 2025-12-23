@@ -6,21 +6,20 @@
 #
 from enum import Enum
 
-import numpy as np
 from flatbuffers import flexbuffers
 
 from onnx2tflite.src.tflite_generator.meta.meta import CustomOptions
 
 
 class Activation(Enum):
-    sigmoid = 'Sigmoid'
-    tanh = 'Tanh'
+    sigmoid = "Sigmoid"
+    tanh = "Tanh"
 
 
 class Direction(Enum):
-    forward = 'forward'
-    bidirectional = 'bidirectional'
-    reverse = 'reverse'
+    forward = "forward"
+    bidirectional = "bidirectional"
+    reverse = "reverse"
 
 
 class OnnxGRU(CustomOptions):
@@ -38,12 +37,12 @@ class OnnxGRU(CustomOptions):
         direction_str = direction.value
 
         custom_options_data = flexbuffers.Dumps({
-            'activations': activations_str,
-            'clip': clip,
-            'direction': direction_str,
-            'hidden_size': hidden_size,
-            'layout': layout,
-            'linear_before_reset': int(linear_before_reset)
+            "activations": activations_str,
+            "clip": clip,
+            "direction": direction_str,
+            "hidden_size": hidden_size,
+            "layout": layout,
+            "linear_before_reset": int(linear_before_reset)
         })
 
         super().__init__("OnnxGRU", custom_options_data)

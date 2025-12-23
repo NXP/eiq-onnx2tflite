@@ -19,7 +19,7 @@ def _buffer_has_data(t_buffer: tflite_model.Buffer) -> bool | None:
         size = t_buffer.data.size
         return size != 0
 
-    except Exception as _: # noqa: BLE001 
+    except Exception as _: # noqa: BLE001
         logger.d("'ModelBuilder.bufferHasData()' failed!")
         return None
 

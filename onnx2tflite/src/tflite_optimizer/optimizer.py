@@ -16,7 +16,6 @@ from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul
     CombineHardSigmoidAndMulIntoHardSwish,
 )
 from onnx2tflite.src.tflite_optimizer.optimizations.eliminate_dead_branches import EliminateDeadBranches
-from onnx2tflite.src.tflite_optimizer.optimizations.remove_cancelling_transposes import RemoveCancellingTransposes
 from onnx2tflite.src.tflite_optimizer.optimizations.fuse_activation_functions import FuseActivationFunctions
 from onnx2tflite.src.tflite_optimizer.optimizations.fuse_fully_connected_and_add_operators import (
     FuseFullyConnectedAndAddOperators,
@@ -43,6 +42,7 @@ from onnx2tflite.src.tflite_optimizer.optimizations.prune_transpose_operators im
     FuseTransposeOperators,
     RemoveIdentityTransposeOperators,
 )
+from onnx2tflite.src.tflite_optimizer.optimizations.remove_cancelling_transposes import RemoveCancellingTransposes
 from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_buffers import (
     RemoveUnusedTensorsAndBuffers,
 )

@@ -7,8 +7,8 @@
 
 import math
 import traceback
+from collections.abc import Callable
 from itertools import chain
-from typing import Callable
 
 import numpy as np
 import onnx

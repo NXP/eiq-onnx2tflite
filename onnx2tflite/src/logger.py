@@ -12,7 +12,7 @@ Module implements functions for logging, error messages and custom assertions.
 import logging
 from collections import defaultdict
 from enum import Enum
-from typing import NoReturn, Any
+from typing import Any, NoReturn
 
 logger = logging.getLogger("onnx2tflite")
 

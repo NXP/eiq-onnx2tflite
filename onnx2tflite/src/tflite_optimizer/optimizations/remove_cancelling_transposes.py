@@ -7,29 +7,32 @@
 
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
-from onnx2tflite.src.tflite_optimizer.pattern_matcher import PatternMatcher, Op
-from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorsHaveOneConsumer, TensorHasStaticValue, \
-    TensorIsChannelsLast, TensorDimensionsMatch, RuleOr
+from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
+from onnx2tflite.src.tflite_optimizer.tensor_rules import (
+    RuleOr,
+    TensorDimensionsMatch,
+    TensorHasStaticValue,
+    TensorsHaveOneConsumer,
+)
 
 
 class RemoveCancellingTransposes(BaseOptimization):
-    """
-    Optimization that removes cancelling Transpose operations around a Reshape:
+    """Optimization that removes cancelling Transpose operations around a Reshape:
 
-               │  (4D)
-        ┌──────▼──────┐
-        │  Transpose  │ ◄─  perm=[0, 3, 1, 2]
-        └──────┬──────┘
-               │  (4D)                                                            │  (4D)
-         ┌─────▼─────┐                                                      ┌─────▼─────┐
-         │  Reshape  │  ◄─ Batch & Channel dim not changed     ─────►       │  Reshape  │
-         └─────┬─────┘                                                      └─────┬─────┘
-               │  (4D/3D)                                                         │  (4D/3D)
-        ┌──────▼──────┐                                                           ▼
-        │  Transpose  │ ◄─  perm=[0, 2, 3, 1] | [0, 2, 1]
-        └──────┬──────┘
-               │  (4D/3D)
-               ▼
+           │  (4D)
+    ┌──────▼──────┐
+    │  Transpose  │ ◄─  perm=[0, 3, 1, 2]
+    └──────┬──────┘
+           │  (4D)                                                            │  (4D)
+     ┌─────▼─────┐                                                      ┌─────▼─────┐
+     │  Reshape  │  ◄─ Batch & Channel dim not changed     ─────►       │  Reshape  │
+     └─────┬─────┘                                                      └─────┬─────┘
+           │  (4D/3D)                                                         │  (4D/3D)
+    ┌──────▼──────┐                                                           ▼
+    │  Transpose  │ ◄─  perm=[0, 2, 3, 1] | [0, 2, 1]
+    └──────┬──────┘
+           │  (4D/3D)
+           ▼
     """
 
     def __call__(self):

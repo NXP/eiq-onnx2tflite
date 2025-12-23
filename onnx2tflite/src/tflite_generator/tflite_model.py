@@ -7,7 +7,8 @@
 #
 
 import itertools
-from typing import Optional, Callable, Any
+from collections.abc import Callable
+from typing import Any, Optional
 
 import flatbuffers as fb
 import numpy as np

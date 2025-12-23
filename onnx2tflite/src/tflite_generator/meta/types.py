@@ -9,8 +9,9 @@
 
 Module contains helper functions that work with TFLite data types.
 """
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Any
+from typing import Any
 
 import flatbuffers as fb
 

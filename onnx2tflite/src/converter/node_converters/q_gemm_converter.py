@@ -92,9 +92,8 @@ class QGemmConverter(NodeConverter):
             # Transpose statically.
             t_op.tmp_inputs[input_idx] = self.builder.create_transposed_tensor(t)
             return None
-        else:
-            # Dynamic tensor -> prepend a Transpose op.
-            return self.builder.create_transpose_operator_before(t_op, input_idx, [1, 0])
+        # Dynamic tensor -> prepend a Transpose op.
+        return self.builder.create_transpose_operator_before(t_op, input_idx, [1, 0])
 
     def _handle_c_tensor(self, o_q_gemm: q_gemm_attributes.QGemm, t_op: tflite_model.Operator,
                          c: tflite_model.Tensor, a_scale, b_scale) -> None:
