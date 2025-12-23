@@ -5,12 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.0] - 2025-12-23
 
 ### Added
 
-- [onnx2tflite|onnx2quant] Mod op with static inputs is now pre-computed and removed from model
-- [onnx2tflite] Conversion of Tan operator
+- `[onnx2tflite|onnx2quant]` Mod op with static inputs is now pre-computed and removed from model
+- `[onnx2tflite]` Conversion of Tan operator
+- `[onnx2tflite]` Removed redundant Transposes around Reshape operator
+- `[onnx2tflite]` Conversion of quantized Conv1D operator
+- `[onnx2tflite]` Conversion and quantization of GRU operator
+
+### Fixed
+
+- `[onnx2tflite|onnx2quant]` Improved error propagation
+- `[onnx2tflite]` Fixed flags keep-io-tensors-format, guarantee-non-negative-indices, skip-opset-version-check
 
 ## [0.7.0] - 2025-08-18
 
