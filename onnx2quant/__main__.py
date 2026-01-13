@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -64,12 +64,6 @@ def _parse_arguments() -> argparse.Namespace:
                         help="Allow quantization of models with opset version 10 and lower. Quantization of such models "
                              "can produce invalid models because opset is forcefully updated to version 11. This applies "
                              "especially to models with operators: Clip, Dropout, BatchNormalization and Split.")
-    parser.add_argument("-c", "--calibration-dataset-mapping", dest="calibration_dataset_mapping",
-                        type=str, action="extend", nargs="+", required=True,
-                        help="Mapping between model input and calibration dataset directory with *.npy files. Value must "
-                             "be in format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument "
-                             "can be used multiple times to specify multiple inputs for the model. In case model "
-                             "has semicolon in input tensor's name, it has to be renamed.")
     parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
                         type=str, action="extend", nargs="*",
                         help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
@@ -84,6 +78,19 @@ def _parse_arguments() -> argparse.Namespace:
                         default=True,
                         help="If the shape inference fails or is incomplete, generate the partially inferred ONNX model "
                              "as `sym_shape_infer_temp.onnx`.")
+
+    calibration_dataset_arguments = parser.add_mutually_exclusive_group(required=True)
+    calibration_dataset_arguments.add_argument("-c", "--calibration-dataset-mapping", dest="calibration_dataset_mapping",
+                        type=str, action="extend", nargs="+",
+                        help="Mapping between model input and calibration dataset directory with *.npy files. Value must "
+                             "be in format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument "
+                             "can be used multiple times to specify multiple inputs for the model. In case model "
+                             "has semicolon in input tensor's name, it has to be renamed.")
+    calibration_dataset_arguments.add_argument("-u", "--use-random-calibration-dataset", action="store_true",
+                        default=False, dest="use_random_calibration_dataset",
+                        help="Use a random dataset for calibration instead of providing a real calibration dataset. "
+                             "Note that random dataset does not provide reliable quantization results.")
+
 
     return parser.parse_args()
 
@@ -119,7 +126,8 @@ def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: d
     :param output_onnx_model_path: Path where final quantized model should be saved.
     :param args: Quantization arguments as dict provided via CLI.
     """
-    calibration_data_reader = NpyCalibrationDataReader(args["calibration_dataset_mapping"])
+
+    calibration_data_reader = None if args.get("use_random_calibration_dataset", False) else NpyCalibrationDataReader(args["calibration_dataset_mapping"])
     quantization_config = QuantizationConfig(calibration_data_reader, args)
     quantized_model = QDQQuantizer().quantize_model(onnx_model, quantization_config=quantization_config)
 
@@ -213,8 +221,9 @@ def run_quantization() -> None:
                 assert isinstance(args.input_shapes_mapping, list)
                 args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
 
-            assert isinstance(args.calibration_dataset_mapping, list)
-            args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
+            if not args.use_random_calibration_dataset:
+                assert isinstance(args.calibration_dataset_mapping, list)
+                args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
         except Exception as e:  # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT,
                              f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}")

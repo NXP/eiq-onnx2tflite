@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -1026,11 +1026,19 @@ class QDQQuantizer:
                 "QDQDisableWeightAdjustForInt32Bias": True,
             }
 
+            if quantization_config.use_random_calibration_dataset:
+                calibration_data_reader = RandomDataCalibrationDataReader.from_onnx_model(
+                    onnx_model=inferred_model_proto,
+                    num_samples=10
+                )
+            else:
+                calibration_data_reader = quantization_config.calibration_data_reader
+
             onnxruntime.quantization.quantize_static(
                 input_model_path,
                 output_model_path,
                 per_channel=quantization_config.per_channel,
-                calibration_data_reader=quantization_config.calibration_data_reader,
+                calibration_data_reader=calibration_data_reader,
                 op_types_to_quantize=self.op_types_to_quantize,
                 extra_options=extra_options)
 

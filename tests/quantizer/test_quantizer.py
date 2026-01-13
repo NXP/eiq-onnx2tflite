@@ -143,7 +143,7 @@ def test_quantizer_via_code():
     with randomCalibrationDataset((1, 1, 28, 28), items_count=10) as dataset_dir:
         args = {
             "calibration_dataset_mapping": {"Input3": dataset_dir},
-            "allow_opset_10_and_lower": True
+            "allow_opset_10_and_lower": True,
         }
 
         _quantize_model(model, "model_quant.onnx", args)
@@ -339,3 +339,55 @@ def test_quantizer__random_data_calibration_data_reader__specific_ranges(interme
     assert np.allclose(_compute_range(x1[0].quantization), [-4.2, 13.37], atol=0.2)
     assert np.allclose(_compute_range(x2[0].quantization), [-42., 1.], atol=0.2)
     assert np.allclose(_compute_range(x3[0].quantization), [0., 420.], atol=1.1)
+
+
+def test_cmd__calibration_dataset_flags__no_flag():
+    model_path = os.path.join(_ROOT_DIR, "tests", "artifacts", "downloaded", "mnist-12", "model.onnx")
+
+    result = exec_quantization([model_path])
+    assert "error: one of the arguments -c/--calibration-dataset-mapping -u/--use-random-calibration-dataset is required" in result.stderr.lower(), "Quantizer did not produce error message!"
+
+
+def test_cmd__calibration_dataset_flags__provided_dataset():
+    model_path = os.path.join(_ROOT_DIR, "tests", "artifacts", "downloaded", "mnist-12", "model.onnx")
+
+    with randomCalibrationDataset((1, 1, 28, 28), items_count=10):
+        provided_calibration_ds = exec_quantization([model_path, "-c", f"Input3;tmp_calibration_dataset"])
+    assert_successful_quantization(provided_calibration_ds)
+
+
+def test_cmd__calibration_dataset_flags__random_dataset():
+    model_path = os.path.join(_ROOT_DIR, "tests", "artifacts", "downloaded", "mnist-12", "model.onnx")
+
+    random_ds = exec_quantization([model_path, "-u"])
+    assert_successful_quantization(random_ds)
+
+def test_cmd__calibration_dataset_flags__both():
+    model_path = os.path.join(_ROOT_DIR, "tests", "artifacts", "downloaded", "mnist-12", "model.onnx")
+
+    with randomCalibrationDataset((1, 1, 28, 28), items_count=10):
+        both = exec_quantization([model_path, "-c", f"Input3;tmp_calibration_dataset", "-u"])
+    assert "error: argument -u/--use-random-calibration-dataset: not allowed with argument -c/--calibration-dataset-mapping" in both.stderr.lower(), "Quantizer produced error message!"
+
+
+def test_quantizer__random_ds_symbolic_input():
+    input_shape = ("N", 28, 28)
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node('Softmax', ['input'], ['output'])],
+        'Symbolic resolution and random dataset test',
+        [onnx.helper.make_tensor_value_info("input", TensorProto.FLOAT, input_shape)],
+        [onnx.helper.make_tensor_value_info("output", TensorProto.FLOAT, ())],
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        input_model_path = os.path.join(temp_dir, "model_softmax.onnx")
+        output_model_path = os.path.join(temp_dir, "model_softmax_quant.onnx")
+
+        onnx.save(onnx_model, input_model_path)
+
+        result = exec_quantization([input_model_path,
+                                    "-o", output_model_path,
+                                    "-u",
+                                    "-s", "N:2"])
+        assert_successful_quantization(result, pathlib.Path(temp_dir), "model_softmax_quant.onnx")
