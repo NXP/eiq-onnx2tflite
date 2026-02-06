@@ -32,11 +32,11 @@ def _get_preprocessing_parser() -> argparse.ArgumentParser:
     """Return a parser which handles options used by the pre-processing stage that comes before quantization."""
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--replace-div-with-mul", action=argparse.BooleanOptionalAction, default=True,
-                        help="Replace some `Div` operators with `Mul`. `Div` doesn't support int8 quantization in "
-                             "TFLite so this is replacement can avoid having to compute `Div` in float32.")
+                        help="Replace some 'Div' operators with 'Mul'. 'Div' doesn't support int8 quantization in "
+                             "TFLite so this is replacement can avoid having to compute 'Div' in float32.")
     parser.add_argument("--replace-constant-with-static-tensor", action=argparse.BooleanOptionalAction,
                         default=False,
-                        help="Remove `Constant` nodes and directly assign static data to their output tensors.")
+                        help="Remove 'Constant' nodes and directly assign static data to their output tensors.")
 
     return parser
 
@@ -46,7 +46,7 @@ def _parse_arguments() -> argparse.Namespace:
         prog="onnx2quant",
         description="""
             Quantize ONNX model in 'TFLite conversion optimized way'. This tool
-            produces QDQ model with per-tensor quantization and INT8 activations.
+            produces QDQ model with per-tensor/per-channel quantization and INT8 activations.
             Some operators can be QDQ quantized even if there isn't quantized variant 
             in ONNX but TFLite supports quantized version of this specific operator.
         """,
@@ -77,7 +77,7 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument("--generate-artifacts-after-failed-shape-inference", action=argparse.BooleanOptionalAction,
                         default=True,
                         help="If the shape inference fails or is incomplete, generate the partially inferred ONNX model "
-                             "as `sym_shape_infer_temp.onnx`.")
+                             "as 'sym_shape_infer_temp.onnx'.")
 
     calibration_dataset_arguments = parser.add_mutually_exclusive_group(required=True)
     calibration_dataset_arguments.add_argument("-c", "--calibration-dataset-mapping", dest="calibration_dataset_mapping",
