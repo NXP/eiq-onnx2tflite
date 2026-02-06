@@ -7,8 +7,8 @@
 
 import onnx
 
-from onnx2quant.preprocessing_steps.base_preprocessing_step import PreprocessingStep
 from onnx2tflite.src import logger
+from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
 
 
 class ReplaceConstantWithStaticTensor(PreprocessingStep):

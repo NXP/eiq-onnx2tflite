@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -31,6 +31,9 @@ class ConversionConfig:
         self.cast_int64_to_int32: bool = False
         self.accept_resize_rounding_error: bool = False
         self.skip_opset_version_check: bool = False
+
+        # Preprocessing flags
+        self.duplicate_multiconsumer_dequantize_linear: bool = True
 
         self.tflite_quantization_integrity_check: bool = True
 

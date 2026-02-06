@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -130,6 +130,7 @@ def full_quantized_model_test(func):
         assert (kwargs['onnx_artifact_dir'])
         assert (kwargs['atol'])
 
+        conversion_args = kwargs.get(enabled_onnx_tests.CONVERSION_ARGS, dict())
         test_name = os.path.basename(kwargs['onnx_artifact_dir'])
         model_path, input_data_onnx, input_data_tflite = func(*args, **kwargs)
         onnx_model = onnx.load_model(model_path)
@@ -141,7 +142,7 @@ def full_quantized_model_test(func):
         quantized_onnx_model = QDQQuantizer().quantize_model(onnx_model, qc)
         quantized_onnx_model = ModelShapeInference.infer_shapes(quantized_onnx_model)
 
-        tfl_model = convert.convert_model(quantized_onnx_model)
+        tfl_model = convert.convert_model(quantized_onnx_model, ConversionConfig(conversion_args))
 
         onnx_executor = OnnxExecutor(quantized_onnx_model.SerializeToString())
         output_onnx = onnx_executor.inference(input_data_onnx)

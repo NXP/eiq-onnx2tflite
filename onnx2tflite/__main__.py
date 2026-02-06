@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023 NXP
+# Copyright 2023, 2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -88,7 +88,9 @@ def _get_conversion_parser() -> argparse.ArgumentParser:
                         default=True,
                         help="If the shape inference fails or is incomplete, generate the partly inferred ONNX model as"
                              " `sym_shape_infer_temp.onnx`.")
-
+    parser.add_argument("--duplicate-dequantize-linear", action=argparse.BooleanOptionalAction, default=True,
+                        help="Duplicate DequantizeLinear nodes with static inputs and multiple consumers. It increases "
+                             "success rate of QDQ cluster recognition leading to more quantized nodes.")
     return parser
 
 

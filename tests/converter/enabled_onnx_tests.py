@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -861,18 +861,21 @@ NODE = {
     "test_not_2d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_not_3d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_not_4d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_onehot_negative_indices": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-                                     CONVERSION_ERROR: not_implemented(
-                                         "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_negative_indices": {
+        CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
+        CONVERSION_ERROR: not_implemented(
+            "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
     "test_onehot_with_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
                               CONVERSION_ERROR: not_implemented(
                                   "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
-    "test_onehot_with_negative_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-                                       CONVERSION_ERROR: not_implemented(
-                                           "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
-    "test_onehot_without_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-                                 CONVERSION_ERROR: not_implemented(
-                                     "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_with_negative_axis": {
+        CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
+        CONVERSION_ERROR: not_implemented(
+            "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_without_axis": {
+        CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
+        CONVERSION_ERROR: not_implemented(
+            "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
     # "test_optional_get_element_optional_sequence": {},
     # "test_optional_get_element_optional_tensor": {},
     # "test_optional_get_element_sequence": {},
@@ -1503,7 +1506,8 @@ PYTORCH_CONVERTED = {
     "test_Conv2d_strided": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_dilated": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_Conv3d_dilated_strided": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
+    "test_Conv3d_dilated_strided": {COMPARISON_ARGS: {"atol": 1e-7},
+                                    CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_groups": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_no_bias": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_stride": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
@@ -1716,8 +1720,8 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "caffenet-8": {},  # QDQ: Old dropout spec error
     # "caffenet-9": {},  # QDQ: Old dropout spec error
     "caffenet-12": {"marks": [pytest.mark.slow]},
-    "emotion-ferplus-7": {},
-    "emotion-ferplus-8": {},
+    "emotion-ferplus-7": {CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "emotion-ferplus-8": {CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     # "googlenet-7": {}, #TODO model calibration fails
     # "googlenet-8": {}, #TODO model calibration fails
     # "googlenet-9": {}, #TODO model calibration fails
@@ -1727,33 +1731,35 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "inception-v1-9": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "inception-v1-12": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     "inception-v2-7": {"atol": 0.012, "marks": [pytest.mark.slow]},
-    "inception-v2-8": {"atol": 0.016, "marks": [pytest.mark.slow]},
+    "inception-v2-8": {"atol": 0.016, "marks": [pytest.mark.slow],
+                       CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "inception-v2-9": {"atol": 0.008, "marks": [pytest.mark.slow]},
     # Following models (mnist-*) produce zero error when running with ReferenceEvaluator and ONNX 1.16.*
     # Models must be upgraded to opset 19+ with "version_converter.convert_version(onnx_model, 20)".
-    "mnist-7": {"atol": 0.014},
-    "mnist-8": {"atol": 0.014},
+    "mnist-7": {"atol": 0.014, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "mnist-8": {"atol": 0.014, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "mnist-12": {},
     # "rcnn-ilsvrc13-7": {},  # QDQ: Old dropout spec error
     # "rcnn-ilsvrc13-8": {},  # QDQ: Old dropout spec error
     # "rcnn-ilsvrc13-9": {},  # QDQ: Old dropout spec error
     "ResNet101-DUC-7": {"marks": [pytest.mark.slow]},
     "ResNet101-DUC-12": {"marks": [pytest.mark.slow]},
-    "resnet50-caffe2-v1-7": {"atol": 0.004},
-    "resnet50-caffe2-v1-8": {"atol": 0.004},
-    "resnet50-caffe2-v1-9": {"atol": 0.004},
+    "resnet50-caffe2-v1-7": {"atol": 0.004, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "resnet50-caffe2-v1-8": {"atol": 0.004, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "resnet50-caffe2-v1-9": {"atol": 0.004, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     # "shufflenet-7": {}, # Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "shufflenet-8": {}, # Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "shufflenet-9": {}, # Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     "super-resolution-10": {},
-    "squeezenet1.1-7": {"atol": 0.3},
+    "squeezenet1.1-7": {"atol": 0.3, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     # "tinyyolov2-7": {"atol": 2.1e-5},  # QDQ: Outdated BatchNormalization
     # "tinyyolov2-8": {"atol": 2.3e-5},  # QDQ: Outdated BatchNormalization
     # "ultraface-version-RFB-320": {},  # QDQ: Old Slice spec error (shape inference error)
     # "ultraface-version-RFB-640": {},  # QDQ: Old Slice spec error (shape inference error)
     "vgg16-7": {"atol": 0.15, "marks": [pytest.mark.slow]},
     "vgg16-12": {"atol": 0.15, "marks": [pytest.mark.slow]},
-    "vgg16-bn-7": {"atol": 0.47, "marks": [pytest.mark.slow]},
+    "vgg16-bn-7": {"atol": 0.47, "marks": [pytest.mark.slow],
+                   CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "vgg19-7": {"atol": 0.25, "marks": [pytest.mark.slow]},
     "vgg19-bn-7": {"atol": 0.2, "marks": [pytest.mark.slow]},
     # [AIR-10034] MatMul + Add optimization decreases error of this model
@@ -1763,7 +1769,8 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     "yolov2-coco-9": {'atol': 0.78},
     "zfnet512-7": {"atol": 0.004, "marks": [pytest.mark.slow]},
     "zfnet512-8": {"atol": 0.004, "marks": [pytest.mark.slow]},
-    "zfnet512-9": {"atol": 0.004, "marks": [pytest.mark.slow]},
+    "zfnet512-9": {"atol": 0.004, "marks": [pytest.mark.slow],
+                   CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "zfnet512-12": {"atol": 0.004, "marks": [pytest.mark.slow]},
 
     # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).

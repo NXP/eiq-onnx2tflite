@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -20,12 +20,12 @@ class PreprocessingStep(ABC):
     @property
     @abstractmethod
     def disabling_flag(self) -> str:
-        # Return the `onnx2quant` flag which disables this particular preprocessing step.
+        # Return the preprocessing flag which disables this particular preprocessing step.
         pass
 
     @abstractmethod
     def run(self) -> None:
-        # Execute the preprocessing step on the `self.model` onnx model.
+        # Execute the preprocessing step on the `self.model` ONNX model.
         pass
 
     def try_get_tensor_data(self, tensor: str) -> np.ndarray | None:
@@ -45,6 +45,21 @@ class PreprocessingStep(ABC):
 
         return name
 
+    def contains_quantization_nodes(self) -> bool:
+        """Check if model contains quantization nodes ('QuantizeLinear' or 'DequantizeLinear').
+
+        :return: True if mode contains at least one quantization node.
+        """
+        for node in self.model.graph.node:
+            if node.op_type in ["QuantizeLinear", "DequantizeLinear"]:
+                return True
+
+        return False
+
+    def is_initializer(self, tensor_name: str) -> bool:
+        """Check if tensor is initializer"""
+        return any([initializer.name == tensor_name for initializer in self.model.graph.initializer])
+
     def add_initializer(self, initializer: onnx.TensorProto) -> None:
         """Add a `TensorProto` to the `graph.initializers`, with all necessary additional steps."""
         self.model.graph.initializer.append(initializer)
@@ -53,6 +68,19 @@ class PreprocessingStep(ABC):
             # https://github.com/onnx/onnx/blob/rel-1.15.0/onnx/checker.cc#L723-L728
             vi = onnx.helper.make_tensor_value_info(initializer.name, initializer.data_type, initializer.dims)
             self.model.graph.input.append(vi)
+
+    def remove_initializer(self, tensor_name: str):
+        """Remove initializer from graph or do nothing if initializer doesn't exist."""
+        tensors = [initializer for initializer in self.model.graph.initializer if initializer.name == tensor_name]
+        if len(tensors) == 0:
+            return
+
+        self.model.graph.initializer.remove(tensors[0])
+
+    def get_value_info(self, tensor_name: str) -> onnx.ValueInfoProto | None:
+        value_infos = [tensor for tensor in self.model.graph.value_info if tensor.name == tensor_name]
+
+        return value_infos[0] if len(value_infos) > 0 else None
 
     def validate_name(self, tensor_name: str | None) -> str:
         tensor_name = tensor_name or "tensor"
