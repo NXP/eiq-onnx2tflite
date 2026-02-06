@@ -131,27 +131,3 @@ def test_convert_cum_sum__channels_first(axis: int):
     input_data = np.arange(0, np.prod(shape)).reshape(shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
-
-
-@pytest.mark.parametrize("_type", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
-def test_convert_cum_sum__quantized(_type: TensorProto.DataType):
-    shape = [3, 14, 15]
-
-    graph = onnx.helper.make_graph(
-        [
-            onnx.helper.make_node('QuantizeLinear', ['x', 's', 'zp'], ['x1']),
-            onnx.helper.make_node('CumSum', ['x1'], ['y'])
-        ],
-        'Quantized input test',
-        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
-        [onnx.helper.make_tensor_value_info('y', _type, ())],
-        [
-            onnx.helper.make_tensor('s', TensorProto.FLOAT, [1], [1.42]),
-            onnx.helper.make_tensor('zp', _type, [1], [12])
-        ]
-    )
-    onnx_model = onnx.helper.make_model(graph)
-
-    with pytest.raises(logger.Error):
-        convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL

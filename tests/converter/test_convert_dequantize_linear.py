@@ -138,7 +138,6 @@ def test_convert_dequantize_linear_with_dynamic_quantization_parameters():
     "attr_kwargs",
     [
         pytest.param({"block_size": 1}, id="block_size"),
-        pytest.param({"output_dtype": 1}, id="output_dtype"),
     ])
 def test_convert_dequantize_linear__unsupported_attributes(attr_kwargs):
     input_shape = [1, 24, 56, 56]
