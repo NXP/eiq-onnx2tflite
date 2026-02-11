@@ -2,14 +2,14 @@
     "SPDXID": "SPDXRef-DOCUMENT",
     "spdxVersion": "SPDX-2.3",
     "creationInfo": {
-        "created": "2025-12-23T17:09:52Z",
+        "created": "2026-02-11T15:36:43Z",
         "creators": [
             "Organization: NXP",
             "Tool: Black Duck Hub - 2025.10.0"
         ],
         "licenseListVersion": "3.26"
     },
-    "name": "eiq-onnx2tflite-0.8.0",
+    "name": "eiq-onnx2tflite-0.9.0",
     "dataLicense": "CC0-1.0",
     "hasExtractedLicensingInfos": [
         {
@@ -23,7 +23,7 @@
             "name": "LA_OPT_Online Code Hosting NXP_Software_License - v1.4 May 2025"
         }
     ],
-    "documentNamespace": "https://blackducksoftware.github.io/spdx/eiq-onnx2tflite-19e3359b-e8c6-477e-bb17-b75e18233130",
+    "documentNamespace": "https://blackducksoftware.github.io/spdx/eiq-onnx2tflite-f7085720-6d97-4fbd-8db4-e6aa1a6309ae",
     "packages": [
         {
             "SPDXID": "SPDXRef-package-0d6863ea-d23d-42f1-941d-622e0319e444",
@@ -98,28 +98,46 @@
             "versionInfo": "15.0.1"
         },
         {
-            "SPDXID": "SPDXRef-package-64a0a773-d8a3-4ded-b9e2-78c80497bc73",
+            "SPDXID": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
+            "downloadLocation": "https://github.com/nxp/eiq-onnx2tflite",
+            "externalRefs": [
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "4db87301-1418-45b5-93da-8d32d10ba6b3",
+                    "referenceType": "BlackDuck-Version"
+                }
+            ],
+            "filesAnalyzed": false,
+            "licenseConcluded": "(LicenseRef-babf777f-042b-42df-a5bf-638993427038)",
+            "licenseDeclared": "(LicenseRef-babf777f-042b-42df-a5bf-638993427038)",
+            "name": "eiq-onnx2tflite",
+            "originator": "Organization: NXP",
+            "supplier": "Organization: NXP",
+            "versionInfo": "0.9.0"
+        },
+        {
+            "SPDXID": "SPDXRef-package-519f0c94-f134-4a9c-ba77-6b63107bb0b1",
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "64a0a773-d8a3-4ded-b9e2-78c80497bc73",
+                    "referenceLocator": "519f0c94-f134-4a9c-ba77-6b63107bb0b1",
                     "referenceType": "BlackDuck-ComponentVersion"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "33b182b2-1de9-4443-afd7-019615af3a13",
+                    "referenceLocator": "1ac59252-efa9-4847-adda-55c704035f0c",
                     "referenceType": "BlackDuck-Component"
                 }
             ],
             "filesAnalyzed": false,
-            "homepage": "https://github.com/GrahamDumpleton/wrapt",
-            "licenseConcluded": "BSD-2-Clause",
-            "licenseDeclared": "BSD-2-Clause",
-            "name": "wrapt",
-            "originator": "Organization: wrapt",
-            "supplier": "Organization: wrapt",
-            "versionInfo": "2.0.1"
+            "homepage": "https://github.com/protocolbuffers/protobuf",
+            "licenseConcluded": "BSD-3-Clause",
+            "licenseDeclared": "BSD-3-Clause",
+            "name": "Protobuf",
+            "originator": "Organization: Protobuf",
+            "supplier": "Organization: Protobuf",
+            "versionInfo": "6.33.5"
         },
         {
             "SPDXID": "SPDXRef-package-6a1d9e47-7f1c-4df3-9f6b-3c6a63a13c2f",
@@ -159,24 +177,6 @@
             "originator": "Organization: TensorFlow",
             "supplier": "Organization: TensorFlow",
             "versionInfo": "2.18.1"
-        },
-        {
-            "SPDXID": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
-            "downloadLocation": "https://github.com/nxp/eiq-onnx2tflite",
-            "externalRefs": [
-                {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "70024995-16ce-422f-af3b-aa48561e8df9",
-                    "referenceType": "BlackDuck-Version"
-                }
-            ],
-            "filesAnalyzed": false,
-            "licenseConcluded": "(LicenseRef-babf777f-042b-42df-a5bf-638993427038)",
-            "licenseDeclared": "(LicenseRef-babf777f-042b-42df-a5bf-638993427038)",
-            "name": "eiq-onnx2tflite",
-            "originator": "Organization: NXP",
-            "supplier": "Organization: NXP",
-            "versionInfo": "0.8.0"
         },
         {
             "SPDXID": "SPDXRef-package-722a9c82-4484-40a3-8a76-eb3248b25851",
@@ -261,30 +261,6 @@
             "versionInfo": "2.2.6"
         },
         {
-            "SPDXID": "SPDXRef-package-a45dfaf0-f486-4335-b2d4-575b6fdb6660",
-            "downloadLocation": "NOASSERTION",
-            "externalRefs": [
-                {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "a45dfaf0-f486-4335-b2d4-575b6fdb6660",
-                    "referenceType": "BlackDuck-ComponentVersion"
-                },
-                {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "1ac59252-efa9-4847-adda-55c704035f0c",
-                    "referenceType": "BlackDuck-Component"
-                }
-            ],
-            "filesAnalyzed": false,
-            "homepage": "https://github.com/protocolbuffers/protobuf",
-            "licenseConcluded": "BSD-3-Clause",
-            "licenseDeclared": "BSD-3-Clause",
-            "name": "Protobuf",
-            "originator": "Organization: Protobuf",
-            "supplier": "Organization: Protobuf",
-            "versionInfo": "6.33.2"
-        },
-        {
             "SPDXID": "SPDXRef-package-a5bb0523-ad13-40a4-b585-655b6af01ce8",
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
@@ -312,6 +288,30 @@
             "originator": "Organization: mpmath",
             "supplier": "Organization: mpmath",
             "versionInfo": "1.3.0"
+        },
+        {
+            "SPDXID": "SPDXRef-package-b1305808-9075-4464-8f34-a4c2c69b7c1a",
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "b1305808-9075-4464-8f34-a4c2c69b7c1a",
+                    "referenceType": "BlackDuck-ComponentVersion"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "33b182b2-1de9-4443-afd7-019615af3a13",
+                    "referenceType": "BlackDuck-Component"
+                }
+            ],
+            "filesAnalyzed": false,
+            "homepage": "https://github.com/GrahamDumpleton/wrapt",
+            "licenseConcluded": "BSD-2-Clause",
+            "licenseDeclared": "BSD-2-Clause",
+            "name": "wrapt",
+            "originator": "Organization: wrapt",
+            "supplier": "Organization: wrapt",
+            "versionInfo": "2.1.1"
         },
         {
             "SPDXID": "SPDXRef-package-ce2afc54-fb7a-4a24-a67f-8dbe4dd49a51",
@@ -398,72 +398,72 @@
     ],
     "relationships": [
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-0d6863ea-d23d-42f1-941d-622e0319e444"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "CONTAINS",
             "relatedSpdxElement": "SPDXRef-package-19023cc7-1888-477a-bc7d-c8ef982837eb"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-1f0a2792-b412-4a75-99c9-3c211bfca69f"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
-            "relationshipType": "DYNAMIC_LINK",
-            "relatedSpdxElement": "SPDXRef-package-64a0a773-d8a3-4ded-b9e2-78c80497bc73"
+            "spdxElementId": "SPDXRef-DOCUMENT",
+            "relationshipType": "DESCRIBES",
+            "relatedSpdxElement": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
+            "relationshipType": "DYNAMIC_LINK",
+            "relatedSpdxElement": "SPDXRef-package-519f0c94-f134-4a9c-ba77-6b63107bb0b1"
+        },
+        {
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "CONTAINS",
             "relatedSpdxElement": "SPDXRef-package-6a1d9e47-7f1c-4df3-9f6b-3c6a63a13c2f"
         },
         {
-            "spdxElementId": "SPDXRef-DOCUMENT",
-            "relationshipType": "DESCRIBES",
-            "relatedSpdxElement": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9"
-        },
-        {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-722a9c82-4484-40a3-8a76-eb3248b25851"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-77b60f63-3d56-42fe-ac35-3b6263c186ad"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-96cddd4d-b9fa-46dc-b905-14177bf05a78"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
-            "relationshipType": "DYNAMIC_LINK",
-            "relatedSpdxElement": "SPDXRef-package-a45dfaf0-f486-4335-b2d4-575b6fdb6660"
-        },
-        {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-a5bb0523-ad13-40a4-b585-655b6af01ce8"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
+            "relationshipType": "DYNAMIC_LINK",
+            "relatedSpdxElement": "SPDXRef-package-b1305808-9075-4464-8f34-a4c2c69b7c1a"
+        },
+        {
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-ce2afc54-fb7a-4a24-a67f-8dbe4dd49a51"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-d58a27a6-bae7-4758-a981-c7daabde9e3b"
         },
         {
-            "spdxElementId": "SPDXRef-package-70024995-16ce-422f-af3b-aa48561e8df9",
+            "spdxElementId": "SPDXRef-package-4db87301-1418-45b5-93da-8d32d10ba6b3",
             "relationshipType": "DYNAMIC_LINK",
             "relatedSpdxElement": "SPDXRef-package-ea42da12-a79c-4daf-a2fd-3290fee26c5c"
         }

@@ -1,10 +1,10 @@
-Copyright 2025
+Copyright 2026
 
-[eiq-onnx2tflite : 0.8.0]
+[eiq-onnx2tflite : 0.9.0]
 
 Phase: RELEASED
 Distribution: EXTERNAL
-Release date: 12/23/25
+Release date: 2/10/26
 
 Notices Report Content
  * License Data
@@ -22,10 +22,10 @@ NumPy 2.2.6: https://numpy.org/ : BSD 3-clause "New" or "Revised" License
 onnx v1.17.0: https://github.com/onnx/onnx : Apache License 2.0
 onnxruntime 1.21.1: https://www.onnxruntime.ai : MIT License
 Packaging 25.0: https://github.com/pypa/packaging : (Apache License 2.0 AND BSD 3-clause "New" or "Revised" License)
-Protobuf 6.33.2: https://github.com/protocolbuffers/protobuf : BSD 3-clause "New" or "Revised" License
+Protobuf 6.33.5: https://github.com/protocolbuffers/protobuf : BSD 3-clause "New" or "Revised" License
 SymPy 1.14.0: http://sympy.org : BSD 3-clause "New" or "Revised" License
 TensorFlow 2.18.1: http://tensorflow.org : Apache License 2.0
-wrapt 2.0.1: https://github.com/GrahamDumpleton/wrapt : BSD 2-clause "Simplified" License
+wrapt 2.1.1: https://github.com/GrahamDumpleton/wrapt : BSD 2-clause "Simplified" License
 
 Copyright Text: 
 
@@ -220,7 +220,7 @@ third-party archives.
 ---
 
 BSD 2-clause "Simplified" License
-(wrapt 2.0.1)
+(wrapt 2.1.1)
 
 BSD Two Clause License
 ======================
@@ -249,7 +249,7 @@ DAMAGE.
 ---
 
 BSD 3-clause "New" or "Revised" License
-(mpmath 1.3.0, NumPy 2.2.6, Packaging 25.0, Protobuf 6.33.2, SymPy 1.14.0)
+(mpmath 1.3.0, NumPy 2.2.6, Packaging 25.0, Protobuf 6.33.3, SymPy 1.14.0)
 
 Copyright (c) <YEAR>, <OWNER>
 All rights reserved.
