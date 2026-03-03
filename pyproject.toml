@@ -67,3 +67,13 @@ ignore = [
     "ISC001",  # Conflicts with "ruff format" command
     "TC006", # Add quotes to type expression in `typing.cast()` - conflict with IDE imports
 ]
+
+[tool.pytest.ini_options]
+minversion = 7.0
+junit_logging = "log"
+log_cli = "True"
+log_cli_level = "INFO"
+log_file_level = "INFO"
+log_format = "%(asctime)s %(levelname)-8s %(message)s"
+pythonpath = "."
+testpaths = "tests"

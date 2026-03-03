@@ -26,14 +26,16 @@ Converter could be used as a standard CLI tool or standalone library.
 
 ```commandline
 :~$ onnx2tflite -h
-usage: onnx2tflite [-h] [--allow-inputs-stripping | --no-allow-inputs-stripping] [--keep-io-format | --no-keep-io-format]
+usage: onnx2tflite [-h] [--allow-inputs-stripping | --no-allow-inputs-stripping]
+                   [--keep-io-tensors-format | --no-keep-io-tensors-format]
                    [--skip-shape-inference | --no-skip-shape-inference]
                    [--qdq-aware-conversion | --no-qdq-aware-conversion] [-s [SYMBOLIC_DIMENSIONS_MAPPING ...]]
                    [-m [INPUT_SHAPES_MAPPING ...]]
                    [--dont-skip-nodes-with-known-outputs | --no-dont-skip-nodes-with-known-outputs]
                    [--allow-select-ops | --no-allow-select-ops]
                    [--generate-artifacts-after-failed-shape-inference | --no-generate-artifacts-after-failed-shape-inference]
-                   [--guarantee-non-negative-indices | --no-guarantee-non-negative-indices] 
+                   [--duplicate-dequantize-linear | --no-duplicate-dequantize-linear]
+                   [--guarantee-non-negative-indices | --no-guarantee-non-negative-indices]
                    [--cast-int64-to-int32 | --no-cast-int64-to-int32]
                    [--accept-resize-rounding-error | --no-accept-resize-rounding-error]
                    [--skip-opset-version-check | --no-skip-opset-version-check] [-o out] [-v]
@@ -50,7 +52,7 @@ options:
   --allow-inputs-stripping, --no-allow-inputs-stripping
                         Model inputs will be removed if they are not necessary for inference and their values are derived
                         during the conversion.
-  --keep-io-format, --no-keep-io-format
+  --keep-io-tensors-format, --no-keep-io-tensors-format
                         Keep the format of input and output tensors of the converted model the same, as in the original
                         ONNX model (NCHW).
   --skip-shape-inference, --no-skip-shape-inference
@@ -73,13 +75,16 @@ options:
   --generate-artifacts-after-failed-shape-inference, --no-generate-artifacts-after-failed-shape-inference
                         If the shape inference fails or is incomplete, generate the partly inferred ONNX model as
                         'sym_shape_infer_temp.onnx'.
+  --duplicate-dequantize-linear, --no-duplicate-dequantize-linear
+                        Duplicate DequantizeLinear nodes with static inputs and multiple consumers. It increases success
+                        rate of QDQ cluster recognition leading to more quantized nodes.
   --guarantee-non-negative-indices, --no-guarantee-non-negative-indices
-                        Guarantee that an 'indices' input tensors will always contain non-negative values. This applies
-                        to operators: 'Gather', 'GatherND', 'OneHot' and 'ScatterND'.
+                        Guarantee that an 'indices' input tensor will always contain non-negative values. This applies to
+                        operators: 'Gather', 'GatherND', 'OneHot' and 'ScatterND'.
   --cast-int64-to-int32, --no-cast-int64-to-int32
                         Cast some nodes with type INT64 to INT32 when TFLite doesn't support INT64. Such nodes are often
-                        used in ONNX to calculate shapes/indices, so full range of INT64 isn't necessary. This applies 
-                        to operators: 'Abs' and 'Div'."
+                        used in ONNX to calculate shapes/indices, so full range of INT64 isn't necessary. This applies to
+                        operators: 'Abs' and 'Div'.
   --accept-resize-rounding-error, --no-accept-resize-rounding-error
                         Accept the error caused by a different rounding approach of the ONNX 'Resize' and TFLite
                         'ResizeNearestNeighbor' operators, and convert the model anyway.
@@ -111,15 +116,15 @@ variant in ONNX but TFLite supports quantized version of this specific operator.
 :~$ onnx2quant -h
 usage: onnx2quant [-h] [--replace-div-with-mul | --no-replace-div-with-mul]
                   [--replace-constant-with-static-tensor | --no-replace-constant-with-static-tensor] [-o OUTPUT]
-                  [--per-channel | --no-per-channel] [-l | --allow-opset-10-and-lower | --no-allow-opset-10-and-lower] 
-                  -c CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...] 
+                  [--per-channel | --no-per-channel] [-l | --allow-opset-10-and-lower | --no-allow-opset-10-and-lower]
                   [-s [SYMBOLIC_DIMENSIONS_MAPPING ...]] [-m [INPUT_SHAPES_MAPPING ...]]
                   [--generate-artifacts-after-failed-shape-inference | --no-generate-artifacts-after-failed-shape-inference]
+                  (-c CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...] | -u)
                   onnx_model
 
-Quantize ONNX model in 'TFLite conversion optimized way'. This tool produces QDQ model with per-tensor/per-channel 
-quantization and INT8 activations. Some operators can be QDQ quantized even if there isn't quantized variant in ONNX 
-but TFLite supports quantized version of this specific operator.
+Quantize ONNX model in 'TFLite conversion optimized way'. This tool produces QDQ model with per-tensor/per-channel
+quantization and INT8 activations. Some operators can be QDQ quantized even if there isn't quantized variant in ONNX but
+TFLite supports quantized version of this specific operator.
 
 positional arguments:
   onnx_model            Path to input ONNX '*.onnx' model.
@@ -140,11 +145,6 @@ options:
                         Allow quantization of models with opset version 10 and lower. Quantization of such models can
                         produce invalid models because opset is forcefully updated to version 11. This applies especially
                         to models with operators: Clip, Dropout, BatchNormalization and Split.
-  -c CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...], --calibration-dataset-mapping CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...]
-                        Mapping between model input and calibration dataset directory with *.npy files. Value must be in
-                        format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument can be used
-                        multiple times to specify multiple inputs for the model. In case modelhas semicolon in input
-                        tensor's name, it has to be renamed.
   -s [SYMBOLIC_DIMENSIONS_MAPPING ...], --symbolic-dimension-into-static [SYMBOLIC_DIMENSIONS_MAPPING ...]
                         Change symbolic dimension in model to static (fixed) value. Provided mapping must follow this
                         format '<dim_name>:<dim_size>', for example 'batch:1'. This argument can be used multiple times.
@@ -152,8 +152,16 @@ options:
                         Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,<dim_1>,...)',
                         for example 'input_1:(1,3,224,224)'. This argument can be used multiple times.
   --generate-artifacts-after-failed-shape-inference, --no-generate-artifacts-after-failed-shape-inference
-                        If the shape inference fails or is incomplete, generate the partly inferred ONNX model as
+                        If the shape inference fails or is incomplete, generate the partially inferred ONNX model as
                         'sym_shape_infer_temp.onnx'.
+  -c CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...], --calibration-dataset-mapping CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...]
+                        Mapping between model input and calibration dataset directory with *.npy files. Value must be in
+                        format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument can be used
+                        multiple times to specify multiple inputs for the model. In case model has semicolon in input
+                        tensor's name, it has to be renamed.
+  -u, --use-random-calibration-dataset
+                        Use a random dataset for calibration instead of providing a real calibration dataset. Note that
+                        random dataset does not provide reliable quantization results.
 ```
 
 ## Development
@@ -161,7 +169,7 @@ options:
 - [Project structure & testing](docs/project_development_basics.md)
 - [How to implement new operator?](docs/new_operator_support.md)
 - [What to do when increasing TensorFlow version?](docs/increasing_dependencies_versions.md)
-- [ONNXRT code tags](docs/code_tags.md)
+- [ONNX RT code tags](docs/code_tags.md)
 
 ### Utilities
 

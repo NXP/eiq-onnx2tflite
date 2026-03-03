@@ -115,7 +115,7 @@ class IntermediateTFLiteModelProvider:
         ops = filter(lambda x: isinstance(x.builtin_options, builtin_options), self.get_operators())
         return len(list(ops))
 
-    def assert_converted_model_has_operators(self, expected_ops: list[libBuiltinOperator.BuiltinOperator]):
+    def assert_converted_model_has_operators(self, expected_ops: list[libBuiltinOperator.BuiltinOperator | int]):
         """ Assert that the converted model contain operators listed in `expected_ops` and in that specific order.
 
         :param expected_ops: BuiltinOperator values which should be in the converted model, in the specific order.

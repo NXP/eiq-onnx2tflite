@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -21,6 +21,7 @@ from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.conversion_context import ConversionContext
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import operator_converter, tensor_converter
+from onnx2tflite.src.converter.conversion_preprocessor import ConversionPreprocessor
 from onnx2tflite.src.logger import BasicLoggingContext, Error, loggingContext
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.onnx_parser import onnx_model
@@ -217,6 +218,9 @@ def convert_model(
                         inferred_tensor_data=inferred_tensor_data,
                         generate_artifacts_after_failed_shape_inference=conversion_config.generate_artifacts_after_failed_shape_inference
                     )
+
+            with loggingContext(BasicLoggingContext.CONVERSION_PREPROCESSING):
+                ConversionPreprocessor(parsed_onnx_model, conversion_config).preprocess()
 
             with loggingContext(BasicLoggingContext.ONNX_PARSER):
                 # Initialize the internal ONNX model representation

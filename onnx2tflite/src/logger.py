@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023 NXP
+# Copyright 2023, 2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -135,6 +135,7 @@ class BasicLoggingContext(LoggingContext):
     OPERATOR_CONVERSION = LoggingContext("operator_conversion")
     TFLITE_GENERATOR = LoggingContext("tflite_generator")
     QDQ_QUANTIZER = LoggingContext("qdq_quantizer")
+    CONVERSION_PREPROCESSING = LoggingContext("conversion_preprocessing")
 
 
 class NodeLoggingContext(LoggingContext):

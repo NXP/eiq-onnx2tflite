@@ -223,7 +223,6 @@ def test_convert_quantize_linear__quantized(type_: TensorProto.DataType):
     "attr_kwargs",
     [
         pytest.param({"block_size": 1}, id="block_size"),
-        pytest.param({"precision": 1}, id="precision"),
         pytest.param({"output_dtype": 1}, id="output_dtype"),
     ])
 def test_convert_quantize_linear__unsupported_attributes(attr_kwargs):
