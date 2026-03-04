@@ -46,6 +46,7 @@ from .hard_sigmoid_converter import HardSigmoidConverter
 from .hard_swish_converter import HardSwishConverter
 from .identity_converter import IdentityConverter
 from .instance_normalization_converter import InstanceNormalizationConverter
+from .is_nan_converter import IsNaNConverter
 from .layer_normalization_converter import LayerNormalizationConverter
 from .leaky_relu_converter import LeakyReluConverter
 from .less_converter import LessConverter
@@ -122,8 +123,8 @@ __all__ = [
     EqualConverter, ErfConverter, ExpConverter, ExpandConverter, FlattenConverter, FloorConverter, GatherConverter,
     GatherNDConverter, GeluConverter, GemmConverter, GlobalAveragePoolConverter, GlobalMaxPoolConverter,
     GreaterConverter, GreaterOrEqualConverter, GRUConverter, HardSigmoidConverter, HardSwishConverter,
-    IdentityConverter,
-    InstanceNormalizationConverter, LayerNormalizationConverter, LeakyReluConverter, LessConverter,
+    IdentityConverter, InstanceNormalizationConverter, IsNaNConverter,
+    LayerNormalizationConverter, LeakyReluConverter, LessConverter,
     LessOrEqualConverter, LogConverter, LRNConverter, LSTMConverter, MatMulConverter, MaxConverter, MaxPoolConverter,
     MinConverter, ModConverter, MulConverter, MultinomialConverter, NegConverter, NotConverter, OneHotConverter,
     OrConverter, PReluConverter, PadConverter, PowConverter, QGemmConverter, QLinearAddConverter,

@@ -74,6 +74,7 @@ class OperatorConverter:
         "HardSwish": node_converters.HardSwishConverter,
         "Identity": node_converters.IdentityConverter,
         "InstanceNormalization": node_converters.InstanceNormalizationConverter,
+        "IsNaN": node_converters.IsNaNConverter,
         "LRN": node_converters.LRNConverter,
         "LSTM": node_converters.LSTMConverter,
         "LayerNormalization": node_converters.LayerNormalizationConverter,

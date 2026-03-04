@@ -8,7 +8,6 @@
 from onnxruntime.quantization import CalibrationDataReader
 
 from onnx2tflite.src import logger
-from typing import Literal
 
 PER_CHANNEL_DEFAULT = False
 

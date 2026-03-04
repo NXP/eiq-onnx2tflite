@@ -583,8 +583,8 @@ NODE = {
     # "test_isinf_float16": {},
     # "test_isinf_negative": {},
     # "test_isinf_positive": {},
-    # "test_isnan": {},
-    # "test_isnan_float16": {},
+    "test_isnan": {},
+    # "test_isnan_float16": {}, # TFLite doesn't support float16 version of 'Equal' operator
     "test_layer_normalization_2d_axis0": {},
     # "test_layer_normalization_2d_axis0_expanded": {},
     # "test_layer_normalization_2d_axis0_expanded_ver18": {},

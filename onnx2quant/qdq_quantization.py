@@ -840,6 +840,7 @@ class QDQQuantizer:
         "HardSwish",
         # "Identity",  # Represented by single tensor in TFLite.
         # "InstanceNormalization",  # Represented by multiple operators. Quantization can introduce large errors.
+        # "IsNaN",  # Not supported by the nature of the operator (only IEEE 754 floating point format represent NaN)
         # "LayerNormalization",  # Represented by multiple operators. Quantization can introduce large errors.
         "LeakyRelu",
         "Less",

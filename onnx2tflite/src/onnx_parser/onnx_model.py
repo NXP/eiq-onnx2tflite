@@ -245,6 +245,7 @@ class NodeProto(meta.ONNXObject):
         "HardSwish": None,
         "Identity": None,
         "InstanceNormalization": builtin_attributes.InstanceNormalization,
+        "IsNaN": None,
         "LRN": builtin_attributes.LRN,
         "LSTM": builtin_attributes.LSTM,
         "LayerNormalization": builtin_attributes.LayerNormalization,
