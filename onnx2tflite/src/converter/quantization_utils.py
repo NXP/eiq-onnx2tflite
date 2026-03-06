@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -146,11 +146,6 @@ def propagate_quantization(from_tensor: tflite_model.Tensor,
     checks the consistency.
     :raises: logger.Error - INVALID_ONNX_MODEL
     """
-    if from_tensor.quantization is not None and from_tensor.quantization.is_per_channel():
-        # Note: For simplicity the quantization propagation is allowed only for per tensor quantized tensors.
-        # Typically, operator inputs and outputs are per-tensor quantized. Per channel is only for weights.
-        logger.e(logger.Code.NOT_IMPLEMENTED,
-                 "Propagation of quantization for PerChannel quantized tensors is not yet supported")
 
     # noinspection PyTypeChecker
     if not _validate_or_set_quant_params(to_tensor, from_tensor.quantization):

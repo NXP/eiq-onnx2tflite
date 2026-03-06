@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -20,10 +20,12 @@ from onnx2tflite.src.tflite_generator.builtin_options import concatenation_optio
 from tests import executors
 
 
-def _create_q_linear_conv_model(input_shape: List[int], weights_shape: List[int],
-                                dilations: List[int], strides: List[int], auto_pad: str, pads: List[int], group: int,
-                                weights_data, bias_data, weights_scale, weights_zero_point,
-                                input_type, output_type, weights_type) -> onnx.ModelProto:
+def _create_q_linear_conv_model(
+        input_shape: List[int], weights_shape: List[int],
+        dilations: List[int], strides: List[int], auto_pad: str, pads: List[int], group: int,
+        weights_data, bias_data, weights_scale, weights_zero_point,
+        input_type, output_type, weights_type
+) -> onnx.ModelProto:
     kernel_shape = weights_shape[2:]
     input_scale = [0.01865844801068306]
     input_zero_point = [114]
@@ -64,11 +66,11 @@ def _create_q_linear_conv_model(input_shape: List[int], weights_shape: List[int]
 @pytest.mark.parametrize(
     "input_shape,weights_shape,dilations,strides,auto_pad,pads,group,weights_scale,weights_zero_point", [
         pytest.param([1, 3, 224, 224], [96, 3, 11, 11], [1, 1], [4, 4], None, [0, 0, 0, 0], 1, [0.124],
-                     [0], id="per tensor, explicit padding"),
+                     [0], id="per tensor,explicit padding"),
         pytest.param([1, 384, 12, 12], [256, 192, 3, 3], [1, 1], [1, 1], "SAME_LOWER", None, 2,
-                     [0.05], [0], id="per tensor"),
+                     [0.05], [0], id="per tensor,group=2"),
         pytest.param([1, 384, 12, 12], [256, 96, 3, 3], [1, 1], [1, 1], "SAME_LOWER", None, 4,
-                     [0.05], [0], id="per tensor"),
+                     [0.05], [0], id="per tensor,group=4"),
         pytest.param([1, 256, 10, 10], [3, 256, 3, 3], [5, 5], [1, 1], None, [5, 5, 5, 5], 1,
                      [0.1, 0.2, 0.05], [0, 0, 0], id="per channel"),
     ])
@@ -241,7 +243,7 @@ def test_convert_2d_q_linear_conv_without_optional_attributes():
 
 
 @pytest.mark.parametrize("dilations,strides,auto_pad,pads,group,weights_scale,weights_zero_point", [
-    pytest.param([1, 1], [4, 4], None, [0, 0, 0, 0], 1, [0.124], [0], id="per tensor, explicit padding"),
+    pytest.param([1, 1], [4, 4], None, [0, 0, 0, 0], 1, [0.124], [0], id="per tensor,explicit padding"),
     pytest.param([1, 1], [1, 1], "SAME_LOWER", None, 2, [0.05], [0], id="per tensor"),
     pytest.param([5, 5], [1, 1], None, [5, 5, 5, 5], 1, [0.1, 0.2, 0.05, 0.4, 0.5], [0, 0, 0, 0, 0], id="per channel"),
 ])
@@ -269,7 +271,7 @@ def test_convert_2d_q_linear_conv_into_depthwise_conv_2d_static_weights(
 
 
 @pytest.mark.parametrize("dilations,strides,auto_pad,pads,weights_scale,weights_zero_point", [
-    pytest.param([1, 1], [4, 4], None, [0, 0, 0, 0], [0.124], [0], id="per tensor, explicit padding"),
+    pytest.param([1, 1], [4, 4], None, [0, 0, 0, 0], [0.124], [0], id="per tensor,explicit padding"),
     pytest.param([1, 1], [1, 1], "SAME_LOWER", None, [0.05], [0], id="per tensor"),
     pytest.param([5, 5], [1, 1], None, [5, 5, 5, 5], [0.1, 0.2, 0.05, 0.4, 0.5], [0, 0, 0, 0, 0], id="per channel"),
 ])
@@ -332,7 +334,7 @@ def test_convert_2d_q_linear_conv_into_depthwise_conv_2d_dynamic_int8_weights(
 
 
 @pytest.mark.parametrize("dilations,strides,auto_pad,pads,weights_scale,weights_zero_point", [
-    pytest.param([1, 1], [4, 4], None, [0, 0, 0, 0], [0.124], [128], id="per tensor, explicit padding"),
+    pytest.param([1, 1], [4, 4], None, [0, 0, 0, 0], [0.124], [128], id="per tensor,explicit padding"),
     pytest.param([1, 1], [1, 1], "SAME_LOWER", None, [0.05], [128], id="per tensor"),
 ])
 def test_convert_2d_q_linear_conv_into_depthwise_conv_2d_dynamic_uint8_weights(
@@ -697,7 +699,7 @@ def test_convert_2d_q_linear_conv_group__convertible_into_multiple_convolutions(
 @pytest.mark.parametrize(
     "input_shape,weights_shape,dilations,strides,auto_pad,pads,group,weights_scale,weights_zero_point", [
         pytest.param([1, 3, 224, 224], [96, 3, 11, 11], [1, 1], [4, 4], None, [0, 0, 0, 0], 1, [0.124],
-                     [0], id="per tensor, explicit padding"),
+                     [0], id="per tensor,explicit padding"),
         pytest.param([1, 384, 12, 12], [256, 192, 3, 3], [1, 1], [1, 1], "SAME_LOWER", None, 2,
                      [0.05], [0], id="per tensor"),
         pytest.param([1, 384, 12, 12], [256, 96, 3, 3], [1, 1], [1, 1], "SAME_LOWER", None, 4,
@@ -709,10 +711,7 @@ def test_convert_2d_q_linear_conv__default_bias(input_shape: List[int], weights_
                                                 dilations: List[int], strides: List[int],
                                                 auto_pad: str, pads: List[int], group: int,
                                                 weights_scale: List[float], weights_zero_point: List[int]):
-    # Bias has name ''.
-
     weights_data = np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
-    bias_data = np.arange(weights_shape[0]).astype(np.int32)
 
     kernel_shape = weights_shape[2:]
     input_scale = [0.01865844801068306]
@@ -720,6 +719,7 @@ def test_convert_2d_q_linear_conv__default_bias(input_shape: List[int], weights_
     output_scale = [0.12412]
     output_zero_point = [0]
 
+    # Bias has name ''.
     onnx_model = onnx.helper.make_model(
         onnx.helper.make_graph(
             nodes=[
@@ -734,7 +734,6 @@ def test_convert_2d_q_linear_conv__default_bias(input_shape: List[int], weights_
             outputs=[onnx.helper.make_tensor_value_info("output", TensorProto.INT8, ())],
             initializer=[
                 onnx.helper.make_tensor("weights", TensorProto.INT8, weights_shape, weights_data),
-                onnx.helper.make_tensor("bias", onnx.TensorProto.INT32, [len(bias_data)], bias_data),
                 onnx.helper.make_tensor("input_scale", onnx.TensorProto.FLOAT, [len(input_scale)], input_scale),
                 onnx.helper.make_tensor("input_zero_point", TensorProto.INT8, [len(input_zero_point)],
                                         input_zero_point),
@@ -751,3 +750,217 @@ def test_convert_2d_q_linear_conv__default_bias(input_shape: List[int], weights_
     input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
+
+
+@pytest.mark.parametrize(
+    "input_shape,weights_shape,dilations,strides,auto_pad,pads,group,weights_scale,weights_zero_point", [
+        pytest.param([1, 3, 224], [96, 3, 11], [1], [4], None, [0, 0], 1, [0.124], [0],
+                     id="per tensor,explicit padding"),
+        pytest.param([1, 384, 12], [256, 192, 3], [1], [1], "SAME_LOWER", None, 2,
+                     [0.05], [0], id="per tensor, group=2"),
+        pytest.param([1, 384, 12], [256, 96, 3], [1], [1], "SAME_LOWER", None, 4,
+                     [0.05], [0], id="per tensor, group=4"),
+        pytest.param([1, 256, 10], [3, 256, 3], [5], [1], None, [5, 5], 1,
+                     [0.1, 0.2, 0.05], [0, 0, 0], id="per channel"),
+    ])
+def test_convert_1d_q_linear_conv_with_signed_types(input_shape: List[int], weights_shape: List[int],
+                                                    dilations: List[int], strides: List[int],
+                                                    auto_pad: str, pads: List[int], group: int,
+                                                    weights_scale: List[float], weights_zero_point: List[int]):
+    weights_data = np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
+    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+
+    onnx_model = _create_q_linear_conv_model(input_shape, weights_shape, dilations, strides, auto_pad,
+                                             pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
+                                             onnx.TensorProto.INT8, onnx.TensorProto.INT8, onnx.TensorProto.INT8)
+
+    onnx.checker.check_model(onnx_model)
+
+    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+
+    executors.convert_run_compare(onnx_model, input_data, atol=1)
+
+
+@pytest.mark.parametrize("input_shape,weights_scale,group", [
+    pytest.param([1, 12, 10], [0.124], 1, id="per tensor,group=1"),  # single traditional convolution
+    pytest.param([1, 12, 10], [0.124], 3, id="per tensor,group=3"),  # separated convolutions
+    pytest.param([1, 12, 10], [0.1, 0.2, 0.05], 1, id="per channel,group=1"),  # single traditional convolution
+    pytest.param([1, 12, 10], [0.1, 0.2, 0.05], 3, id="per channel,group=3"),  # group convolution
+    pytest.param([1, 3, 10], [0.124], 3, id="per tensor,group=3"),  # depthwise convolution
+    pytest.param([1, 3, 10], [0.1, 0.2, 0.05], 3, id="per channel,depthwise"),  # depthwise convolution
+])
+@pytest.mark.parametrize("input_type,output_type,weight_type", [
+    pytest.param(onnx.TensorProto.INT8, onnx.TensorProto.INT8, onnx.TensorProto.INT8, id="I:INT8,O:INT8,W:INT8"),
+    pytest.param(onnx.TensorProto.UINT8, onnx.TensorProto.UINT8, onnx.TensorProto.INT8, id="I:UINT8,O:UINT8,W:INT8"),
+    pytest.param(onnx.TensorProto.UINT8, onnx.TensorProto.UINT8, onnx.TensorProto.UINT8, id="I:UINT8,O:UINT8,W:UINT8")
+])
+def test_convert_1d_q_linear_conv__io_types_variants(
+        input_shape: List[int], weights_scale: List[float], input_type, output_type, weight_type, group: int):
+    weights_shape = [3, input_shape[1] // group, 3]  # [out_channels, kernel_channels, kernel_height, kernel_width]
+
+    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+
+    if weight_type == onnx.TensorProto.INT8:
+        weights_zero_point = [0] * len(weights_scale)
+        weights_data = np.random.randint(-128, 127, weights_shape).astype(np.int8)
+    else:
+        weights_zero_point = [128] * len(weights_scale)
+        weights_data = np.random.randint(0, 255, weights_shape).astype(np.uint8)
+
+    # noinspection PyTypeChecker
+    onnx_model = _create_q_linear_conv_model(input_shape, weights_shape, None, None, "SAME_LOWER",
+                                             None, group, weights_data, bias_data, weights_scale, weights_zero_point,
+                                             input_type, output_type, weight_type)
+
+    if input_type == onnx.TensorProto.INT8:
+        input_data = np.random.randint(-20, 20, input_shape).astype(np.int8)
+    else:
+        input_data = np.random.randint(0, 20, input_shape).astype(np.uint8)
+
+    executors.convert_run_compare(onnx_model, input_data)
+
+
+@pytest.mark.parametrize("dilations,strides,auto_pad,pads,group,weights_scale,weights_zero_point", [
+    pytest.param([1], [4], None, [0, 0], 1, [0.124], [0], id="per tensor,explicit padding"),
+    pytest.param([1], [1], "SAME_LOWER", None, 2, [0.05], [0], id="per tensor"),
+    pytest.param([5], [1], None, [5, 5], 1, [0.1, 0.2, 0.05, 0.4, 0.5], [0, 0, 0, 0, 0], id="per channel"),
+])
+def test_convert_1d_q_linear_conv_into_depthwise_conv_2d_static_weights(
+        dilations: List[int], strides: List[int], auto_pad: str, pads: List[int], group: int,
+        weights_scale: List[float], weights_zero_point: List[int], intermediate_tflite_model_provider):
+    kernel_shape = [3]
+    input_shape = [1, 5, 15]
+    weights_shape = [5, 1] + kernel_shape
+    group = 5
+
+    weights_data = np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
+    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+
+    # noinspection PyTypeChecker
+    onnx_model = _create_q_linear_conv_model(input_shape, weights_shape, dilations, strides, auto_pad,
+                                             pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
+                                             onnx.TensorProto.INT8, onnx.TensorProto.INT8, onnx.TensorProto.INT8)
+
+    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+
+    executors.convert_run_compare(onnx_model, input_data)
+
+    assert intermediate_tflite_model_provider.get_op_count(depthwise_conv_2d_options.DepthwiseConv2D) == 1
+
+
+@pytest.mark.parametrize("dilations,strides,auto_pad,pads,weights_scale,weights_zero_point", [
+    pytest.param([1], [4], None, [0, 0], [0.124], [0], id="per tensor,explicit padding"),
+    pytest.param([1], [1], "SAME_LOWER", None, [0.05], [0], id="per tensor"),
+    pytest.param([5], [1], None, [5, 5], [0.1, 0.2, 0.05, 0.4, 0.5], [0, 0, 0, 0, 0], id="per channel"),
+])
+def test_convert_1d_q_linear_conv_into_depthwise_conv_2d_dynamic_int8_weights(
+        dilations: List[int], strides: List[int], auto_pad: str, pads: List[int],
+        weights_scale: List[float], weights_zero_point: List[int], intermediate_tflite_model_provider
+):
+    kernel_shape = [3]
+    input_shape = [1, 5, 15]
+    weights_shape = [5, 1] + kernel_shape
+    group = 5
+
+    weights_data = np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
+    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+
+    kernel_shape = weights_shape[2:]
+    input_scale = [0.01865844801068306]
+    input_zero_point = [114]
+    output_scale = [0.12412]
+    output_zero_point = [0]
+
+    q_linear_conv_node = onnx.helper.make_node(
+        "QLinearConv",
+        ["input", "input_scale", "input_zero_point", "weights", "weights_scale", "weights_zero_point", "output_scale",
+         "output_zero_point", "bias"],
+        ["output"],
+        dilations=dilations, strides=strides, kernel_shape=kernel_shape, pads=pads, group=group, auto_pad=auto_pad)
+
+    graph = onnx.helper.make_graph(
+        nodes=[q_linear_conv_node],
+        name="QLinearConv_test",
+        inputs=[
+            onnx.helper.make_tensor_value_info("input", onnx.TensorProto.INT8, input_shape),
+            onnx.helper.make_tensor_value_info("weights", onnx.TensorProto.INT8, weights_shape),
+        ],
+        outputs=[onnx.helper.make_tensor_value_info("output", onnx.TensorProto.INT8, ())],
+        initializer=[
+            onnx.helper.make_tensor("bias", onnx.TensorProto.INT32, [len(bias_data)], bias_data),
+            onnx.helper.make_tensor("input_scale", onnx.TensorProto.FLOAT, [len(input_scale)], input_scale),
+            onnx.helper.make_tensor("input_zero_point", onnx.TensorProto.INT8, [len(input_zero_point)],
+                                    input_zero_point),
+            onnx.helper.make_tensor("weights_scale", onnx.TensorProto.FLOAT, [len(weights_scale)], weights_scale),
+            onnx.helper.make_tensor("weights_zero_point", onnx.TensorProto.INT8, [len(weights_zero_point)],
+                                    weights_zero_point),
+            onnx.helper.make_tensor("output_scale", onnx.TensorProto.FLOAT, [len(output_scale)], output_scale),
+            onnx.helper.make_tensor("output_zero_point", onnx.TensorProto.INT8, [len(output_zero_point)],
+                                    output_zero_point),
+        ]
+    )
+
+    onnx_model = onnx.helper.make_model(graph)
+
+    input_data = {
+        0: np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8),
+        1: weights_data
+    }
+
+    executors.convert_run_compare(onnx_model, input_data)
+
+    assert intermediate_tflite_model_provider.get_op_count(depthwise_conv_2d_options.DepthwiseConv2D) == 1
+
+
+@pytest.mark.parametrize(
+    "input_shape,weights_shape,dilations,strides,auto_pad,pads,group,weights_scale,weights_zp", [
+        pytest.param([1, 3, 224], [96, 3, 11], [1], [4], None, [0, 0], 1, [0.124],
+                     [0], id="per tensor,explicit padding"),
+        pytest.param([1, 384, 12], [256, 192, 3], [1], [1], "SAME_LOWER", None, 2,
+                     [0.05], [0], id="per tensor"),
+    ])
+def test_convert_1d_q_linear_conv__default_bias(
+        input_shape: List[int], weights_shape: List[int],
+        dilations: List[int], strides: List[int],
+        auto_pad: str, pads: List[int], group: int,
+        weights_scale: List[float], weights_zp: List[int]
+):
+    weights_data = np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
+
+    kernel_shape = weights_shape[2:]
+    input_scale = [0.01865844801068306]
+    input_zp = [114]
+    output_scale = [0.12412]
+    output_zp = [0]
+
+    # Bias has name ''.
+    inputs = [
+        "input", "input_scale", "input_zp", "weights", "weights_scale", "weights_zp", "output_scale", "output_zp", ''
+    ]
+    initializers = [
+        onnx.helper.make_tensor("weights", TensorProto.INT8, weights_shape, weights_data),
+        onnx.helper.make_tensor("input_scale", onnx.TensorProto.FLOAT, [len(input_scale)], input_scale),
+        onnx.helper.make_tensor("input_zp", TensorProto.INT8, [len(input_zp)], input_zp),
+        onnx.helper.make_tensor("weights_scale", onnx.TensorProto.FLOAT, [len(weights_scale)], weights_scale),
+        onnx.helper.make_tensor("weights_zp", TensorProto.INT8, [len(weights_zp)], weights_zp),
+        onnx.helper.make_tensor("output_scale", onnx.TensorProto.FLOAT, [len(output_scale)], output_scale),
+        onnx.helper.make_tensor("output_zp", TensorProto.INT8, [len(output_zp)], output_zp)
+    ]
+    onnx_model = onnx.helper.make_model(
+        onnx.helper.make_graph(
+            nodes=[onnx.helper.make_node(
+                "QLinearConv",
+                inputs,
+                ["output"],
+                dilations=dilations, strides=strides, kernel_shape=kernel_shape, pads=pads,
+                group=group, auto_pad=auto_pad)
+            ],
+            name="QLinearConv_test",
+            inputs=[onnx.helper.make_tensor_value_info("input", TensorProto.INT8, input_shape)],
+            outputs=[onnx.helper.make_tensor_value_info("output", TensorProto.INT8, ())],
+            initializer=initializers
+        )
+    )
+    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+
+    executors.convert_run_compare(onnx_model, input_data)

@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -22,12 +22,13 @@ from onnx2tflite.src.converter.quantization_utils import (
     get_symmetric_zero_point_for_type,
     re_quantize_static_tensor,
     set_quantization_parameters_to_tensor,
+    propagate_quantization,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes, q_linear_conv_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import conv_2d_options, depthwise_conv_2d_options
+from onnx2tflite.src.tflite_generator.builtin_options import conv_2d_options, depthwise_conv_2d_options, reshape_options
 
 ConvAttributes = conv_attributes.Conv | q_linear_conv_attributes.QLinearConv
 
@@ -231,6 +232,80 @@ class QLinearConvConverter(NodeConverter):
 
         return conversion_result
 
+    def _convert_1d_q_linear_conv(
+            self, o_conv_attributes: conv_attributes.Conv, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
+        weight_tensor_index = self.get_weight_tensor_index(o_conv_attributes)
+
+        # -- Calculate the shapes for equivalent 2D convolution --
+        conv_2d_input_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_inputs[0].shape.vector)
+        conv_2d_weight_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_inputs[weight_tensor_index].shape.vector)
+        conv_2d_output_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_outputs[0].shape.vector)
+
+        # -- Generate tensors taking part in the conversion --
+        input_reshape_x = t_op.tmp_inputs[0]
+
+        input_reshape_y = self.builder.duplicate_tensor(input_reshape_x, name_suffix="_4D_")
+        input_reshape_y.shape = tflite_model.Shape(conv_2d_input_shape)
+
+        output_reshape_x = self.builder.duplicate_tensor(t_op.tmp_outputs[0], name_suffix="_4D_")
+        output_reshape_x.shape = tflite_model.Shape(conv_2d_output_shape)
+
+        output_reshape_y = t_op.tmp_outputs[0]
+
+        pre_reshapes = []
+
+        # Extend the weights tensor to 4D
+        weights_tensor = t_op.tmp_inputs[weight_tensor_index]
+        if tensor_has_data(weights_tensor):
+            # Do it statically
+            weights_tensor.shape = tflite_model.Shape(conv_2d_weight_shape)
+            weights_tensor.tmp_buffer.data = weights_tensor.tmp_buffer.data.reshape(conv_2d_weight_shape)
+        else:
+            # Add a Reshape before the weights tensor
+            new_weights_tensor = self.builder.duplicate_tensor(weights_tensor, name_suffix="_4D_")
+            new_weights_tensor.shape = tflite_model.Shape(conv_2d_weight_shape)
+
+            weight_reshape = tflite_model.Operator(builtin_options=reshape_options.Reshape(conv_2d_weight_shape))
+            weight_reshape.tmp_inputs = [weights_tensor]
+            weight_reshape.tmp_outputs = [new_weights_tensor]
+
+            pre_reshapes.append(weight_reshape)
+
+            # Save the new weights tensor, to assign it later.
+            weights_tensor = new_weights_tensor
+
+        # -- Create the new operators --
+        input_reshape = tflite_model.Operator(builtin_options=reshape_options.Reshape(conv_2d_input_shape))
+        input_reshape.tmp_inputs = [input_reshape_x]
+        input_reshape.tmp_outputs = [input_reshape_y]
+        pre_reshapes.append(input_reshape)
+
+        output_reshape = tflite_model.Operator(builtin_options=reshape_options.Reshape(output_reshape_y.shape.vector))
+        output_reshape.tmp_inputs = [output_reshape_x]
+        output_reshape.tmp_outputs = [output_reshape_y]
+
+        # Assign the new input and output of the Conv2D
+        t_op.tmp_inputs[0] = input_reshape_y
+        t_op.tmp_inputs[weight_tensor_index] = weights_tensor
+        t_op.tmp_outputs = [output_reshape_x]
+
+        # Extend all ONNX attributes to 2D
+        common.extend_1d_kernel_shape_to_2d(o_conv_attributes.kernel_shape)
+        common.extend_1d_strides_to_2d(o_conv_attributes.strides)
+        common.extend_1d_dilations_to_2d(o_conv_attributes.dilations)
+        common.extend_1d_pads_to_2d(o_conv_attributes.pads)
+
+        # Convert the now 2D Conv
+        converted_conv_ops = self._convert_2d_q_linear_conv(o_conv_attributes, t_op)
+
+        # Propagate inner (Conv) quantization parameters to outer tensors of added Reshapes
+        for reshape in pre_reshapes:
+            propagate_quantization(reshape.tmp_outputs[0], reshape.tmp_inputs[0])
+        propagate_quantization(output_reshape_x, output_reshape_y)
+
+        return pre_reshapes + converted_conv_ops + [output_reshape]
+
     def _convert_2d_q_linear_conv(self, attrs: ConvAttributes, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         if conv_utils.group_conv_convertible_as_depthwise(attrs, t_op, self.get_weight_tensor_index(attrs)):
             t_op.builtin_options = depthwise_conv_2d_options.DepthwiseConv2D()
@@ -293,7 +368,7 @@ class QLinearConvConverter(NodeConverter):
 
         kernel_rank = len(attrs.kernel_shape)
         if kernel_rank == 1:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of 1D QLinearConv is not yet implemented!")
+            return self._convert_1d_q_linear_conv(attrs, t_op)
         elif kernel_rank == 2:
             return self._convert_2d_q_linear_conv(attrs, t_op)
         else:
