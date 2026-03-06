@@ -224,31 +224,32 @@ class _OutputTensorsCombiner:
             self.output_tensors.append(output_tensor)
             self.concat_op.tmp_inputs.append(output_tensor)
 
-    def get_output_tensor(self, idx) -> int:
+    def get_output_tensor(self, idx) -> TFTensor:
         return self.output_tensors[idx]
 
     def get_ops(self) -> list[tflite_model.Operator]:
         return [self.concat_op]
 
 
-def build_input_tensor_padding(conv_attributes, t_op, builder, input_idx=0) -> tuple[
-    Padding, (tflite_model.Operator | None)]:
+def build_input_tensor_padding(
+        o_conv_attributes, t_op, builder, input_idx=0
+) -> tuple[Padding, tflite_model.Operator | None]:
     """Build padding for input tensor of Conv/QLinearConv op 't_op'.
 
-    :param conv_attributes: Attributes of converted ONNX 'Conv' operator.
+    :param o_conv_attributes: Attributes of converted ONNX 'Conv' operator.
     :param t_op: A TFLite 'ConvXD' operator.
     :param builder: ModelBuilder object.
     :param input_idx: Padded input tensor index.
     :return: Tuple with Padding object and optional 'Pad' operator that should be prepended before 't_op' by caller.
     """
     padding, explicit_padding = translator.convert_padding(
-        conv_attributes.auto_pad,
-        conv_attributes.pads,
+        o_conv_attributes.auto_pad,
+        o_conv_attributes.pads,
         t_op.tmp_inputs[input_idx].shape.vector,
         t_op.tmp_outputs[0].shape.vector,
-        conv_attributes.kernel_shape,
-        conv_attributes.strides,
-        conv_attributes.dilations)
+        o_conv_attributes.kernel_shape,
+        o_conv_attributes.strides,
+        o_conv_attributes.dilations)
 
     if explicit_padding is not None:
         # Must add extra 'Pad' operator
@@ -285,11 +286,14 @@ def conv_op_factory(o_conv_attributes, input_tensor: tflite_model.Tensor,
     return OpsList(middle_op=conv_op)
 
 
-def create_separated_convolutions_based_on_group(o_conv_attributes: ConvAttributes, t_op: TFOperator,
-                                                 builder: ModelBuilder,
-                                                 conv_conversion_fn: ConvConversionFn,
-                                                 conv_op_factory: ConvOpFactory,
-                                                 weight_out_channels_idx: int) -> list[TFOperator]:
+def create_separated_convolutions_based_on_group(
+        o_conv_attributes: ConvAttributes,
+        t_op: TFOperator,
+        builder: ModelBuilder,
+        conv_conversion_fn: ConvConversionFn,
+        conv_op_factory_fn: ConvOpFactory,
+        weight_out_channels_idx: int
+) -> list[TFOperator]:
     """Build subgraph with multiple TFLite Conv2D/Conv3D operators that replace Conv/QLinearConv
     ONNX operator with 'group' attribute higher than one. Number of new Conv2D/Conv3D operators
     correspond to number of groups. Input tensors of ONNX operator are split and distributed
@@ -319,7 +323,7 @@ def create_separated_convolutions_based_on_group(o_conv_attributes: ConvAttribut
     :param builder: ModelBuilder instance.
     :param conv_conversion_fn: Function for conversion of Conv/QLinearConv ONNX op into its unpadded
         TFLite variant. It returns conversion metadata (IO tensors and all generated ops).
-    :param conv_op_factory: Factory function for creation of Conv2D/Conv3D TFLite operator based
+    :param conv_op_factory_fn: Factory function for creation of Conv2D/Conv3D TFLite operator based
         on provided IO tensors, attributes nad builtin_options.
     :param weight_out_channels_idx: Index of weight tensor within operator's 'tmp_inputs'.
     :return: List of TFLite operators representing subgraph.
@@ -339,8 +343,8 @@ def create_separated_convolutions_based_on_group(o_conv_attributes: ConvAttribut
         output_tensor = combiner.get_output_tensor(i)
 
         conv_builtin_options = cast(ConvBuiltinOptions, conversion_result.ops_list.middle_op.builtin_options)
-        conv_ops_list = conv_op_factory(o_conv_attributes, input_tensor, weight_tensor, bias_tensor, output_tensor,
-                                        builder, conv_builtin_options)
+        conv_ops_list = conv_op_factory_fn(o_conv_attributes, input_tensor, weight_tensor, bias_tensor, output_tensor,
+                                           builder, conv_builtin_options)
 
         conv_ops.extend(conv_ops_list.flatten())
 
