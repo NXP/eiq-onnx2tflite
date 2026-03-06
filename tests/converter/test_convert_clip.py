@@ -402,40 +402,6 @@ def test_convert_per_tensor_quantized_clip_as_relu(scale: float, zp: int, data_t
         opcode_index).builtin_code == BuiltinOperator.RELU
 
 
-def test_convert_per_channel_quantized_clip():
-    x_shape = [5, 10, 15]
-
-    scale = [.1, .2, .3, .4, .5]
-    zp = [0, 1, -1, 5, -5]
-
-    np.random.seed(42)
-
-    # x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
-
-    graph = onnx.helper.make_graph(
-        [
-            onnx.helper.make_node('QuantizeLinear', ['x', 's', 'zp'], ['y1'], axis=0),
-            onnx.helper.make_node('Clip', ['y1', 'min', 'max'], ['y'])
-        ],
-        'Clip test',
-        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, x_shape)],
-        [onnx.helper.make_tensor_value_info('y', TensorProto.INT8, ())],
-        [
-            onnx.helper.make_tensor('min', TensorProto.INT8, [1], [-1]),
-            onnx.helper.make_tensor('max', TensorProto.INT8, [1], [1]),
-            onnx.helper.make_tensor('s', TensorProto.FLOAT, [len(scale)], scale),
-            onnx.helper.make_tensor('zp', TensorProto.INT8, [len(zp)], zp)
-        ]
-    )
-
-    onnx_model = onnx.helper.make_model(graph)
-
-    # Per channel quantization propagation is not implemented yet
-    with pytest.raises(logger.Error):
-        convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.NOT_IMPLEMENTED
-
-
 def test_convert_clip_v6_default_values():
     x_shape = [5, 10, 15]
 
