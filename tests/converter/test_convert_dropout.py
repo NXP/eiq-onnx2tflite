@@ -57,7 +57,7 @@ def test_convert_dropout__not_skipped(intermediate_tflite_model_provider):
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, x_data)
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.TRANSPOSE])
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 def test_convert_dropout__with_seed_attribute():

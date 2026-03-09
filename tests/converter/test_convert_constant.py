@@ -62,8 +62,8 @@ def test_convert_constant_with_specific_types(value_type: TensorProto.DataType, 
     [[1], [10], [4, 5], [2, 3, 4, 5]],
     ids=lambda x: f"{len(x)}D"
 )
-def test_convert_constant__value_attribute__converted_to_transpose(value_type: TensorProto.DataType, shape: list[int],
-                                                                   intermediate_tflite_model_provider):
+def test_convert_constant__value_attribute__converted_to_reshape(value_type: TensorProto.DataType, shape: list[int],
+                                                                 intermediate_tflite_model_provider):
     np.random.seed(42)
     np_value = np.random.random(np.prod(shape)).astype(to_numpy_type(value_type))
     graph = onnx.helper.make_graph(
@@ -75,7 +75,7 @@ def test_convert_constant__value_attribute__converted_to_transpose(value_type: T
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, {})
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.TRANSPOSE])
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 @pytest.mark.parametrize(

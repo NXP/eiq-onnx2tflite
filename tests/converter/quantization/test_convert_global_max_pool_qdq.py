@@ -44,5 +44,5 @@ def test_convert_global_max_pool_qdq(qdq_model_global_max_pool, intermediate_tfl
 
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
         BuiltinOperator.TRANSPOSE, BuiltinOperator.QUANTIZE, BuiltinOperator.MAX_POOL_2D, BuiltinOperator.DEQUANTIZE,
-        BuiltinOperator.TRANSPOSE
+        BuiltinOperator.RESHAPE
     ])

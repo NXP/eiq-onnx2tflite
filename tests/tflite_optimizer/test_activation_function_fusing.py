@@ -164,10 +164,10 @@ def test_activation_fusing__depthwise_conv2d(activation: str, intermediate_tflit
     )
     executors.convert_run_compare(onnx_model, data)
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
-        BuiltinOperator.TRANSPOSE,
+        BuiltinOperator.RESHAPE,
         BuiltinOperator.DEPTHWISE_CONV_2D,
         # No activation function right here.
-        BuiltinOperator.TRANSPOSE
+        BuiltinOperator.RESHAPE
     ])
     ops = intermediate_tflite_model_provider.get_operators()
     # noinspection PyUnresolvedReferences
@@ -478,10 +478,10 @@ def test_activation_fusing__quantized__depthwise_conv2d(intermediate_tflite_mode
 
     executors.convert_run_compare(onnx_model, data)
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
-        BuiltinOperator.TRANSPOSE, BuiltinOperator.QUANTIZE,
+        BuiltinOperator.RESHAPE, BuiltinOperator.QUANTIZE,
         BuiltinOperator.DEPTHWISE_CONV_2D,
         # No activation function right here.
-        BuiltinOperator.DEQUANTIZE, BuiltinOperator.TRANSPOSE
+        BuiltinOperator.DEQUANTIZE, BuiltinOperator.RESHAPE
     ])
     ops = intermediate_tflite_model_provider.get_operators()
     # noinspection PyUnresolvedReferences

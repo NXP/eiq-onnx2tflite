@@ -615,4 +615,4 @@ def test_convert_clip_with_omitted_inputs(intermediate_tflite_model_provider):
     executors.convert_run_compare(onnx_model, x_data)
     ops = intermediate_tflite_model_provider.get_operators()
     assert len(ops) == 1
-    assert ops[0].builtin_options.operator_type == BuiltinOperator.TRANSPOSE  # Identity (must have at least 1 op).
+    assert ops[0].builtin_options.operator_type == BuiltinOperator.RESHAPE  # Identity (must have at least 1 op).

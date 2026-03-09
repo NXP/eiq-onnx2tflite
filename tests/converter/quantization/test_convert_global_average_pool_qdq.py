@@ -12,7 +12,7 @@ from onnx import TensorProto
 from onnx2quant.qdq_quantization import InputSpec, QDQQuantizer, RandomDataCalibrationDataReader
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options, dequantize_options, \
-    quantize_options, transpose_options
+    quantize_options, transpose_options, reshape_options
 from tests import executors
 
 
@@ -48,4 +48,4 @@ def test_convert_global_average_pool_qdq(qdq_model_global_average_pool, intermed
     assert isinstance(ops[1].builtin_options, quantize_options.Quantize)
     assert isinstance(ops[2].builtin_options, average_pool_2d_options.AveragePool2D)
     assert isinstance(ops[3].builtin_options, dequantize_options.Dequantize)
-    assert isinstance(ops[4].builtin_options, transpose_options.Transpose)
+    assert isinstance(ops[4].builtin_options, reshape_options.Reshape)

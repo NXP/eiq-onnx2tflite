@@ -13,10 +13,11 @@ import pytest
 from onnx import TensorProto
 
 from onnx2tflite.src import logger
-from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig
+from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig, ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_options
+from onnx2tflite.src.tflite_optimizer.optimizer import Optimization
 from tests import executors
 
 
@@ -292,7 +293,11 @@ def test_convert_reshape_both_io_channels_first__single_unitary_change(
         8: var_post,
     }
 
-    executors.convert_run_compare(onnx_model, input_data, atol=4e-6)
+    cc = ConversionConfig()
+    # Disable replacing optimization so Transposes stay in the model
+    cc.optimization_blacklist = [Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE]
+
+    executors.convert_run_compare(onnx_model, input_data, atol=4e-6, conversion_config=cc)
 
     assert intermediate_tflite_model_provider.get_op_count(transpose_options.Transpose) == transpose_ops_count
 
