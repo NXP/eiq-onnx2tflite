@@ -27,6 +27,12 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
         if not self.contains_quantization_nodes():
             return
 
+        # Do not run optimization for opset lower than 10.
+        # Old models tend to have initializers also in inputs collection
+        # which causes issues.
+        if self.model.ir_version < 10:
+            return
+
         # Compute consumer mapping
         tensor_consumers = defaultdict(list)
         for node in self.model.graph.node:
