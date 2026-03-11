@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `[onnx2tflite|onnx2quant]` Support for quantization and conversion of (quantized) Gelu operator
 - `[onnx2tflite]` Add optimization that replaces Transpose with input invariant permutation by Reshape
 
 

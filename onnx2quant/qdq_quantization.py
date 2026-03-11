@@ -92,6 +92,7 @@ class QDQClustersRecognizer:
         "Gather",
         "GatherND",
         "Gemm",
+        "Gelu",
         "GlobalAveragePool",
         "GlobalMaxPool",
         "Greater",
@@ -829,7 +830,7 @@ class QDQQuantizer:
         "Flatten",
         "Gather",
         "GatherND",
-        # "Gelu",
+        "Gelu",
         "Gemm",
         "GlobalAveragePool",
         "GlobalMaxPool",
@@ -908,6 +909,7 @@ class QDQQuantizer:
         QDQRegistry["Expand"] = QDQDirect8BitOp
         QDQRegistry["Flatten"] = QDQDirect8BitOp
         QDQRegistry["GatherND"] = QDQDirect8BitOp
+        QDQRegistry["Gelu"] = QDQOperatorBase
         QDQRegistry["GlobalAveragePool"] = QDQDirect8BitOp
         QDQRegistry["GlobalMaxPool"] = QDQDirect8BitOp
         QDQRegistry["Greater"] = QDQOperatorBase

@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -36,7 +36,8 @@ class GeluConverter(NodeConverter):
             logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Gelu` has invalid number of input and output tensors.")
 
         x = t_op.tmp_inputs[0]
-        self.assert_type_allowed(x.type)
+        if not t_op.is_qdq_quantized():
+            self.assert_type_allowed(x.type)
 
         o_gelu = cast(gelu_attributes.Gelu, node.attributes)
         if o_gelu.approximate == "none":
