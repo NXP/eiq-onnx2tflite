@@ -153,12 +153,12 @@ def test_remove_failure__incorrect_permutation__channels_last(intermediate_tflit
         [
             onnx.helper.make_node('MaxPool', ['input'], ['a'], kernel_shape=[1, 1]),
             onnx.helper.make_node('Reshape', ['a', 'new_shape'], ['c']),
-            onnx.helper.make_node('Transpose', ['c'], ['output'], perm=[1, 2, 0]),
+            onnx.helper.make_node('Transpose', ['c'], ['output'], perm=[2, 1, 0]),
         ],
         'Transpose cancellation test',
         [onnx.helper.make_tensor_value_info("input", TensorProto.FLOAT, input_shape)],
         [onnx.helper.make_tensor_value_info("output", TensorProto.FLOAT, [48, 196, 1])],
-        [onnx.helper.make_tensor("new_shape", TensorProto.INT64, [3], [1, 48, 196])]  # <-
+        [onnx.helper.make_tensor("new_shape", TensorProto.INT64, [3], [1, 196, 48])]  # <-
     )
 
     onnx_model = onnx.helper.make_model(graph)

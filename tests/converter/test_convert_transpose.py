@@ -193,9 +193,12 @@ def test_convert_transpose_between_channels_first_tensors(input_shape: List[int]
     input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     config = ConversionConfig()
-    # This optimization would cause the test "4D, identity" to fail, because the `Transpose` is unnecessary and gets
-    #  removed.
-    config.optimization_blacklist = [Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS]
+    # These optimizations would cause the test "4D, identity" to fail, because the 'Transpose' | 'Reshape'
+    # is unnecessary and gets removed.
+    config.optimization_blacklist = [
+        Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS,
+        Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE,
+    ]
 
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
@@ -244,9 +247,12 @@ def test_convert_transpose_from_channels_first(input_shape: List[int], perm: Lis
     input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     config = ConversionConfig()
-    # This optimization would cause the test "3D, switch C and H" to fail, because there will be an unnecessary
-    #  `Transpose` operator, which gets removed.
-    config.optimization_blacklist = [Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS]
+    # These optimizations would cause the test "3D, switch C and H" to fail, because there will be an unnecessary
+    #  'Transpose' | 'Reshape' operator, which gets removed.
+    config.optimization_blacklist = [
+        Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS,
+        Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE,
+    ]
 
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
@@ -294,9 +300,12 @@ def test_convert_transpose_to_channels_first(input_shape: List[int], perm: List[
     input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     config = ConversionConfig()
-    # This optimization would cause the test "3D, switch C and H" to fail, because there will be an unnecessary
-    #  `Transpose` operator, which gets removed.
-    config.optimization_blacklist = [Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS]
+    # These optimizations would cause the test "3D, switch C and H" to fail, because there will be an unnecessary
+    #  'Transpose' | 'Reshape' operator, which gets removed.
+    config.optimization_blacklist = [
+        Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS,
+        Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE,
+    ]
 
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 

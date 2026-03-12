@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -49,6 +49,8 @@ from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_bu
 from onnx2tflite.src.tflite_optimizer.optimizations.replace_average_pool_before_fully_connected_with_sum import (
     ReplaceAveragePoolBeforeFullyConnectedWithSum,
 )
+from onnx2tflite.src.tflite_optimizer.optimizations.replace_input_invariant_transpose_to_reshape import \
+    ReplaceInputInvariantTransposeWithReshape
 
 
 class Optimization(Enum):
@@ -71,6 +73,7 @@ class Optimization(Enum):
     COMBINE_HARD_SIGMOID_AND_MUL_INTO_HARD_SWISH = 16
     REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM = 17
     REMOVE_CANCELLING_TRANSPOSES = 18
+    REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE = 19
 
 
 class Optimizer:
@@ -119,6 +122,8 @@ class Optimizer:
             Optimization.REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM:
                 ReplaceAveragePoolBeforeFullyConnectedWithSum(builder, conversion_config),
             Optimization.REMOVE_CANCELLING_TRANSPOSES: RemoveCancellingTransposes(builder, conversion_config),
+            Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE:
+                ReplaceInputInvariantTransposeWithReshape(builder, conversion_config),
         }
 
     def optimize(self, optimization_whitelist: list[Optimization] | None = None,

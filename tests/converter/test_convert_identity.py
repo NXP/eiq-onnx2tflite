@@ -24,7 +24,7 @@ from tests import executors
         [256], [10, 20], [5, 10, 10], [2, 4, 6, 8], [2, 4, 6, 8, 10], [1, 2, 3, 4, 5, 6]
     ])
 def test_convert_identity__not_skipped(shape: list[int], intermediate_tflite_model_provider):
-    # The `Identity` will be turned to a `Transpose` operator.
+    # The `Identity` will be turned to a `Reshape` operator.
     np.random.seed(42)
     data = np.random.rand(*shape).astype(np.float32)
 
@@ -38,7 +38,7 @@ def test_convert_identity__not_skipped(shape: list[int], intermediate_tflite_mod
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, data)
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.TRANSPOSE])
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 def test_convert_identity__not_skipped__7d(intermediate_tflite_model_provider):
@@ -121,7 +121,7 @@ def test_convert_identity__inferred_data(intermediate_tflite_model_provider):
 
 
 def test_convert_identity__chain(intermediate_tflite_model_provider):
-    # The first 2 identities are skipped and the last one is turned to `Transpose`.
+    # The first 2 identities are skipped and the last one is turned to `Reshape`.
     shape = [42, 37]
 
     np.random.seed(42)
@@ -142,7 +142,7 @@ def test_convert_identity__chain(intermediate_tflite_model_provider):
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, {})
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.TRANSPOSE])
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 @pytest.mark.parametrize(
@@ -170,7 +170,7 @@ def test_convert_identity__types(type_: TensorProto.DataType, intermediate_tflit
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, data)
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.TRANSPOSE])
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 def test_convert_identity__invalid_type():

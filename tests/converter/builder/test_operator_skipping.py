@@ -127,6 +127,6 @@ def test_single_op_not_skipped(intermediate_tflite_model_provider):
 
     ops = intermediate_tflite_model_provider.get_operators()
 
-    # Make sure the model contains just 1 Transpose operator.
+    # Make sure the model contains just 1 Reshape operator.
     assert len(ops) == 1
-    assert ops[0].builtin_options.operator_type == BuiltinOperator.TRANSPOSE
+    assert ops[0].builtin_options.operator_type == BuiltinOperator.RESHAPE

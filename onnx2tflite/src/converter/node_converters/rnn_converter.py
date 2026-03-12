@@ -367,7 +367,8 @@ class RNNConverter(NodeConverter):
         # Since there are some optimizations for Transpose operators already implemented, I decided to go with the first
         #  option. If you believe some different solution is better, please let me know.
         reshape_op = self.builder.create_reshape_after(t_op, 0, [seq_length, batch_size, 2, hidden_size])
-        transpose_op = self.builder.create_transpose_operator_after(reshape_op, 0, [0, 2, 1, 3])
+        transpose_op = self.builder.create_transpose_operator_after(reshape_op, 0, [0, 2, 1, 3],
+                                                                    keep_output_shape=False)
 
         # The Reshape and Transpose must come before any other operators added after the RNN.
         ops.post_ops = [reshape_op, transpose_op] + ops.post_ops

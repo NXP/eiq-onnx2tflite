@@ -17,6 +17,7 @@ from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_options
+from onnx2tflite.src.tflite_optimizer.optimizer import Optimization
 from tests import executors
 
 
@@ -337,7 +338,11 @@ def test_convert_squeeze_with_channel_last_input_output(input_shape, axes, trans
 
     input_data = np.linspace(0., 1., math.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
-    executors.convert_run_compare(model, input_data)
+    cc = ConversionConfig()
+    # Disable replacing optimization so Transposes stay in the model
+    cc.optimization_blacklist = [Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE]
+
+    executors.convert_run_compare(model, input_data, conversion_config=cc)
 
     assert intermediate_tflite_model_provider.get_op_count(transpose_options.Transpose) == transpose_ops_count
 

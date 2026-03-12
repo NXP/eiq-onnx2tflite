@@ -68,7 +68,7 @@ def test_convert_max__1_input_not_skipped(shape: list[int], intermediate_tflite_
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, data)
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.TRANSPOSE])
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 @pytest.mark.parametrize(
