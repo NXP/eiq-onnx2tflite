@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `[onnx2tflite|onnx2quant]` Support for quantization and conversion of (quantized) Gelu operator
 - `[onnx2tflite]` Add optimization that replaces Transpose with input invariant permutation by Reshape
 - `[onnx2tflite]` Do not add unnecessary Transpose or Reshape ops for broadcasted tensors when possible
-
+- `[onnx2tflite]` Conversion of 1D QLinearConv, quantized Gelu and IsNaN operators
+- `[onnx2quant]` Support for Gelu QDQ quantization
 
 ## [0.9.0] - 2026-02-06
 
