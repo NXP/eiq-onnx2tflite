@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024,2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -1216,13 +1216,15 @@ class ModelBuilder:
         output_rank = output_shape.len()
 
         for input_tensor in t_op.tmp_inputs:
-
             if input_tensor.shape != main_output.shape:
                 if tensor_has_data(input_tensor):
                     # Replace the static input with one with a corrected shape.
                     x = self.prepare_static_tensor_for_correct_broadcasting_with_channels_first_tensors(input_tensor,
                                                                                                         output_rank)
                     new_tmp_inputs.append(x)
+                elif len(input_tensor.shape.vector) == 0 or input_tensor.shape.vector == [1]:
+                    # Dynamic unitary tensor -> we can skip Reshape + Transpose
+                    new_tmp_inputs.append(input_tensor)
                 else:
                     # Prepend Reshape and Transpose
                     ops = self.prepare_dynamic_tensor_for_correct_broadcasting_with_channels_first_tensors(input_tensor,
