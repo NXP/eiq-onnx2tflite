@@ -31,7 +31,7 @@ from onnx2tflite.src.tflite_generator import tflite_model
 MINIMUM_REQUIRED_OPSET = 7
 
 # A warning message will be printed for models with a higher opset.
-MAXIMUM_VERIFIED_OPSET = 22  # Corresponding to ONNX 1.17.
+MAXIMUM_VERIFIED_OPSET = 25  # Corresponding to ONNX 1.20.1
 
 
 def _assert_supported_opset(model: onnx_model.ModelProto, conversion_context: ConversionContext) -> None:
