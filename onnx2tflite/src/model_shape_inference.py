@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -175,9 +175,11 @@ class ModelShapeInference(SymbolicShapeInference):
         axis = get_attribute(node, "axis", -1)
         axis = handle_negative_axis(axis, len(sympy_shape) + 1)
         new_shape = get_shape_from_sympy_shape(
-            sympy_shape[:axis]
-            + [self._new_symbolic_dim_from_output(node) if not is_literal(depth) else depth]
-            + sympy_shape[axis:]
+            [
+                *sympy_shape[:axis],
+                self._new_symbolic_dim_from_output(node) if not is_literal(depth) else depth,
+                *sympy_shape[axis:],
+            ]
         )
         vi = self.known_vi_[node.output[0]]
         vi.CopyFrom(
