@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -47,7 +47,7 @@ def test_too_high_opset():
     )
     onnx_model = onnx.helper.make_model(
         graph,
-        opset_imports=[onnx.helper.make_opsetid(domain="", version=23)]  # Opset 23.
+        opset_imports=[onnx.helper.make_opsetid(domain="", version=26)]  # Opset 26.
     )
 
     with pytest.raises(logger.Error):
@@ -55,5 +55,5 @@ def test_too_high_opset():
 
     log = logger.conversion_log.get_logs()['operator_conversion'][0]
     assert log['error_code'] == logger.Code.NOT_IMPLEMENTED
-    assert 'opset > 22 is not guaranteed' in log['message']
+    assert 'opset > 25 is not guaranteed' in log['message']
     assert '--skip-opset-version-check' in log['message']

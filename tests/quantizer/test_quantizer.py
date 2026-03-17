@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -138,7 +138,7 @@ def test_cmd_dataset_size_not_correspond():
 
 
 def test_quantizer_via_code():
-    model_path = os.path.join(_ROOT_DIR, "tests", "artifacts", "downloaded", "mnist-8", "model.onnx")
+    model_path = os.path.join(_ROOT_DIR, "tests", "artifacts", "downloaded", "mnist-12", "model.onnx")
     model = onnx.load_model(model_path)
     with randomCalibrationDataset((1, 1, 28, 28), items_count=10) as dataset_dir:
         args = {

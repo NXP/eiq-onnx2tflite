@@ -1560,16 +1560,16 @@ ONNX_ZOO_MODELS = {
 # Make sure you have downloaded model in advance with script "tests/download_models.py"
 ONNX_ZOO_MODELS_QUANTIZABLE = {
     # Vision Models:
-    # "bvlcalexnet-7": {},  # QDQ: Old dropout spec error
-    # "bvlcalexnet-8": {},  # QDQ: Old dropout spec error
-    # "bvlcalexnet-9": {},  # QDQ: Old dropout spec error
+    "bvlcalexnet-7": {},
+    "bvlcalexnet-8": {},
+    "bvlcalexnet-9": {},
     "bvlcalexnet-12": {"atol": 0.004, "marks": [pytest.mark.slow]},
-    # "caffenet-7": {},  # QDQ: Old dropout spec error
-    # "caffenet-8": {},  # QDQ: Old dropout spec error
-    # "caffenet-9": {},  # QDQ: Old dropout spec error
+    "caffenet-7": {},
+    "caffenet-8": {},
+    "caffenet-9": {},
     "caffenet-12": {"marks": [pytest.mark.slow]},
-    "emotion-ferplus-7": {CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
-    "emotion-ferplus-8": {CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    # "emotion-ferplus-7": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvAddFusion_Add_B_Parameter4 is undefined!
+    # "emotion-ferplus-8": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvAddFusion_Add_B_Parameter4 is undefined!
     # "googlenet-7": {}, #TODO model calibration fails
     # "googlenet-8": {}, #TODO model calibration fails
     # "googlenet-9": {}, #TODO model calibration fails
@@ -1578,22 +1578,20 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "inception-v1-8": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "inception-v1-9": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "inception-v1-12": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
-    "inception-v2-7": {"atol": 0.012, "marks": [pytest.mark.slow]},
-    "inception-v2-8": {"atol": 0.016, "marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
-    "inception-v2-9": {"atol": 0.008, "marks": [pytest.mark.slow]},
-    # Following models (mnist-*) produce zero error when running with ReferenceEvaluator and ONNX 1.16.*
-    # Models must be upgraded to opset 19+ with "version_converter.convert_version(onnx_model, 20)".
-    "mnist-7": {"atol": 0.014, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
-    "mnist-8": {"atol": 0.014, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    # "inception-v2-7": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvMulFusion_W_ConvBnFusion_W_conv1/7x7_s2_w_0 is undefined!
+    # "inception-v2-8": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvMulFusion_W_ConvBnFusion_W_conv1/7x7_s2_w_0 is undefined!
+    # "inception-v2-9": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvMulFusion_W_ConvBnFusion_W_conv1/7x7_s2_w_0 is undefined!
+    # "mnist-7": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvAddFusion_Add_B_Parameter6 is undefined!
+    # "mnist-8": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvAddFusion_Add_B_Parameter6 is undefined!
     "mnist-12": {},
-    # "rcnn-ilsvrc13-7": {},  # QDQ: Old dropout spec error
-    # "rcnn-ilsvrc13-8": {},  # QDQ: Old dropout spec error
-    # "rcnn-ilsvrc13-9": {},  # QDQ: Old dropout spec error
-    "ResNet101-DUC-7": {"marks": [pytest.mark.slow]},
+    "rcnn-ilsvrc13-7": {},
+    "rcnn-ilsvrc13-8": {},
+    "rcnn-ilsvrc13-9": {},
+    # "ResNet101-DUC-7": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_conv1_1_3x3_s2_weight is undefined!
     "ResNet101-DUC-12": {"marks": [pytest.mark.slow]},
-    "resnet50-caffe2-v1-7": {"atol": 0.004, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
-    "resnet50-caffe2-v1-8": {"atol": 0.004, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
-    "resnet50-caffe2-v1-9": {"atol": 0.004, CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    # "resnet50-caffe2-v1-7": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_gpu_0/conv1_w_0 is undefined!
+    # "resnet50-caffe2-v1-8": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_gpu_0/conv1_w_0 is undefined!
+    # "resnet50-caffe2-v1-9": {}, # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_gpu_0/conv1_w_0 is undefined!
     # "shufflenet-7": {}, # Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "shufflenet-8": {}, # Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "shufflenet-9": {}, # Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
@@ -1605,9 +1603,9 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "ultraface-version-RFB-640": {},  # QDQ: Old Slice spec error (shape inference error)
     "vgg16-7": {"atol": 0.15, "marks": [pytest.mark.slow]},
     "vgg16-12": {"atol": 0.15, "marks": [pytest.mark.slow]},
-    "vgg16-bn-7": {"atol": 0.47, "marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    # "vgg16-bn-7": {}, # # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_vgg0_conv0_weight is undefined!
     "vgg19-7": {"atol": 0.25, "marks": [pytest.mark.slow]},
-    "vgg19-bn-7": {"atol": 0.2, "marks": [pytest.mark.slow]}, # [AIR-10034] MatMul + Add optimization decreases error of this model
+    # "vgg19-bn-7": {}, # # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_vgg0_conv0_weight is undefined!
     # "vgg19-caffe2-7": {"atol": 1.3e-6},  # Old dropout spec error
     # "vgg19-caffe2-8": {},  # QDQ: Old dropout spec error
     # "vgg19-caffe2-9": {},  # QDQ: Old dropout spec error

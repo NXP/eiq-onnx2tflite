@@ -1,5 +1,5 @@
 #
-# Copyright 2023 NXP
+# Copyright 2023,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -129,4 +129,4 @@ def test_convert_constant_with_complex_type():
 
     with pytest.raises(logger.Error):
         convert_model(onnx_model)
-    assert logger.conversion_log.get_logs()["shape_inference"][0]["error_code"] == logger.Code.SHAPE_INFERENCE_ERROR
+    assert logger.conversion_log.get_logs()["onnx_parser"][0]["error_code"] == logger.Code.UNSUPPORTED_OPERATOR
