@@ -40,6 +40,8 @@ def invalid_onnx_operator(message: str, node_idx: int = 0):
     return get_error_dict(logger.Code.INVALID_ONNX_OPERATOR, message, node_idx)
 
 
+# @formatter:off
+
 NODE = {
     "test_abs": {},
     # "test_acos": {},
@@ -78,53 +80,37 @@ NODE = {
     "test_and_bcast4v3d": {},
     "test_and_bcast4v4d": {},
     "test_argmax_default_axis_example": {},
-    "test_argmax_default_axis_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_default_axis_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_default_axis_random": {},
-    "test_argmax_default_axis_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_default_axis_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_keepdims_example": {},
-    "test_argmax_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_keepdims_random": {},
-    "test_argmax_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_negative_axis_keepdims_example": {},
-    "test_argmax_negative_axis_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_negative_axis_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_negative_axis_keepdims_random": {},
-    "test_argmax_negative_axis_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_negative_axis_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_no_keepdims_example": {},
-    "test_argmax_no_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_no_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmax_no_keepdims_random": {},
-    "test_argmax_no_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
+    "test_argmax_no_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMax` with `select_last_index=1` is not possible.')},
     "test_argmin_default_axis_example": {},
-    "test_argmin_default_axis_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_default_axis_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_default_axis_random": {},
-    "test_argmin_default_axis_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_default_axis_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_keepdims_example": {},
-    "test_argmin_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_keepdims_random": {},
-    "test_argmin_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_negative_axis_keepdims_example": {},
-    "test_argmin_negative_axis_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_negative_axis_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_negative_axis_keepdims_random": {},
-    "test_argmin_negative_axis_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_negative_axis_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_no_keepdims_example": {},
-    "test_argmin_no_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_no_keepdims_example_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     "test_argmin_no_keepdims_random": {},
-    "test_argmin_no_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
+    "test_argmin_no_keepdims_random_select_last_index": {CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ArgMin` with `select_last_index=1` is not possible.')},
     # "test_asin": {},
     # "test_asin_example": {},
     # "test_asinh": {},
@@ -134,20 +120,16 @@ NODE = {
     # "test_atanh": {},
     # "test_atanh_example": {},
     "test_averagepool_1d_default": {},
-    "test_averagepool_2d_ceil": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX AveragePool with 'ceil_mode' = 1 and 'count_include_pad' = 0 is not possible.")},
+    "test_averagepool_2d_ceil": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX AveragePool with 'ceil_mode' = 1 and 'count_include_pad' = 0 is not possible.")},
     "test_averagepool_2d_default": {COMPARISON_ARGS: {"atol": 1e-7}},
-    "test_averagepool_2d_dilations": {CONVERSION_ERROR: not_implemented(
-        "Conversion of ONNX AveragePool with dilations '[2, 2]' is not yet implemented.")},
-    "test_averagepool_2d_pads": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!")},
+    "test_averagepool_2d_dilations": {CONVERSION_ERROR: not_implemented("Conversion of ONNX AveragePool with dilations '[2, 2]' is not yet implemented.")},
+    "test_averagepool_2d_pads": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!")},
     "test_averagepool_2d_pads_count_include_pad": {COMPARISON_ARGS: {"atol": 1e-7}},
     "test_averagepool_2d_precomputed_pads": {},
     "test_averagepool_2d_precomputed_pads_count_include_pad": {},
     "test_averagepool_2d_precomputed_same_upper": {},
     "test_averagepool_2d_precomputed_strides": {},
-    "test_averagepool_2d_same_lower": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!")},
+    "test_averagepool_2d_same_lower": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!")},
     "test_averagepool_2d_same_upper": {COMPARISON_ARGS: {"atol": 1e-7}},
     "test_averagepool_2d_strides": {COMPARISON_ARGS: {"atol": 1e-7}},
     # "test_averagepool_3d_default": {},
@@ -337,15 +319,9 @@ NODE = {
     "test_concat_3d_axis_negative_2": {},
     "test_concat_3d_axis_negative_3": {},
     "test_constant": {},
-    "test_constant_pad": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
-    "test_constant_pad_axes": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
-    "test_constant_pad_negative_axes": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
+    "test_constant_pad": { CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
+    "test_constant_pad_axes": { CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
+    "test_constant_pad_negative_axes": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
     "test_constantofshape_float_ones": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     # "test_constantofshape_int_shape_zero": {},
     "test_constantofshape_int_zeros": {CONVERSION_ARGS: {"skip_shape_inference": True}},
@@ -370,36 +346,24 @@ NODE = {
     "test_cos_example": {},
     # "test_cosh": {},
     # "test_cosh_example": {},
-    "test_cumsum_1d": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
-    "test_cumsum_1d_exclusive": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
-    "test_cumsum_1d_reverse": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
-    "test_cumsum_1d_reverse_exclusive": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
-    "test_cumsum_2d_axis_0": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
-    "test_cumsum_2d_axis_1": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
-    "test_cumsum_2d_negative_axis": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_1d": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_1d_exclusive": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_1d_reverse": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_1d_reverse_exclusive": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_2d_axis_0": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_2d_axis_1": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
+    "test_cumsum_2d_negative_axis": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
     # "test_deform_conv_with_mask_bias": {},
     # "test_deform_conv_with_multiple_offset_groups": {},
-    "test_depthtospace_crd_mode_example": {CONVERSION_ERROR: not_implemented(
-        "Conversion of ONNX `DepthToSpace` with `mode=CRD` is not yet supported.")},
+    "test_depthtospace_crd_mode_example": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `DepthToSpace` with `mode=CRD` is not yet supported.")},
     "test_depthtospace_example": {},
-    "test_dequantizelinear": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
-    "test_dequantizelinear_axis": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
+    "test_dequantizelinear": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
+    "test_dequantizelinear_axis": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
     # "test_dequantizelinear_blocked": {},
-    "test_dequantizelinear_e4m3fn": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
+    "test_dequantizelinear_e4m3fn": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
     # "test_dequantizelinear_e4m3fn_float16": {},
     # "test_dequantizelinear_e4m3fn_zero_point": {},
-    "test_dequantizelinear_e5m2": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
+    "test_dequantizelinear_e5m2": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
     # "test_dequantizelinear_int4": {},
     # "test_dequantizelinear_int16": {},
     # "test_dequantizelinear_uint4": {},
@@ -417,10 +381,8 @@ NODE = {
     "test_div_example": {},
     # "test_div_uint8": {},  # ONNXRT Not implemented in ONNX Runtime
     "test_dropout_default": {},
-    "test_dropout_default_mask": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with more than 1 output is not possible.")},
-    "test_dropout_default_mask_ratio": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with more than 1 output is not possible.")},
+    "test_dropout_default_mask": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with more than 1 output is not possible.")},
+    "test_dropout_default_mask_ratio": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with more than 1 output is not possible.")},
     "test_dropout_default_old": {},
     "test_dropout_default_ratio": {},
     "test_dropout_random_old": {},
@@ -430,21 +392,16 @@ NODE = {
     # "test_dynamicquantizelinear_max_adjusted_expanded": {},
     # "test_dynamicquantizelinear_min_adjusted": {},
     # "test_dynamicquantizelinear_min_adjusted_expanded": {},
-    "test_edge_pad": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
-    "test_einsum_batch_diagonal": {CONVERSION_ARGS: {"allow_select_ops": True}, CONVERSION_ERROR: not_implemented(
-        'Conversion of ONNX `Einsum` with ellipsis ("...") in the equation is not yet supported.')},
+    "test_edge_pad": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
+    "test_einsum_batch_diagonal": {CONVERSION_ARGS: {"allow_select_ops": True}, CONVERSION_ERROR: not_implemented('Conversion of ONNX `Einsum` with ellipsis ("...") in the equation is not yet supported.')},
     "test_einsum_batch_matmul": {CONVERSION_ARGS: {"allow_select_ops": True}},
     "test_einsum_inner_prod": {CONVERSION_ARGS: {"allow_select_ops": True}},
     "test_einsum_sum": {CONVERSION_ARGS: {"allow_select_ops": True}},
     "test_einsum_transpose": {CONVERSION_ARGS: {"allow_select_ops": True}},
-    "test_elu": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: not_implemented(
-        'Conversion of ONNX `Elu` with `alpha=2.0` is not supported.')},
+    "test_elu": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: not_implemented('Conversion of ONNX `Elu` with `alpha=2.0` is not supported.')},
     "test_elu_default": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     # "test_elu_default_expanded_ver18": {},  # Expanded (CastLike...)
-    "test_elu_example": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: not_implemented(
-        'Conversion of ONNX `Elu` with `alpha=2.0` is not supported.')},
+    "test_elu_example": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: not_implemented('Conversion of ONNX `Elu` with `alpha=2.0` is not supported.')},
     # "test_elu_example_expanded_ver18": {},  # Expanded (CastLike...)
     # "test_elu_expanded_ver18": {},  # Expanded (CastLike...)
     "test_equal": {},
@@ -479,11 +436,7 @@ NODE = {
     # "test_gather_negative_indices": {},
     "test_gathernd_example_float32": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}},
     "test_gathernd_example_int32": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}},
-    "test_gathernd_example_int32_batch_dim1": {
-        CONVERSION_ARGS: {"guarantee_non_negative_indices": True},
-        CONVERSION_ERROR: conversion_impossible(
-            'Conversion of ONNX `GatherND` with `batch_dims != 0` is not supported.')
-    },
+    "test_gathernd_example_int32_batch_dim1": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}, CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `GatherND` with `batch_dims != 0` is not supported.')},
     "test_gelu_default_1": {},
     # "test_gelu_default_1_expanded": {},  # Doesn't use Gelu.
     "test_gelu_default_2": {COMPARISON_ARGS: {"atol": 2.4e-7}},
@@ -698,33 +651,20 @@ NODE = {
     "test_matmul_3d": {},
     "test_matmul_4d": {},
     # "test_matmulinteger": {},
-    "test_max_example": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Max` with more than 2 inputs is not yet implemented.")},
-    "test_max_float16": {
-        CONVERSION_ERROR: conversion_impossible(
-            "Conversion of the ONNX operator `Max` with type `FLOAT16`, is not possible.")},
+    "test_max_example": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Max` with more than 2 inputs is not yet implemented.")},
+    "test_max_float16": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Max` with type `FLOAT16`, is not possible.")},
     "test_max_float32": {},
-    "test_max_float64": {
-        CONVERSION_ERROR: conversion_impossible(
-            "Conversion of the ONNX operator `Max` with type `FLOAT64`, is not possible.")},
-    "test_max_int8": {
-        CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Max` with type `INT8`, is not supported.")},
-    "test_max_int16": {CONVERSION_ERROR: not_implemented(
-        "Conversion of the ONNX operator `Max` with type `INT16`, is not supported.")},
+    "test_max_float64": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Max` with type `FLOAT64`, is not possible.")},
+    "test_max_int8": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Max` with type `INT8`, is not supported.")},
+    "test_max_int16": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Max` with type `INT16`, is not supported.")},
     "test_max_int32": {},
     "test_max_int64": {},
     "test_max_one_input": {},
     "test_max_two_inputs": {},
-    "test_max_uint8": {CONVERSION_ERROR: not_implemented(
-        "Conversion of the ONNX operator `Max` with type `UINT8`, is not supported.")},
-    "test_max_uint16": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `Max` with type `UINT16`, is not possible.")},
-    "test_max_uint32": {
-        CONVERSION_ERROR: conversion_impossible(
-            "Conversion of the ONNX operator `Max` with type `UINT32`, is not possible.")},
-    "test_max_uint64": {
-        CONVERSION_ERROR: conversion_impossible(
-            "Conversion of the ONNX operator `Max` with type `UINT64`, is not possible.")},
+    "test_max_uint8": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Max` with type `UINT8`, is not supported.")},
+    "test_max_uint16": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Max` with type `UINT16`, is not possible.")},
+    "test_max_uint32": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Max` with type `UINT32`, is not possible.")},
+    "test_max_uint64": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Max` with type `UINT64`, is not possible.")},
     "test_maxpool_1d_default": {},
     # "test_maxpool_2d_ceil": {},
     # "test_maxpool_2d_ceil_output_size_reduce_by_one": {},
@@ -750,62 +690,41 @@ NODE = {
     # "test_mean_one_input": {},
     # "test_mean_two_inputs": {},
     # "test_melweightmatrix": {},
-    "test_min_example": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Min` with more than 2 inputs is not yet implemented.")},
-    "test_min_float16": {
-        CONVERSION_ERROR: conversion_impossible(
-            "Conversion of the ONNX operator `Min` with type `FLOAT16`, is not possible.")},
+    "test_min_example": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Min` with more than 2 inputs is not yet implemented.")},
+    "test_min_float16": {CONVERSION_ERROR: conversion_impossible(    "Conversion of the ONNX operator `Min` with type `FLOAT16`, is not possible.")},
     "test_min_float32": {},
-    "test_min_float64": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `Min` with type `FLOAT64`, is not possible.")},
-    "test_min_int8": {CONVERSION_ERROR: not_implemented(
-        "Conversion of the ONNX operator `Min` with type `INT8`, is not supported.")},
-    "test_min_int16": {CONVERSION_ERROR: not_implemented(
-        "Conversion of the ONNX operator `Min` with type `INT16`, is not supported.")},
+    "test_min_float64": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Min` with type `FLOAT64`, is not possible.")},
+    "test_min_int8": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Min` with type `INT8`, is not supported.")},
+    "test_min_int16": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Min` with type `INT16`, is not supported.")},
     "test_min_int32": {},
     "test_min_int64": {},
     "test_min_one_input": {},
     "test_min_two_inputs": {},
-    "test_min_uint8": {CONVERSION_ERROR: not_implemented(
-        "Conversion of the ONNX operator `Min` with type `UINT8`, is not supported.")},
-    "test_min_uint16": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `Min` with type `UINT16`, is not possible.")},
-    "test_min_uint32": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `Min` with type `UINT32`, is not possible.")},
-    "test_min_uint64": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `Min` with type `UINT64`, is not possible.")},
+    "test_min_uint8": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Min` with type `UINT8`, is not supported.")},
+    "test_min_uint16": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Min` with type `UINT16`, is not possible.")},
+    "test_min_uint32": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Min` with type `UINT32`, is not possible.")},
+    "test_min_uint64": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Min` with type `UINT64`, is not possible.")},
     # "test_mish": {},
     # "test_mish_expanded": {},
     "test_mod_broadcast": {},
-    "test_mod_int64_fmod": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
-    "test_mod_mixed_sign_float16": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
-    "test_mod_mixed_sign_float32": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
-    "test_mod_mixed_sign_float64": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
-    "test_mod_mixed_sign_int8": {
-        CONVERSION_ERROR: not_implemented('Conversion of the ONNX operator `Mod` with type `INT8`, is not supported.')},
-    "test_mod_mixed_sign_int16": {CONVERSION_ERROR: not_implemented(
-        'Conversion of the ONNX operator `Mod` with type `INT16`, is not supported.')},
+    "test_mod_int64_fmod": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
+    "test_mod_mixed_sign_float16": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
+    "test_mod_mixed_sign_float32": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
+    "test_mod_mixed_sign_float64": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `Mod` with `fmod=1` is not supported.')},
+    "test_mod_mixed_sign_int8": {CONVERSION_ERROR: not_implemented('Conversion of the ONNX operator `Mod` with type `INT8`, is not supported.')},
+    "test_mod_mixed_sign_int16": {CONVERSION_ERROR: not_implemented('Conversion of the ONNX operator `Mod` with type `INT16`, is not supported.')},
     "test_mod_mixed_sign_int32": {},
     "test_mod_mixed_sign_int64": {},
-    "test_mod_uint8": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of the ONNX operator `Mod` with type `UINT8`, is not possible.')},
-    "test_mod_uint16": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of the ONNX operator `Mod` with type `UINT16`, is not possible.')},
-    "test_mod_uint32": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of the ONNX operator `Mod` with type `UINT32`, is not possible.')},
-    "test_mod_uint64": {CONVERSION_ERROR: conversion_impossible(
-        'Conversion of the ONNX operator `Mod` with type `UINT64`, is not possible.')},
+    "test_mod_uint8": {CONVERSION_ERROR: conversion_impossible('Conversion of the ONNX operator `Mod` with type `UINT8`, is not possible.')},
+    "test_mod_uint16": {CONVERSION_ERROR: conversion_impossible('Conversion of the ONNX operator `Mod` with type `UINT16`, is not possible.')},
+    "test_mod_uint32": {CONVERSION_ERROR: conversion_impossible('Conversion of the ONNX operator `Mod` with type `UINT32`, is not possible.')},
+    "test_mod_uint64": {CONVERSION_ERROR: conversion_impossible('Conversion of the ONNX operator `Mod` with type `UINT64`, is not possible.')},
     # "test_momentum": {},
     # "test_momentum_multiple": {},
     "test_mul": {},
     "test_mul_bcast": {},
     "test_mul_example": {},
-    "test_mul_uint8": {CONVERSION_ERROR: not_implemented(
-        "Conversion of the ONNX operator `Mul` with type `UINT8`, is not supported.")},
+    "test_mul_uint8": {CONVERSION_ERROR: not_implemented("Conversion of the ONNX operator `Mul` with type `UINT8`, is not supported.")},
     # "test_mvn": {},
     "test_mvn_expanded": {},
     "test_mvn_expanded_ver18": {},
@@ -861,21 +780,10 @@ NODE = {
     "test_not_2d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_not_3d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_not_4d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_onehot_negative_indices": {
-        CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-        CONVERSION_ERROR: not_implemented(
-            "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
-    "test_onehot_with_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-                              CONVERSION_ERROR: not_implemented(
-                                  "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
-    "test_onehot_with_negative_axis": {
-        CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-        CONVERSION_ERROR: not_implemented(
-            "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
-    "test_onehot_without_axis": {
-        CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},
-        CONVERSION_ERROR: not_implemented(
-            "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_negative_indices": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_with_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True},CONVERSION_ERROR: not_implemented("Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_with_negative_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
+    "test_onehot_without_axis": {CONVERSION_ARGS: {"skip_shape_inference": True, "guarantee_non_negative_indices": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")},
     # "test_optional_get_element_optional_sequence": {},
     # "test_optional_get_element_optional_tensor": {},
     # "test_optional_get_element_sequence": {},
@@ -899,28 +807,19 @@ NODE = {
     "test_pow_bcast_array": {},
     "test_pow_bcast_scalar": {},
     "test_pow_example": {},
-    "test_pow_types_float32_int32": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
-    "test_pow_types_float32_int64": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
-    "test_pow_types_float32_uint32": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
-    "test_pow_types_float32_uint64": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
-    "test_pow_types_int32_float32": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
-    "test_pow_types_int32_int32": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because the power values at runtime could be negative, which is not supported by TFLite.")},
-    "test_pow_types_int64_float32": {
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
-    "test_pow_types_int64_int64": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of the ONNX operator `Pow` with type `INT64`, is not possible.")},
+    "test_pow_types_float32_int32": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
+    "test_pow_types_float32_int64": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
+    "test_pow_types_float32_uint32": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
+    "test_pow_types_float32_uint64": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
+    "test_pow_types_int32_float32": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
+    "test_pow_types_int32_int32": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because the power values at runtime could be negative, which is not supported by TFLite.")},
+    "test_pow_types_int64_float32": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `Pow` with non-matching input types is not supported.")},
+    "test_pow_types_int64_int64": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `Pow` with type `INT64`, is not possible.")},
     "test_prelu_broadcast": {},
     # "test_prelu_broadcast_expanded": {},
     "test_prelu_example": {},
     # "test_prelu_example_expanded": {},
-    "test_qlinearconv": {CONVERSION_ERROR: not_implemented(
-        "Conversion of ONNX quantized operators is only supported when the quantization parameters are static!")},
+    "test_qlinearconv": {CONVERSION_ERROR: not_implemented("Conversion of ONNX quantized operators is only supported when the quantization parameters are static!")},
     # "test_qlinearmatmul_2D_int8_float16": {},
     # "test_qlinearmatmul_2D_int8_float32": {},
     # "test_qlinearmatmul_2D_uint8_float16": {},
@@ -963,7 +862,6 @@ NODE = {
     # "test_reduce_l1_negative_axes_keep_dims_example_expanded": {},
     # "test_reduce_l1_negative_axes_keep_dims_random": {},
     # "test_reduce_l1_negative_axes_keep_dims_random_expanded": {},
-
     # These tests fail, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this
     #  edge case, so only a warning is printed.
     # "test_reduce_l2_default_axes_keepdims_example": {},
@@ -984,7 +882,6 @@ NODE = {
     # "test_reduce_l2_negative_axes_keep_dims_example_expanded": {},
     "test_reduce_l2_negative_axes_keep_dims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     # "test_reduce_l2_negative_axes_keep_dims_random_expanded": {},
-
     # "test_reduce_log_sum_asc_axes": {},
     # "test_reduce_log_sum_asc_axes_expanded": {},
     # "test_reduce_log_sum_default": {},
@@ -1013,11 +910,7 @@ NODE = {
     # "test_reduce_log_sum_exp_negative_axes_keepdims_random_expanded": {},
     # "test_reduce_log_sum_negative_axes": {},
     # "test_reduce_log_sum_negative_axes_expanded": {},
-
-    "test_reduce_max_bool_inputs": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ReduceMax` with type BOOL is not possible.')
-    },
+    "test_reduce_max_bool_inputs": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: conversion_impossible('Conversion of ONNX `ReduceMax` with type BOOL is not possible.')},
     "test_reduce_max_default_axes_keepdim_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_max_default_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_max_do_not_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
@@ -1026,10 +919,7 @@ NODE = {
     "test_reduce_max_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_max_negative_axes_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_max_negative_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-
-    # These 2 tests fail, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this
-    #  edge case, so only a warning is printed.
-    # "test_reduce_mean_default_axes_keepdims_example": {},
+    # "test_reduce_mean_default_axes_keepdims_example": {}, These 2 tests fail, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this edge case, so only a warning is printed.
     # "test_reduce_mean_default_axes_keepdims_random": {},
     "test_reduce_mean_do_not_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_mean_do_not_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
@@ -1042,14 +932,11 @@ NODE = {
     "test_reduce_min_default_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_min_do_not_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_min_do_not_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-    # This test fails, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this
-    #  edge case, so only a warning is printed.
-    # "test_reduce_min_empty_set": {},
+    # "test_reduce_min_empty_set": {}, This test fails, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this edge case, so only a warning is printed.
     "test_reduce_min_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_min_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_min_negative_axes_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_min_negative_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-
     "test_reduce_prod_default_axes_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_prod_default_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_prod_do_not_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
@@ -1059,24 +946,18 @@ NODE = {
     "test_reduce_prod_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_prod_negative_axes_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_prod_negative_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-
-    # These 2 tests fail, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this
-    #  edge case, so only a warning is printed.
-    # "test_reduce_sum_default_axes_keepdims_example": {},
+    # "test_reduce_sum_default_axes_keepdims_example": {}, These 2 tests fail, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this edge case, so only a warning is printed.
     # "test_reduce_sum_default_axes_keepdims_random": {},
     "test_reduce_sum_do_not_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_do_not_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_empty_axes_input_noop": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_empty_axes_input_noop_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_empty_set": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-    # This test fails, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this
-    #  edge case, so only a warning is printed.
-    # "test_reduce_sum_empty_set_non_reduced_axis_zero": {},
+    # "test_reduce_sum_empty_set_non_reduced_axis_zero": {}, # This test fails, because the `axes` are dynamic and contain no data at runtime. Converter cannot detect this edge case, so only a warning is printed.
     "test_reduce_sum_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_negative_axes_keepdims_example": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reduce_sum_negative_axes_keepdims_random": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-
     # "test_reduce_sum_square_default_axes_keepdims_example": {},
     # "test_reduce_sum_square_default_axes_keepdims_example_expanded": {},
     # "test_reduce_sum_square_default_axes_keepdims_random": {},
@@ -1095,9 +976,7 @@ NODE = {
     # "test_reduce_sum_square_negative_axes_keepdims_example_expanded": {},
     # "test_reduce_sum_square_negative_axes_keepdims_random": {},
     # "test_reduce_sum_square_negative_axes_keepdims_random_expanded": {},
-    "test_reflect_pad": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
+    "test_reflect_pad": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
     # "test_regex_full_match_basic": {},
     # "test_regex_full_match_email_domain": {},
     # "test_regex_full_match_empty": {},
@@ -1113,9 +992,7 @@ NODE = {
     "test_reshape_reordered_last_dims": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reshape_zero_and_negative_dim": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_reshape_zero_dim": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-
-    # ---- All the `Resize` tests fail for various reasons. All are correctly identified by the converter. ----
-    # "test_resize_downsample_scales_cubic": {},
+    # "test_resize_downsample_scales_cubic": {}, # ---- All the `Resize` tests fail for various reasons. All are correctly identified by the converter. ----
     # "test_resize_downsample_scales_cubic_A_n0p5_exclude_outside": {},
     # "test_resize_downsample_scales_cubic_align_corners": {},
     # "test_resize_downsample_scales_cubic_antialias": {},
@@ -1154,7 +1031,6 @@ NODE = {
     # "test_resize_upsample_sizes_nearest_not_larger": {},
     # "test_resize_upsample_sizes_nearest_not_smaller": {},
     # "test_resize_upsample_sizes_nearest_round_prefer_ceil_asymmetric": {},
-
     # "test_reversesequence_batch": {},
     # "test_reversesequence_time": {},
     # "test_rnn_seq_length": {},
@@ -1173,14 +1049,10 @@ NODE = {
     # "test_scatter_with_axis": {},
     # "test_scatter_without_axis": {},
     "test_scatternd": {CONVERSION_ARGS: {'guarantee_non_negative_indices': True}},
-    "test_scatternd_add": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=add` is not yet supported.')},
-    "test_scatternd_max": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=max` is not yet supported.')},
-    "test_scatternd_min": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=min` is not yet supported.')},
-    "test_scatternd_multiply": {
-        CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=mul` is not yet supported.')},
+    "test_scatternd_add": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=add` is not yet supported.')},
+    "test_scatternd_max": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=max` is not yet supported.')},
+    "test_scatternd_min": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=min` is not yet supported.')},
+    "test_scatternd_multiply": {CONVERSION_ERROR: not_implemented('Conversion of ONNX `ScatterND` with `reduction=mul` is not yet supported.')},
     # "test_sce_NCd1_mean_weight_negative_ii": {},
     # "test_sce_NCd1_mean_weight_negative_ii_expanded": {},
     # "test_sce_NCd1_mean_weight_negative_ii_log_prob": {},
@@ -1405,18 +1277,12 @@ NODE = {
     # "test_top_k": {},
     # "test_top_k_negative_axis": {},
     # "test_top_k_smallest": {},
-    "test_training_dropout": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
-    "test_training_dropout_default": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
-    "test_training_dropout_default_mask": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
-    "test_training_dropout_mask": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
-    "test_training_dropout_zero_ratio": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
-    "test_training_dropout_zero_ratio_mask": {CONVERSION_ERROR: conversion_impossible(
-        "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
+    "test_training_dropout": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
+    "test_training_dropout_default": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
+    "test_training_dropout_default_mask": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
+    "test_training_dropout_mask": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
+    "test_training_dropout_zero_ratio": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
+    "test_training_dropout_zero_ratio_mask": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
     "test_transpose_all_permutations_0": {},
     "test_transpose_all_permutations_1": {},
     "test_transpose_all_permutations_2": {},
@@ -1454,13 +1320,10 @@ NODE = {
     "test_unsqueeze_three_axes": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_unsqueeze_two_axes": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_unsqueeze_unsorted_axes": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-    "test_upsample_nearest": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented(
-        'Conversion of ONNX `Upsample` with a dynamic `scales` input is not supported.')},
+    "test_upsample_nearest": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented('Conversion of ONNX `Upsample` with a dynamic `scales` input is not supported.')},
     "test_where_example": {},
     "test_where_long_example": {},
-    "test_wrap_pad": {
-        CONVERSION_ARGS: {"skip_shape_inference": True},
-        CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
+    "test_wrap_pad": {CONVERSION_ARGS: {"skip_shape_inference": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")},
     "test_xor2d": {},
     "test_xor3d": {},
     "test_xor4d": {},
@@ -1506,8 +1369,7 @@ PYTORCH_CONVERTED = {
     "test_Conv2d_strided": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_dilated": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_Conv3d_dilated_strided": {COMPARISON_ARGS: {"atol": 1e-7},
-                                    CONVERSION_ARGS: {"skip_opset_version_check": True}},
+    "test_Conv3d_dilated_strided": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_groups": {COMPARISON_ARGS: {"atol": 1e-7}, CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_no_bias": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Conv3d_stride": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
@@ -1528,29 +1390,23 @@ PYTORCH_CONVERTED = {
     "test_LogSoftmax": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_MaxPool1d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_MaxPool1d_stride": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_MaxPool1d_stride_padding_dilation": {
-        CONVERSION_ERROR: conversion_impossible("MaxPool dilations '[10, 1]' cannot be converted to TFLite!")},
+    "test_MaxPool1d_stride_padding_dilation": {CONVERSION_ERROR: conversion_impossible("MaxPool dilations '[10, 1]' cannot be converted to TFLite!")},
     "test_MaxPool2d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_MaxPool2d_stride_padding_dilation": {
-        CONVERSION_ERROR: conversion_impossible("MaxPool dilations '[10, 10]' cannot be converted to TFLite!")},
+    "test_MaxPool2d_stride_padding_dilation": {CONVERSION_ERROR: conversion_impossible("MaxPool dilations '[10, 10]' cannot be converted to TFLite!")},
     # "test_MaxPool3d": {},
     # "test_MaxPool3d_stride": {},
     # "test_MaxPool3d_stride_padding": {},
     # "test_PReLU_1d": {},  # ONNXRT: Not supported by ONNX Runtime
-    "test_PReLU_1d_multiparam": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: internal_error(
-        "Failed to broadcast shapes '[2, 3, 4]' and '[3]' during PRelu conversion.")},
+    "test_PReLU_1d_multiparam": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: internal_error("Failed to broadcast shapes '[2, 3, 4]' and '[3]' during PRelu conversion.")},
     # "test_PReLU_2d": {},  # ONNXRT: Not supported by ONNX Runtime
-    "test_PReLU_2d_multiparam": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: internal_error(
-        "Failed to broadcast shapes '[2, 3, 4, 5]' and '[3]' during PRelu conversion.")},
+    "test_PReLU_2d_multiparam": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: internal_error("Failed to broadcast shapes '[2, 3, 4, 5]' and '[3]' during PRelu conversion.")},
     # "test_PReLU_3d": {},  # ONNXRT: Not supported by ONNX Runtime
-    "test_PReLU_3d_multiparam": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: internal_error(
-        "Failed to broadcast shapes '[2, 3, 4, 5, 6]' and '[3]' during PRelu conversion.")},
+    "test_PReLU_3d_multiparam": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: internal_error("Failed to broadcast shapes '[2, 3, 4, 5, 6]' and '[3]' during PRelu conversion.")},
     "test_PixelShuffle": {},
     # "test_PoissonNLLLLoss_no_reduce": {},
     "test_ReflectionPad2d": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_ReLU": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
-    "test_ReplicationPad2d": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: not_implemented(
-        "Conversion of ONNX 'Pad' version 2 in 'edge' mode is not implemented and may not be possible!")},
+    "test_ReplicationPad2d": {CONVERSION_ARGS: {"skip_opset_version_check": True}, CONVERSION_ERROR: not_implemented("Conversion of ONNX 'Pad' version 2 in 'edge' mode is not implemented and may not be possible!")},
     # "test_SELU": {},
     "test_Sigmoid": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
     "test_Softmax": {CONVERSION_ARGS: {"skip_opset_version_check": True}},
@@ -1652,8 +1508,7 @@ ONNX_ZOO_MODELS = {
     "inception-v2-8": {},
     "inception-v2-9": {"atol": 2.6e-6},
     "mnist-7": {},
-    # [AIR-10034] MatMul + Add optimization decreases error of this model
-    "mnist-8": {"atol": 7.16e-06},
+    "mnist-8": {"atol": 7.16e-06}, # [AIR-10034] MatMul + Add optimization decreases error of this model
     "mnist-12": {},
     "rcnn-ilsvrc13-7": {},
     "rcnn-ilsvrc13-8": {},
@@ -1677,8 +1532,7 @@ ONNX_ZOO_MODELS = {
     "vgg16-bn-7": {"atol": 5.8e-06, "marks": [pytest.mark.slow]},
     "vgg19-7": {"atol": 1.24e-05, "marks": [pytest.mark.slow]},
     "vgg19-bn-7": {"atol": 8.59e-06, "marks": [pytest.mark.slow]},
-    # [AIR-10034] MatMul + Add optimization decreases error of this model
-    "vgg19-caffe2-7": {"atol": 8.8e-7, "marks": [pytest.mark.slow]},
+    "vgg19-caffe2-7": {"atol": 8.8e-7, "marks": [pytest.mark.slow]}, # [AIR-10034] MatMul + Add optimization decreases error of this model
     "vgg19-caffe2-8": {"marks": [pytest.mark.slow]},
     "vgg19-caffe2-9": {"marks": [pytest.mark.slow]},
     "yolov2-coco-9": {'atol': 5.e-5},
@@ -1686,10 +1540,7 @@ ONNX_ZOO_MODELS = {
     "zfnet512-8": {},
     "zfnet512-9": {},
     "zfnet512-12": {},
-
-    # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).
-    # Outputs are logits.
-    "resnet50-v1-12-int8": {"atol": 0.26, "atol_avx2": 1.90},
+    "resnet50-v1-12-int8": {"atol": 0.26, "atol_avx2": 1.90}, # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223). Outputs are logits.
     "caffenet-12-int8": {"atol": 2.5e-3},
     "densenet-12-int8": {"atol": 0.68},  # Investigating the large error. Larger error on Windows.
     "efficientnet-lite4-11-int8": {"atol": 4.9e-3},
@@ -1697,11 +1548,8 @@ ONNX_ZOO_MODELS = {
     "zfnet512-12-int8": {"atol": 2.4e-3},
     "bvlcalexnet-12-int8": {"atol": 1.3e-3},
     "mnist-12-int8": {},
-    # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).
-    # Outputs are logits.
-    "vgg16-12-int8": {"atol": 0.26, "atol_avx2": 0.8},
-    "squeezenet1.0-12-int8": {"atol": 3.e-2},
-    # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).
+    "vgg16-12-int8": {"atol": 0.26, "atol_avx2": 0.8}, # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223). Outputs are logits.
+    "squeezenet1.0-12-int8": {"atol": 3.e-2}, # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).
     "ResNet101-DUC-12-int8": {"atol": 2.5e-4, "marks": [pytest.mark.slow]},
     "googlenet-12-int8": {"atol": 4.8e-5},
     "mobilenetv2-12-int8": {"atol": 1.13, "atol_avx2": 2.73},
@@ -1731,8 +1579,7 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "inception-v1-9": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     # "inception-v1-12": {}, # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!
     "inception-v2-7": {"atol": 0.012, "marks": [pytest.mark.slow]},
-    "inception-v2-8": {"atol": 0.016, "marks": [pytest.mark.slow],
-                       CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "inception-v2-8": {"atol": 0.016, "marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "inception-v2-9": {"atol": 0.008, "marks": [pytest.mark.slow]},
     # Following models (mnist-*) produce zero error when running with ReferenceEvaluator and ONNX 1.16.*
     # Models must be upgraded to opset 19+ with "version_converter.convert_version(onnx_model, 20)".
@@ -1758,23 +1605,17 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "ultraface-version-RFB-640": {},  # QDQ: Old Slice spec error (shape inference error)
     "vgg16-7": {"atol": 0.15, "marks": [pytest.mark.slow]},
     "vgg16-12": {"atol": 0.15, "marks": [pytest.mark.slow]},
-    "vgg16-bn-7": {"atol": 0.47, "marks": [pytest.mark.slow],
-                   CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "vgg16-bn-7": {"atol": 0.47, "marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "vgg19-7": {"atol": 0.25, "marks": [pytest.mark.slow]},
-    "vgg19-bn-7": {"atol": 0.2, "marks": [pytest.mark.slow]},
-    # [AIR-10034] MatMul + Add optimization decreases error of this model
+    "vgg19-bn-7": {"atol": 0.2, "marks": [pytest.mark.slow]}, # [AIR-10034] MatMul + Add optimization decreases error of this model
     # "vgg19-caffe2-7": {"atol": 1.3e-6},  # Old dropout spec error
     # "vgg19-caffe2-8": {},  # QDQ: Old dropout spec error
     # "vgg19-caffe2-9": {},  # QDQ: Old dropout spec error
     "yolov2-coco-9": {'atol': 0.78},
     "zfnet512-7": {"atol": 0.004, "marks": [pytest.mark.slow]},
     "zfnet512-8": {"atol": 0.004, "marks": [pytest.mark.slow]},
-    "zfnet512-9": {"atol": 0.004, "marks": [pytest.mark.slow],
-                   CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "zfnet512-9": {"atol": 0.004, "marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
     "zfnet512-12": {"atol": 0.004, "marks": [pytest.mark.slow]},
-
-    # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).
-    # Outputs are logits.
     # "resnet50-v1-12-int8": {"atol": 0.26, "atol_avx2": 1.90},  # QDQ: Error: two nodes with same node name
     # "caffenet-12-int8": {"atol": 2.5e-3},  # QDQ: Error: two nodes with same node name
     # "densenet-12-int8": {"atol": 0.81},  # Investigating the large error. QDQ: Error: two nodes with same node name
@@ -1794,3 +1635,5 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "emotion-ferplus-12-int8": {"atol": 0.09}, # Model already quantized.
     # "ultraface-version-RFB-320-int8": {"atol": [0.08, 0.036]}, # Model already quantized.
 }
+
+# @formatter:off
