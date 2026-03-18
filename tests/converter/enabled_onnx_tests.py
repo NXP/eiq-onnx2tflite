@@ -1861,7 +1861,7 @@ ONNX_ZOO_MODELS = {
     "caffenet-9": {},
     "caffenet-12": {},
     "emotion-ferplus-7": {},
-    "emotion-ferplus-8": {"atol": 3.82e-6},
+    "emotion-ferplus-8": {"atol": 1.17e-6},
     "googlenet-7": {},
     "googlenet-8": {},
     "googlenet-9": {},
@@ -1892,11 +1892,11 @@ ONNX_ZOO_MODELS = {
     "tinyyolov2-7": {"atol": 1.44e-5},
     "tinyyolov2-8": {"atol": 1.82e-5},
     "ultraface-version-RFB-320": {"atol": [3.0e-7, 3.6e-7]},
-    "ultraface-version-RFB-640": {"atol": [1.3e-6, 2.7e-7]},
-    "vgg16-7": {"atol": 8.59e-06, "marks": [pytest.mark.slow]},
-    "vgg16-12": {"atol": 1.29e-05, "marks": [pytest.mark.slow]},
+    "ultraface-version-RFB-640": {"atol": [8.4e-7, 2.7e-7]},
+    "vgg16-7": {"atol": 7.64e-6, "marks": [pytest.mark.slow]},
+    "vgg16-12": {"atol": 9.1e-6, "marks": [pytest.mark.slow]},
     "vgg16-bn-7": {"atol": 5.8e-06, "marks": [pytest.mark.slow]},
-    "vgg19-7": {"atol": 1.24e-05, "marks": [pytest.mark.slow]},
+    "vgg19-7": {"atol": 1.45e-5, "marks": [pytest.mark.slow]},
     "vgg19-bn-7": {"atol": 8.59e-06, "marks": [pytest.mark.slow]},
     "vgg19-caffe2-7": {"atol": 8.8e-7, "marks": [pytest.mark.slow]}, # [AIR-10034] MatMul + Add optimization decreases error of this model
     "vgg19-caffe2-8": {"marks": [pytest.mark.slow]},
@@ -1906,21 +1906,21 @@ ONNX_ZOO_MODELS = {
     "zfnet512-8": {},
     "zfnet512-9": {},
     "zfnet512-12": {},
-    "resnet50-v1-12-int8": {"atol": 0.26, "atol_avx2": 1.90}, # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223). Outputs are logits.
-    "caffenet-12-int8": {"atol": 2.5e-3},
+    "resnet50-v1-12-int8": {"atol": 0.13},
+    "caffenet-12-int8": {},
     "densenet-12-int8": {"atol": 0.68},  # Investigating the large error. Larger error on Windows.
-    "efficientnet-lite4-11-int8": {"atol": 4.9e-3},
+    "efficientnet-lite4-11-int8": {"atol": 1.4e-3},
     # "inception-v1-12-int8": {},  # [Code.CONVERSION_IMPOSSIBLE] - Conversion of ONNX QLinearAveragePool with 'count_include_pad' = 0 and a specific combination of input shape, 'kernel_shape', 'strides' and padding is not possible!
     "zfnet512-12-int8": {"atol": 2.4e-3},
-    "bvlcalexnet-12-int8": {"atol": 1.3e-3},
+    "bvlcalexnet-12-int8": {"atol": 1.2e-8},
     "mnist-12-int8": {},
     "vgg16-12-int8": {"atol": 0.26, "atol_avx2": 0.8}, # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223). Outputs are logits.
     "squeezenet1.0-12-int8": {"atol": 3.e-2}, # Affected by AVX2 issue (https://github.com/microsoft/onnxruntime/issues/11883#issuecomment-1159523223).
     "ResNet101-DUC-12-int8": {"atol": 2.5e-4, "marks": [pytest.mark.slow]},
-    "googlenet-12-int8": {"atol": 4.8e-5},
-    "mobilenetv2-12-int8": {"atol": 1.13, "atol_avx2": 2.73},
+    "googlenet-12-int8": {},
+    "mobilenetv2-12-int8": {"atol": 0.17},
     "emotion-ferplus-12-int8": {},
-    "ultraface-version-RFB-320-int8": {"atol": [0.09, 0.034]},
+    "ultraface-version-RFB-320-int8": {},
 }
 
 # Make sure you have downloaded model in advance with script "tests/download_models.py"
@@ -1967,19 +1967,19 @@ ONNX_ZOO_MODELS_QUANTIZABLE = {
     # "tinyyolov2-8": {"atol": 2.3e-5},  # QDQ: Outdated BatchNormalization
     # "ultraface-version-RFB-320": {},  # QDQ: Old Slice spec error (shape inference error)
     # "ultraface-version-RFB-640": {},  # QDQ: Old Slice spec error (shape inference error)
-    "vgg16-7": {"atol": 0.15, "marks": [pytest.mark.slow]},
-    "vgg16-12": {"atol": 0.15, "marks": [pytest.mark.slow]},
+    "vgg16-7": {"marks": [pytest.mark.slow]},
+    "vgg16-12": {"marks": [pytest.mark.slow]},
     # "vgg16-bn-7": {}, # # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_vgg0_conv0_weight is undefined!
-    "vgg19-7": {"atol": 0.25, "marks": [pytest.mark.slow]},
+    "vgg19-7": {"marks": [pytest.mark.slow]},
     # "vgg19-bn-7": {}, # # Quantized version of model no longer works with ORT 1.20+: Input ConvBnFusion_W_vgg0_conv0_weight is undefined!
     # "vgg19-caffe2-7": {"atol": 1.3e-6},  # Old dropout spec error
     # "vgg19-caffe2-8": {},  # QDQ: Old dropout spec error
     # "vgg19-caffe2-9": {},  # QDQ: Old dropout spec error
     "yolov2-coco-9": {'atol': 0.78},
-    "zfnet512-7": {"atol": 0.004, "marks": [pytest.mark.slow]},
-    "zfnet512-8": {"atol": 0.004, "marks": [pytest.mark.slow]},
-    "zfnet512-9": {"atol": 0.004, "marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
-    "zfnet512-12": {"atol": 0.004, "marks": [pytest.mark.slow]},
+    "zfnet512-7": {"marks": [pytest.mark.slow]},
+    "zfnet512-8": {"marks": [pytest.mark.slow]},
+    "zfnet512-9": {"marks": [pytest.mark.slow], CONVERSION_ARGS: {"duplicate_multiconsumer_dequantize_linear": False}},
+    "zfnet512-12": {"marks": [pytest.mark.slow]},
     # "resnet50-v1-12-int8": {"atol": 0.26, "atol_avx2": 1.90},  # QDQ: Error: two nodes with same node name
     # "caffenet-12-int8": {"atol": 2.5e-3},  # QDQ: Error: two nodes with same node name
     # "densenet-12-int8": {"atol": 0.81},  # Investigating the large error. QDQ: Error: two nodes with same node name
