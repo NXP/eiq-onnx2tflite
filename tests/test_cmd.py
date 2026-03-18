@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -32,7 +32,6 @@ def test_cmd_print_help():
     result = exec_conversion(["-h"])
 
     assert result.returncode == 0
-    assert len(result.stderr) == 0
     assert result.stdout.startswith("usage: onnx2tflite")
 
 

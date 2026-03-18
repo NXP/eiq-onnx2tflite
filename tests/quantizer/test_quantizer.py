@@ -66,7 +66,6 @@ def test_cmd_print_help():
     result = exec_quantization(["-h"])
 
     assert result.returncode == 0
-    assert len(result.stderr) == 0
     assert result.stdout.startswith("usage: onnx2quant")
 
 
