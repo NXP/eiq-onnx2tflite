@@ -65,13 +65,13 @@ def _parse_arguments() -> argparse.Namespace:
                              "can produce invalid models because opset is forcefully updated to version 11. This applies "
                              "especially to models with operators: Clip, Dropout, BatchNormalization and Split.")
     parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
-                        type=str, action="extend", nargs="*",
+                        type=str, action="extend", nargs="+", metavar="DIM_NAME:SIZE",
                         help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
                              "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
                              "can be used multiple times.")
     parser.add_argument("-m", "--set-input-shape", dest="input_shapes_mapping",
-                        type=str, action="extend", nargs="*",
-                        help="Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,"
+                        type=str, action="extend", nargs="+", metavar="INPUT_NAME:SHAPE",
+                        help="Override model input shape. Provided mapping must follow format '<input_name>:(<dim_0>,"
                              "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
                              "times.")
     parser.add_argument("--generate-artifacts-after-failed-shape-inference", action=argparse.BooleanOptionalAction,
@@ -81,7 +81,7 @@ def _parse_arguments() -> argparse.Namespace:
 
     calibration_dataset_arguments = parser.add_mutually_exclusive_group(required=True)
     calibration_dataset_arguments.add_argument("-c", "--calibration-dataset-mapping", dest="calibration_dataset_mapping",
-                        type=str, action="extend", nargs="+",
+                        type=str, action="extend", nargs="+", metavar="INPUT_NAME;DATASET_PATH",
                         help="Mapping between model input and calibration dataset directory with *.npy files. Value must "
                              "be in format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument "
                              "can be used multiple times to specify multiple inputs for the model. In case model "

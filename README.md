@@ -28,9 +28,8 @@ Converter could be used as a standard CLI tool or standalone library.
 :~$ onnx2tflite -h
 usage: onnx2tflite [-h] [--allow-inputs-stripping | --no-allow-inputs-stripping]
                    [--keep-io-tensors-format | --no-keep-io-tensors-format]
-                   [--skip-shape-inference | --no-skip-shape-inference]
-                   [--qdq-aware-conversion | --no-qdq-aware-conversion] [-s [SYMBOLIC_DIMENSIONS_MAPPING ...]]
-                   [-m [INPUT_SHAPES_MAPPING ...]]
+                   [--skip-shape-inference | --no-skip-shape-inference] [--qdq-aware-conversion | --no-qdq-aware-conversion]
+                   [-s DIM_NAME:SIZE [DIM_NAME:SIZE ...]] [-m DIM_NAME:SHAPE [DIM_NAME:SHAPE ...]]
                    [--dont-skip-nodes-with-known-outputs | --no-dont-skip-nodes-with-known-outputs]
                    [--allow-select-ops | --no-allow-select-ops]
                    [--generate-artifacts-after-failed-shape-inference | --no-generate-artifacts-after-failed-shape-inference]
@@ -59,14 +58,15 @@ options:
                         Shape inference will be skipped before model conversion. This option can be used only if model's
                         shapes are fully defined. Defined shapes are necessary for successful conversion.
   --qdq-aware-conversion, --no-qdq-aware-conversion
-                        Quantized QDQ model with QDQ pairs (Q-Ops created by QDQ quantizer) will be converted into
-                        optimized variant with QDQ pairs represented as tensors' quantization parameters.
-  -s [SYMBOLIC_DIMENSIONS_MAPPING ...], --symbolic-dimension-into-static [SYMBOLIC_DIMENSIONS_MAPPING ...]
+                        Quantized QDQ model with QDQ pairs (Q-Ops created by QDQ quantizer) will be converted into optimized
+                        variant with QDQ pairs represented as tensors' quantization parameters.
+  -s DIM_NAME:SIZE [DIM_NAME:SIZE ...], --symbolic-dimension-into-static DIM_NAME:SIZE [DIM_NAME:SIZE ...]
                         Change symbolic dimension in model to static (fixed) value. Provided mapping must follow this
                         format '<dim_name>:<dim_size>', for example 'batch:1'. This argument can be used multiple times.
-  -m [INPUT_SHAPES_MAPPING ...], --set-input-shape [INPUT_SHAPES_MAPPING ...]
-                        Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,<dim_1>,...)',
-                        for example 'input_1:(1,3,224,224)'. This argument can be used multiple times.
+  -m INPUT_NAME:SHAPE [INPUT_NAME:SHAPE ...], --set-input-shape INPUT_NAME:SHAPE [INPUT_NAME:SHAPE ...]
+                        Override model input shape. Provided mapping must follow format
+                        '<input_name>:(<dim_0>,<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be
+                        used multiple times.
   --dont-skip-nodes-with-known-outputs, --no-dont-skip-nodes-with-known-outputs
                         Sometimes it is possible to statically infer the output data of some nodes. These nodes will then
                         not be a part of the output model. This flag will force the converter to keep them in anyway.
@@ -145,16 +145,17 @@ options:
                         Allow quantization of models with opset version 10 and lower. Quantization of such models can
                         produce invalid models because opset is forcefully updated to version 11. This applies especially
                         to models with operators: Clip, Dropout, BatchNormalization and Split.
-  -s [SYMBOLIC_DIMENSIONS_MAPPING ...], --symbolic-dimension-into-static [SYMBOLIC_DIMENSIONS_MAPPING ...]
+  -s DIM_NAME:SIZE [DIM_NAME:SIZE ...], --symbolic-dimension-into-static DIM_NAME:SIZE [DIM_NAME:SIZE ...]
                         Change symbolic dimension in model to static (fixed) value. Provided mapping must follow this
                         format '<dim_name>:<dim_size>', for example 'batch:1'. This argument can be used multiple times.
-  -m [INPUT_SHAPES_MAPPING ...], --set-input-shape [INPUT_SHAPES_MAPPING ...]
-                        Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,<dim_1>,...)',
-                        for example 'input_1:(1,3,224,224)'. This argument can be used multiple times.
+  -m INPUT_NAME:SHAPE [INPUT_NAME:SHAPE ...], --set-input-shape INPUT_NAME:SHAPE [INPUT_NAME:SHAPE ...]
+                        Override model input shape. Provided mapping must follow format
+                        '<input_name>:(<dim_0>,<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be
+                        used multiple times.
   --generate-artifacts-after-failed-shape-inference, --no-generate-artifacts-after-failed-shape-inference
                         If the shape inference fails or is incomplete, generate the partially inferred ONNX model as
                         'sym_shape_infer_temp.onnx'.
-  -c CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...], --calibration-dataset-mapping CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...]
+  -c INPUT_NAME;DATASET_PATH [INPUT_NAME;DATASET_PATH ...], --calibration-dataset-mapping INPUT_NAME;DATASET_PATH [INPUT_NAME;DATASET_PATH ...]
                         Mapping between model input and calibration dataset directory with *.npy files. Value must be in
                         format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument can be used
                         multiple times to specify multiple inputs for the model. In case model has semicolon in input

@@ -66,13 +66,13 @@ def _get_conversion_parser() -> argparse.ArgumentParser:
                              "converted into optimized variant with QDQ pairs represented as tensors' "
                              "quantization parameters.")
     parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
-                        type=str, action="extend", nargs="*",
+                        type=str, action="extend", nargs="+", metavar="DIM_NAME:SIZE",
                         help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
                              "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
                              "can be used multiple times.")
     parser.add_argument("-m", "--set-input-shape", dest="input_shapes_mapping",
-                        type=str, action="extend", nargs="*",
-                        help="Override model input shape. Provided mapping must follow format '<dim_name>:(<dim_0>,"
+                        type=str, action="extend", nargs="+", metavar="INPUT_NAME:SHAPE",
+                        help="Override model input shape. Provided mapping must follow format '<input_name>:(<dim_0>,"
                              "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
                              "times.")
     parser.add_argument("--dont-skip-nodes-with-known-outputs", action=argparse.BooleanOptionalAction, default=False,
