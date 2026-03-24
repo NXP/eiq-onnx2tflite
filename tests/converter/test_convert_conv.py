@@ -80,11 +80,11 @@ def test_convert_2d_conv(kernel_shape: list[int], auto_pad: str | None, pads: li
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
-    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == group
+    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == 1
 
 
 @pytest.mark.parametrize("kernel_shape", [[3], [4]], ids=lambda x: f"kernel_shape = {x}")
@@ -125,7 +125,7 @@ def test_convert_1d_conv(kernel_shape: list[int], auto_pad: str | None, pads: li
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -169,7 +169,7 @@ def test_convert_3d_conv(kernel_shape: list[int], auto_pad: str | None, pads: li
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -199,8 +199,8 @@ def test_convert_1d_conv_with_dynamic_weights():
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
-        1: np.arange(np.prod(weight_shape)).reshape(weight_shape).astype(np.float32),
+        0: np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
+        1: np.random.random(np.prod(weight_shape)).reshape(weight_shape).astype(np.float32),
     }
 
     executors.convert_run_compare(onnx_model, input_data)
@@ -230,8 +230,8 @@ def test_convert_3d_conv_with_dynamic_weights():
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
-        1: np.arange(np.prod(weight_shape)).reshape(weight_shape).astype(np.float32),
+        0: np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
+        1: np.random.random(np.prod(weight_shape)).reshape(weight_shape).astype(np.float32),
     }
 
     executors.convert_run_compare(onnx_model, input_data)
@@ -257,7 +257,7 @@ def test_convert_2d_conv_without_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -282,7 +282,7 @@ def test_convert_2d_conv__omitted_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -307,7 +307,7 @@ def test_convert_2d_conv__separated_and_omitted_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -332,7 +332,7 @@ def test_convert_1d_conv_without_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -357,7 +357,7 @@ def test_convert_1d_conv__omitted_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -382,7 +382,7 @@ def test_convert_1d_conv__separated_and_omitted_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -407,7 +407,7 @@ def test_convert_3d_conv_without_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -432,7 +432,7 @@ def test_convert_3d_conv__omitted_bias():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -594,7 +594,7 @@ def test_convert_conv_2D_into_depthwise_conv_2d(kernel_shape: list[int], auto_pa
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -630,7 +630,7 @@ def test_convert_3d_conv_with_group__static_weights(group, intermediate_tflite_m
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -665,7 +665,7 @@ def test_convert_3d_conv_with_group__dynamic_weights(group, intermediate_tflite_
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
+        0: np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
         1: np.random.random(np.prod(weight_shape)).reshape(weight_shape).astype(np.float32)
     }
 

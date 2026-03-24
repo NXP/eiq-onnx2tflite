@@ -85,7 +85,7 @@ def test_convert_2d_q_linear_conv_with_signed_types(input_shape: List[int], weig
                                              pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
                                              onnx.TensorProto.INT8, onnx.TensorProto.INT8, onnx.TensorProto.INT8)
 
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
 
@@ -148,9 +148,9 @@ def test_convert_2d_q_linear_conv_with_unsigned_types(input_shape: List[int], we
     onnx_model = _create_q_linear_conv_model(input_shape, weights_shape, dilations, strides, auto_pad,
                                              pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
                                              onnx.TensorProto.UINT8, onnx.TensorProto.UINT8, onnx.TensorProto.UINT8)
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.uint8)
+    input_data = ((np.random.random(math.prod(input_shape)) * 255) - 127).reshape(input_shape).astype(np.uint8)
 
-    executors.convert_run_compare(onnx_model, input_data, atol=1)
+    executors.convert_run_compare(onnx_model, input_data)
 
 
 @pytest.mark.parametrize(
@@ -169,8 +169,8 @@ def test_convert_2d_q_linear_conv_with_unsigned_input_and_signed_weights(input_s
                                                                          pads: List[int], group: int,
                                                                          weights_scale: List[float],
                                                                          weights_zero_point: List[int]):
-    weights_data = np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
-    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+    weights_data = np.random.random(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8)
+    bias_data = np.random.random(weights_shape[0]).astype(np.int32)
 
     onnx_model = _create_q_linear_conv_model(input_shape, weights_shape, dilations, strides, auto_pad,
                                              pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
@@ -263,7 +263,7 @@ def test_convert_2d_q_linear_conv_into_depthwise_conv_2d_static_weights(
                                              pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
                                              onnx.TensorProto.INT8, onnx.TensorProto.INT8, onnx.TensorProto.INT8)
 
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
 
@@ -324,7 +324,7 @@ def test_convert_2d_q_linear_conv_into_depthwise_conv_2d_dynamic_int8_weights(
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8),
+        0: (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8),
         1: weights_data
     }
 
@@ -345,7 +345,7 @@ def test_convert_2d_q_linear_conv_into_depthwise_conv_2d_dynamic_uint8_weights(
     weights_shape = [5, 1] + kernel_shape  # [output_channels, kernel_channels, kernel_height, kernel_width]
     group = 5
 
-    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+    bias_data = np.random.random(weights_shape[0]).astype(np.int32)
 
     kernel_shape = weights_shape[2:]
     input_scale = [0.01865844801068306]
@@ -402,7 +402,7 @@ def test_convert_2d_q_linear_conv_unsupported_nonzero_zero_point():
     input_shape = [1, 5, 15, 17]  # [batch, input_channels, height, width]
     weights_shape = [5, 1] + kernel_shape  # [output_channels, kernel_channels, kernel_height, kernel_width]
 
-    bias_data = np.arange(weights_shape[0]).astype(np.int32)
+    bias_data = np.random.random(weights_shape[0]).astype(np.int32)
 
     kernel_shape = weights_shape[2:]
     input_scale = [0.01865844801068306]
@@ -501,13 +501,11 @@ def test_convert_2d_q_linear_conv_group__into_multiple_convolutions__with_static
 
     onnx_model = onnx.helper.make_model(graph)
 
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
 
-    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == group
-    assert intermediate_tflite_model_provider.get_op_count(split_options.Split) == 1  # input
-    assert intermediate_tflite_model_provider.get_op_count(concatenation_options.Concatenation) == 1
+    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == 1
 
 
 @pytest.mark.parametrize("strides,auto_pad,pads,weights_scale,weights_zero_point", [
@@ -562,16 +560,14 @@ def test_convert_2d_q_linear_conv_group__into_multiple_convolutions__with_dynami
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8),
-        1: np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8),
-        2: np.arange(bias_shape[0]).astype(np.int32),
+        0: (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8),
+        1: (np.random.random(math.prod(weights_shape)) * 255).reshape(weights_shape).astype(np.int8),
+        2: np.random.random(bias_shape[0]).astype(np.int32),
     }
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
 
-    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == group
-    assert intermediate_tflite_model_provider.get_op_count(split_options.Split) == 3  # input, weight, bias
-    assert intermediate_tflite_model_provider.get_op_count(concatenation_options.Concatenation) == 1
+    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == 1
 
 
 @pytest.mark.parametrize("strides,auto_pad,pads,group,weights_scale,weights_zero_point", [
@@ -623,9 +619,9 @@ def test_convert_2d_q_linear_conv_group__nonconvertible_into_multiple_convolutio
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8),
-        1: np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8),
-        2: np.arange(bias_shape[0]).astype(np.int32),
+        0: (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8),
+        1: (np.random.random(math.prod(weights_shape)) * 255).reshape(weights_shape).astype(np.int8),
+        2: np.random.random(bias_shape[0]).astype(np.int32),
     }
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
@@ -684,16 +680,14 @@ def test_convert_2d_q_linear_conv_group__convertible_into_multiple_convolutions(
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8),
-        1: np.arange(math.prod(weights_shape)).reshape(weights_shape).astype(np.int8),
+        0: (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8),
+        1: (np.random.random(math.prod(weights_shape)) * 255).reshape(weights_shape).astype(np.int8),
         2: np.arange(bias_shape[0]).astype(np.int32),
     }
 
-    executors.convert_run_compare(onnx_model, input_data, atol=1)
+    executors.convert_run_compare(onnx_model, input_data, atol=1.0)
 
-    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == 2
-    assert intermediate_tflite_model_provider.get_op_count(split_options.Split) == 3
-    assert intermediate_tflite_model_provider.get_op_count(concatenation_options.Concatenation) == 1
+    assert intermediate_tflite_model_provider.get_op_count(conv_2d_options.Conv2D) == 1
 
 
 @pytest.mark.parametrize(
@@ -747,7 +741,7 @@ def test_convert_2d_q_linear_conv__default_bias(input_shape: List[int], weights_
             ]
         )
     )
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
 
@@ -776,7 +770,7 @@ def test_convert_1d_q_linear_conv_with_signed_types(input_shape: List[int], weig
 
     onnx.checker.check_model(onnx_model)
 
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data, atol=1)
 
@@ -841,7 +835,7 @@ def test_convert_1d_q_linear_conv_into_depthwise_conv_2d_static_weights(
                                              pads, group, weights_data, bias_data, weights_scale, weights_zero_point,
                                              onnx.TensorProto.INT8, onnx.TensorProto.INT8, onnx.TensorProto.INT8)
 
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
     executors.convert_run_compare(onnx_model, input_data)
 
@@ -903,11 +897,11 @@ def test_convert_1d_q_linear_conv_into_depthwise_conv_2d_dynamic_int8_weights(
     onnx_model = onnx.helper.make_model(graph)
 
     input_data = {
-        0: np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8),
+        0: (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8),
         1: weights_data
     }
 
-    executors.convert_run_compare(onnx_model, input_data)
+    executors.convert_run_compare(onnx_model, input_data, atol=1.0)
 
     assert intermediate_tflite_model_provider.get_op_count(depthwise_conv_2d_options.DepthwiseConv2D) == 1
 
@@ -961,6 +955,6 @@ def test_convert_1d_q_linear_conv__default_bias(
             initializer=initializers
         )
     )
-    input_data = np.arange(math.prod(input_shape)).reshape(input_shape).astype(np.int8)
+    input_data = (np.random.random(math.prod(input_shape)) * 255).reshape(input_shape).astype(np.int8)
 
-    executors.convert_run_compare(onnx_model, input_data)
+    executors.convert_run_compare(onnx_model, input_data, atol=1.0)

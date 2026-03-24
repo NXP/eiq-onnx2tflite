@@ -339,12 +339,6 @@ class QLinearConvConverter(NodeConverter):
 
             return conversion_result.ops_list.flatten()
 
-        if conv_utils.group_conv_convertible_into_multiple_convolutions(attrs, t_op):
-            t_op.builtin_options = conv_2d_options.Conv2D()
-
-            return conv_utils.create_separated_convolutions_based_on_group(
-                attrs, t_op, self.context.tflite_builder, self._convert_unpadded_2D, conv_utils.conv_op_factory, 0)
-
         t_op.builtin_options = conv_2d_options.Conv2D()
         conversion_result = self._convert_unpadded_2D(attrs, t_op)
         padding, pad_op = conv_utils.build_input_tensor_padding(attrs, t_op, self.context.tflite_builder)

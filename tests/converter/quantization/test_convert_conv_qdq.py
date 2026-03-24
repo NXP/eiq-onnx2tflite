@@ -350,21 +350,14 @@ def test_convert_conv__separable__qdq__per_channel__no_bias(intermediate_tflite_
 
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
         BuiltinOperator.TRANSPOSE, BuiltinOperator.QUANTIZE,
-        BuiltinOperator.SPLIT,
-        BuiltinOperator.CONV_2D, BuiltinOperator.CONV_2D,
-        BuiltinOperator.CONCATENATION,
+        BuiltinOperator.CONV_2D,
         BuiltinOperator.DEQUANTIZE, BuiltinOperator.TRANSPOSE, BuiltinOperator.TRANSPOSE
     ])
 
-    conv1 = intermediate_tflite_model_provider.get_operators()[3]
-    assert conv1.tmp_inputs[1].quantization is not None
-    assert conv1.tmp_inputs[1].quantization.scale.len() == int(weight_shape[0] / group)
-    assert conv1.tmp_inputs[1].quantization.zero_point.len() == int(weight_shape[0] / group)
-
-    conv2 = intermediate_tflite_model_provider.get_operators()[4]
-    assert conv2.tmp_inputs[1].quantization is not None
-    assert conv2.tmp_inputs[1].quantization.scale.len() == int(weight_shape[0] / group)
-    assert conv2.tmp_inputs[1].quantization.zero_point.len() == int(weight_shape[0] / group)
+    conv = intermediate_tflite_model_provider.get_operators()[2]
+    assert conv.tmp_inputs[1].quantization is not None
+    assert conv.tmp_inputs[1].quantization.scale.len() == int(weight_shape[0])
+    assert conv.tmp_inputs[1].quantization.zero_point.len() == int(weight_shape[0])
 
 
 def test_convert_conv__separable__qdq__per_channel__bias(intermediate_tflite_model_provider):
@@ -400,18 +393,11 @@ def test_convert_conv__separable__qdq__per_channel__bias(intermediate_tflite_mod
 
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
         BuiltinOperator.TRANSPOSE, BuiltinOperator.QUANTIZE,
-        BuiltinOperator.SPLIT,
-        BuiltinOperator.CONV_2D, BuiltinOperator.CONV_2D,
-        BuiltinOperator.CONCATENATION,
+        BuiltinOperator.CONV_2D,
         BuiltinOperator.DEQUANTIZE, BuiltinOperator.TRANSPOSE
     ])
 
-    conv1 = intermediate_tflite_model_provider.get_operators()[3]
-    assert conv1.tmp_inputs[1].quantization is not None
-    assert conv1.tmp_inputs[1].quantization.scale.len() == int(weight_shape[0] / group)
-    assert conv1.tmp_inputs[1].quantization.zero_point.len() == int(weight_shape[0] / group)
-
-    conv2 = intermediate_tflite_model_provider.get_operators()[4]
-    assert conv2.tmp_inputs[1].quantization is not None
-    assert conv2.tmp_inputs[1].quantization.scale.len() == int(weight_shape[0] / group)
-    assert conv2.tmp_inputs[1].quantization.zero_point.len() == int(weight_shape[0] / group)
+    conv = intermediate_tflite_model_provider.get_operators()[2]
+    assert conv.tmp_inputs[1].quantization is not None
+    assert conv.tmp_inputs[1].quantization.scale.len() == int(weight_shape[0])
+    assert conv.tmp_inputs[1].quantization.zero_point.len() == int(weight_shape[0])
