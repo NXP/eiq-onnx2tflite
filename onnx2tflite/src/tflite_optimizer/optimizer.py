@@ -43,6 +43,8 @@ from onnx2tflite.src.tflite_optimizer.optimizations.prune_transpose_operators im
     RemoveIdentityTransposeOperators,
 )
 from onnx2tflite.src.tflite_optimizer.optimizations.remove_cancelling_transposes import RemoveCancellingTransposes
+from onnx2tflite.src.tflite_optimizer.optimizations.remove_unnecessary_ops_before_flattened_conv import \
+    RemoveUnnecessaryOpsBeforeFlattenedConv
 from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_buffers import (
     RemoveUnusedTensorsAndBuffers,
 )
@@ -74,6 +76,7 @@ class Optimization(Enum):
     REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM = 17
     REMOVE_CANCELLING_TRANSPOSES = 18
     REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE = 19
+    REMOVE_UNNECESSARY_OPS_BEFORE_FLATTENED_CONV = 20
 
 
 class Optimizer:
@@ -124,6 +127,8 @@ class Optimizer:
             Optimization.REMOVE_CANCELLING_TRANSPOSES: RemoveCancellingTransposes(builder, conversion_config),
             Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE:
                 ReplaceInputInvariantTransposeWithReshape(builder, conversion_config),
+            Optimization.REMOVE_UNNECESSARY_OPS_BEFORE_FLATTENED_CONV:
+                RemoveUnnecessaryOpsBeforeFlattenedConv(builder, conversion_config),
         }
 
     def optimize(self, optimization_whitelist: list[Optimization] | None = None,
