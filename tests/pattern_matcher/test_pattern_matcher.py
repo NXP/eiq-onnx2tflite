@@ -122,21 +122,12 @@ def _builder_for_alexnet_model(mocker, intermediate_tflite_model_provider) -> Mo
         BuiltinOperator.CONV_2D,  # + fused Relu
         BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,
         BuiltinOperator.MAX_POOL_2D,
-        BuiltinOperator.SPLIT,
-        BuiltinOperator.CONV_2D, BuiltinOperator.CONV_2D,  # In parallel
-        BuiltinOperator.CONCATENATION,
-        BuiltinOperator.RELU,
+        BuiltinOperator.CONV_2D,  # + fused Relu
         BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,
         BuiltinOperator.MAX_POOL_2D,
         BuiltinOperator.CONV_2D,  # + fused Relu
-        BuiltinOperator.SPLIT,
-        BuiltinOperator.CONV_2D, BuiltinOperator.CONV_2D,  # In parallel
-        BuiltinOperator.CONCATENATION,
-        BuiltinOperator.RELU,
-        BuiltinOperator.SPLIT,
-        BuiltinOperator.CONV_2D, BuiltinOperator.CONV_2D,  # In parallel
-        BuiltinOperator.CONCATENATION,
-        BuiltinOperator.RELU,
+        BuiltinOperator.CONV_2D,  # + fused Relu
+        BuiltinOperator.CONV_2D,  # + fused Relu
         BuiltinOperator.MAX_POOL_2D,
         BuiltinOperator.RESHAPE,
         BuiltinOperator.FULLY_CONNECTED,  # + fused Relu
@@ -341,81 +332,82 @@ def test_sequence_of_two_ops__tensor_rule__no_match(_builder_for_alexnet_model):
         raise Exception
 
 
-def test_forked_graph__using_op_block_only__simple(_builder_for_alexnet_model):
-    matcher = PatternMatcher(
-        _builder_for_alexnet_model,
-        [
-            Op(['Split'], ['axis', 'x'], ['y1', 'y2']),
-            Op(['Conv2D'], ['y1', 'w1', 'b1'], ['z1']),
-            Op(['Conv2D'], ['y2', 'w2', 'b2'], ['z2']),
-            Op(['Concatenation'], ['z1', 'z2'], ['out'])
-        ])
-
-    num_occurrences = 0
-    for [split, conv1, conv2, concat], tensor_map, _, _ in matcher.match_patterns():
-        num_occurrences += 1
-        assert split.builtin_options.operator_type == BuiltinOperator.SPLIT
-        assert conv1.builtin_options.operator_type == BuiltinOperator.CONV_2D
-        assert conv2.builtin_options.operator_type == BuiltinOperator.CONV_2D
-        assert concat.builtin_options.operator_type == BuiltinOperator.CONCATENATION
-
-        assert 'axis' in tensor_map.keys()
-        assert 'x' in tensor_map.keys()
-        assert 'y1' in tensor_map.keys()
-        assert 'y2' in tensor_map.keys()
-        assert 'w1' in tensor_map.keys()
-        assert 'b1' in tensor_map.keys()
-        assert 'z1' in tensor_map.keys()
-        assert 'w2' in tensor_map.keys()
-        assert 'b2' in tensor_map.keys()
-        assert 'z2' in tensor_map.keys()
-        assert 'out' in tensor_map.keys()
-
-        if num_occurrences == 1:  # Only check the tensor names the first time.
-            assert tensor_map['axis'].name == 'split_dim_'
-            assert tensor_map['x'].name == 'pool1_1'
-            assert tensor_map['y1'].name == 'pool1_1_group_0'
-            assert tensor_map['y2'].name == 'pool1_1_group_1'
-            assert tensor_map['w1'].name == 'conv2_w_0_group_0'
-            assert tensor_map['b1'].name == 'conv2_b_0_group_0'
-            assert tensor_map['z1'].name == 'conv2_1_group_0'
-            assert tensor_map['w2'].name == 'conv2_w_0_group_1'
-            assert tensor_map['b2'].name == 'conv2_b_0_group_1'
-            assert tensor_map['z2'].name == 'conv2_1_group_0_group_1'
-            assert tensor_map['out'].name == 'conv2_1'
-
-    # This pattern appears in total 3 times in the model.
-    assert num_occurrences == 3
-
-
-def test_forked_graph__using_op_block_only__more_complex(_builder_for_alexnet_model):
-    matcher = PatternMatcher(
-        _builder_for_alexnet_model,
-        [
-            Op(['Split'], ['axis', None], ['y1', 'y2']),
-            Op(['Conv2D'], ['y1', ...], ['z1']),
-            Op(['Conv2D'], ['y2', None, 'b2']),
-            Op(['Concatenation'], ['z1', 'z2'], [...])
-        ])
-
-    num_occurrences = 0
-    for [split, conv1, conv2, concat], tensor_map, _, _ in matcher.match_patterns():
-        num_occurrences += 1
-        assert split.builtin_options.operator_type == BuiltinOperator.SPLIT
-        assert conv1.builtin_options.operator_type == BuiltinOperator.CONV_2D
-        assert conv2.builtin_options.operator_type == BuiltinOperator.CONV_2D
-        assert concat.builtin_options.operator_type == BuiltinOperator.CONCATENATION
-
-        if num_occurrences == 1:  # Only check the tensor names the first time.
-            assert tensor_map['axis'].name == 'split_dim_'
-            assert tensor_map['y1'].name == 'pool1_1_group_0'
-            assert tensor_map['y2'].name == 'pool1_1_group_1'
-            assert tensor_map['z1'].name == 'conv2_1_group_0'
-            assert tensor_map['b2'].name == 'conv2_b_0_group_1'
-            assert tensor_map['z2'].name == 'conv2_1_group_0_group_1'
-
-    # This pattern appears in total 3 times in the model.
-    assert num_occurrences == 3
+# TODO(EITO-888) enable on different model
+# def test_forked_graph__using_op_block_only__simple(_builder_for_alexnet_model):
+#     matcher = PatternMatcher(
+#         _builder_for_alexnet_model,
+#         [
+#             Op(['Split'], ['axis', 'x'], ['y1', 'y2']),
+#             Op(['Conv2D'], ['y1', 'w1', 'b1'], ['z1']),
+#             Op(['Conv2D'], ['y2', 'w2', 'b2'], ['z2']),
+#             Op(['Concatenation'], ['z1', 'z2'], ['out'])
+#         ])
+#
+#     num_occurrences = 0
+#     for [split, conv1, conv2, concat], tensor_map, _, _ in matcher.match_patterns():
+#         num_occurrences += 1
+#         assert split.builtin_options.operator_type == BuiltinOperator.SPLIT
+#         assert conv1.builtin_options.operator_type == BuiltinOperator.CONV_2D
+#         assert conv2.builtin_options.operator_type == BuiltinOperator.CONV_2D
+#         assert concat.builtin_options.operator_type == BuiltinOperator.CONCATENATION
+#
+#         assert 'axis' in tensor_map.keys()
+#         assert 'x' in tensor_map.keys()
+#         assert 'y1' in tensor_map.keys()
+#         assert 'y2' in tensor_map.keys()
+#         assert 'w1' in tensor_map.keys()
+#         assert 'b1' in tensor_map.keys()
+#         assert 'z1' in tensor_map.keys()
+#         assert 'w2' in tensor_map.keys()
+#         assert 'b2' in tensor_map.keys()
+#         assert 'z2' in tensor_map.keys()
+#         assert 'out' in tensor_map.keys()
+#
+#         if num_occurrences == 1:  # Only check the tensor names the first time.
+#             assert tensor_map['axis'].name == 'split_dim_'
+#             assert tensor_map['x'].name == 'pool1_1'
+#             assert tensor_map['y1'].name == 'pool1_1_group_0'
+#             assert tensor_map['y2'].name == 'pool1_1_group_1'
+#             assert tensor_map['w1'].name == 'conv2_w_0_group_0'
+#             assert tensor_map['b1'].name == 'conv2_b_0_group_0'
+#             assert tensor_map['z1'].name == 'conv2_1_group_0'
+#             assert tensor_map['w2'].name == 'conv2_w_0_group_1'
+#             assert tensor_map['b2'].name == 'conv2_b_0_group_1'
+#             assert tensor_map['z2'].name == 'conv2_1_group_0_group_1'
+#             assert tensor_map['out'].name == 'conv2_1'
+#
+#     # This pattern appears in total 3 times in the model.
+#     assert num_occurrences == 3
+#
+#
+# def test_forked_graph__using_op_block_only__more_complex(_builder_for_alexnet_model):
+#     matcher = PatternMatcher(
+#         _builder_for_alexnet_model,
+#         [
+#             Op(['Split'], ['axis', None], ['y1', 'y2']),
+#             Op(['Conv2D'], ['y1', ...], ['z1']),
+#             Op(['Conv2D'], ['y2', None, 'b2']),
+#             Op(['Concatenation'], ['z1', 'z2'], [...])
+#         ])
+#
+#     num_occurrences = 0
+#     for [split, conv1, conv2, concat], tensor_map, _, _ in matcher.match_patterns():
+#         num_occurrences += 1
+#         assert split.builtin_options.operator_type == BuiltinOperator.SPLIT
+#         assert conv1.builtin_options.operator_type == BuiltinOperator.CONV_2D
+#         assert conv2.builtin_options.operator_type == BuiltinOperator.CONV_2D
+#         assert concat.builtin_options.operator_type == BuiltinOperator.CONCATENATION
+#
+#         if num_occurrences == 1:  # Only check the tensor names the first time.
+#             assert tensor_map['axis'].name == 'split_dim_'
+#             assert tensor_map['y1'].name == 'pool1_1_group_0'
+#             assert tensor_map['y2'].name == 'pool1_1_group_1'
+#             assert tensor_map['z1'].name == 'conv2_1_group_0'
+#             assert tensor_map['b2'].name == 'conv2_b_0_group_1'
+#             assert tensor_map['z2'].name == 'conv2_1_group_0_group_1'
+#
+#     # This pattern appears in total 3 times in the model.
+#     assert num_occurrences == 3
 
 
 def test_forked_graph__using_op_block_only__tensor_rule(_builder_for_alexnet_model):
@@ -612,95 +604,96 @@ def test_op__mathing_inputs_from_the_back__second_to_last_input(_builder_for_ale
     assert found
 
 
-def test_op__mathing_outputs_from_the_back__last_output(_builder_for_alexnet_model):
-    matcher = PatternMatcher(
-        _builder_for_alexnet_model,
-        [
-            Op(['Split'], outputs=[..., 'x']),
-            Op(['Conv2D'], ['x', ...], ['y']),
-            Op(['Concatenation'], [..., 'y']),
-        ])
-
-    count = 0
-    expected_names = [
-        'pool1_1_group_1',
-        'conv3_2_group_1',
-        'conv4_2_group_1'
-    ]
-    for _, tensor_map, _, _ in matcher.match_patterns():
-        assert 'x' in tensor_map.keys()
-        assert tensor_map['x'].name == expected_names[count]
-        count += 1
-
-    # This pattern appears 3 times in the model.
-    assert count == 3
-
-
-def test_op__mathing_outputs_from_the_back__second_to_last_output(_builder_for_alexnet_model):
-    matcher = PatternMatcher(
-        _builder_for_alexnet_model,
-        [
-            Op(['Split'], outputs=[..., 'x', None]),
-            Op(['Conv2D'], ['x', ...], ['y']),
-            Op(['Concatenation'], ['y', ...]),
-        ])
-
-    count = 0
-    expected_names = [
-        'pool1_1_group_0',
-        'conv3_2_group_0',
-        'conv4_2_group_0'
-    ]
-    for _, tensor_map, _, _ in matcher.match_patterns():
-        assert 'x' in tensor_map.keys()
-        assert tensor_map['x'].name == expected_names[count]
-        count += 1
-
-    # This pattern appears 3 times in the model.
-    assert count == 3
-
-
-def test_multiple_same_ops__mathing_inputs_from_the_back(_builder_for_alexnet_model):
-    matcher = PatternMatcher(
-        _builder_for_alexnet_model,
-        [
-            Op(['Split'], outputs=[None, 'x']),
-            Op(['Conv2D'], ['x', ...], ['y']),
-            MultipleSameOps(['Concatenation'], [..., 'y']),
-        ])
-
-    count = 0
-    expected_names = [
-        'conv2_1_group_0_group_1',
-        'conv4_1_group_0_group_1',
-        'conv5_1_group_0_group_1'
-    ]
-    for [_, _, concat_ops], tensor_map, _, _ in matcher.match_patterns():
-        assert len(concat_ops) == 1  # Just 1 `Concatenation` was matched with the `MultipleSameOps`.
-        assert 'y' in tensor_map.keys()
-        assert tensor_map['y'].name == expected_names[count]
-        count += 1
-
-    assert count == 3  # The pattern appears 3 times in the model.
-
-
-def test_multiple_same_ops__mathing_outputs_from_the_back(_builder_for_alexnet_model):
-    matcher = PatternMatcher(
-        _builder_for_alexnet_model,
-        [
-            Op(['Relu'], outputs=['x']),
-            MultipleSameOps(['Split'], [..., 'x', ...], [..., 'y']),
-        ])
-
-    count = 0
-    for [_, split_ops], tensor_map, _, _ in matcher.match_patterns():
-        assert len(split_ops) == 1  # Just 1 `Split` was matched with the `MultipleSameOps`.
-        assert 'y' in tensor_map.keys()
-        assert len(tensor_map['y']) == 1
-        assert tensor_map['y'][0].name == 'conv4_2_group_1'
-        count += 1
-
-    assert count == 1  # The pattern appears just once in the model.
+# TODO(EITO-888) enable on different model
+# def test_op__mathing_outputs_from_the_back__last_output(_builder_for_alexnet_model):
+#     matcher = PatternMatcher(
+#         _builder_for_alexnet_model,
+#         [
+#             Op(['Split'], outputs=[..., 'x']),
+#             Op(['Conv2D'], ['x', ...], ['y']),
+#             Op(['Concatenation'], [..., 'y']),
+#         ])
+#
+#     count = 0
+#     expected_names = [
+#         'pool1_1_group_1',
+#         'conv3_2_group_1',
+#         'conv4_2_group_1'
+#     ]
+#     for _, tensor_map, _, _ in matcher.match_patterns():
+#         assert 'x' in tensor_map.keys()
+#         assert tensor_map['x'].name == expected_names[count]
+#         count += 1
+#
+#     # This pattern appears 3 times in the model.
+#     assert count == 3
+#
+#
+# def test_op__mathing_outputs_from_the_back__second_to_last_output(_builder_for_alexnet_model):
+#     matcher = PatternMatcher(
+#         _builder_for_alexnet_model,
+#         [
+#             Op(['Split'], outputs=[..., 'x', None]),
+#             Op(['Conv2D'], ['x', ...], ['y']),
+#             Op(['Concatenation'], ['y', ...]),
+#         ])
+#
+#     count = 0
+#     expected_names = [
+#         'pool1_1_group_0',
+#         'conv3_2_group_0',
+#         'conv4_2_group_0'
+#     ]
+#     for _, tensor_map, _, _ in matcher.match_patterns():
+#         assert 'x' in tensor_map.keys()
+#         assert tensor_map['x'].name == expected_names[count]
+#         count += 1
+#
+#     # This pattern appears 3 times in the model.
+#     assert count == 3
+#
+#
+# def test_multiple_same_ops__mathing_inputs_from_the_back(_builder_for_alexnet_model):
+#     matcher = PatternMatcher(
+#         _builder_for_alexnet_model,
+#         [
+#             Op(['Split'], outputs=[None, 'x']),
+#             Op(['Conv2D'], ['x', ...], ['y']),
+#             MultipleSameOps(['Concatenation'], [..., 'y']),
+#         ])
+#
+#     count = 0
+#     expected_names = [
+#         'conv2_1_group_0_group_1',
+#         'conv4_1_group_0_group_1',
+#         'conv5_1_group_0_group_1'
+#     ]
+#     for [_, _, concat_ops], tensor_map, _, _ in matcher.match_patterns():
+#         assert len(concat_ops) == 1  # Just 1 `Concatenation` was matched with the `MultipleSameOps`.
+#         assert 'y' in tensor_map.keys()
+#         assert tensor_map['y'].name == expected_names[count]
+#         count += 1
+#
+#     assert count == 3  # The pattern appears 3 times in the model.
+#
+#
+# def test_multiple_same_ops__mathing_outputs_from_the_back(_builder_for_alexnet_model):
+#     matcher = PatternMatcher(
+#         _builder_for_alexnet_model,
+#         [
+#             Op(['Relu'], outputs=['x']),
+#             MultipleSameOps(['Split'], [..., 'x', ...], [..., 'y']),
+#         ])
+#
+#     count = 0
+#     for [_, split_ops], tensor_map, _, _ in matcher.match_patterns():
+#         assert len(split_ops) == 1  # Just 1 `Split` was matched with the `MultipleSameOps`.
+#         assert 'y' in tensor_map.keys()
+#         assert len(tensor_map['y']) == 1
+#         assert tensor_map['y'][0].name == 'conv4_2_group_1'
+#         count += 1
+#
+#     assert count == 1  # The pattern appears just once in the model.
 
 
 def test_multiple_same_ops__none_ops(_builder_for_custom_model):
