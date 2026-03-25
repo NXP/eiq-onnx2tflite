@@ -9,6 +9,7 @@ from collections import defaultdict
 import onnx
 from onnx.helper import make_tensor_value_info
 
+from onnx2tflite.src import logger
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
 
 
@@ -27,12 +28,6 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
         if not self.contains_quantization_nodes():
             return
 
-        # Do not run optimization for opset lower than 10.
-        # Old models tend to have initializers also in inputs collection
-        # which causes issues.
-        if self.model.ir_version < 10:
-            return
-
         # Compute consumer mapping
         tensor_consumers = defaultdict(list)
         for node in self.model.graph.node:
@@ -48,6 +43,16 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
 
                 if len(dequantize_consumers) > 1 and all_inputs_static:
                     dequantize_nodes_multiple_consumers.append((node, index, dequantize_consumers))
+
+        # Do not run optimization for IR version lower than 10.
+        # Old models tend to have initializers also in inputs collection
+        # which causes issues.
+        if self.model.ir_version < 10:
+            if len(dequantize_nodes_multiple_consumers) > 0:
+                logger.w("Model contains DequantizeLinear nodes with multiple consumers but model's IR version < 10. "
+                         "This will lead to unnecessary Dequantize ops in produced TFLite model and some operators "
+                         "will not run quantized fashion. Use model with IR version >= 10.")
+            return
 
         # Process each DequantizeLinear node
         for (node, index, consumers) in dequantize_nodes_multiple_consumers:
