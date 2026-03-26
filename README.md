@@ -1,10 +1,11 @@
 # ONNX2TFLite converter & ONNX2Quant quantizer
 
-[![latest-version](https://img.shields.io/badge/eiq--onnx2tflite-0.8.0-brightgreen)](https://eiq.nxp.com/repository/eiq-onnx2tflite/)
-![python-badge](https://img.shields.io/badge/Python-3.10.11-green)
+[![latest-version](https://img.shields.io/github/v/release/nxp/eiq-onnx2tflite?label=Release
+)](https://eiq.nxp.com/repository/eiq-onnx2tflite/)
+![python-badge](https://img.shields.io/badge/Python-3.10+-green)
 ![tensorflow-badge](https://img.shields.io/badge/TensorFlow-2.18.1-FF6F00?logo=tensorflow)
-![onnx-badge](https://img.shields.io/badge/ONNX-1.17.0-005CED?logo=onnx)
-![ORT-badge](https://img.shields.io/badge/ONNX_Runtime-1.21.1-lightgray?logo=onnx)
+![onnx-badge](https://img.shields.io/badge/ONNX-1.20.1-005CED?logo=onnx)
+![ORT-badge](https://img.shields.io/badge/ONNX_Runtime-1.24.3-lightgray?logo=onnx)
 ![onnx-opset](https://img.shields.io/badge/ONNX_Opset-7+-blue?logo=onnx)
 
 ONNX2TFLite converter is CLI tool which allows you to convert ONNX models (`*.onnx`) into the analogous model in
