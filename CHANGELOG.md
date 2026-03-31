@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-03-31
+
 ### Added
 
 - `[onnx2tflite|onnx2quant]` Support for quantization and conversion of (quantized) Gelu operator
