@@ -51,7 +51,7 @@ class ReplaceInputInvariantTransposeWithReshape(BaseOptimization):
 
         transpose_replaced = False
 
-        for [transpose], tensor_map, input_to_ops, _ in matcher.match_patterns():
+        for [transpose], tensor_map, _, _ in matcher.match_patterns():
             x = tensor_map["x"]
             y = tensor_map["y"]
 
