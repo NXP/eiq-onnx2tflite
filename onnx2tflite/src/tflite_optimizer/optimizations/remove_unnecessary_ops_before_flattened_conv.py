@@ -63,7 +63,7 @@ class RemoveUnnecessaryOpsBeforeFlattenedConv(BaseOptimization):
         )
 
         to_remove = []
-        for (transpose, reshape, conv), tensor_map, _, _ in matcher.match_patterns():
+        for (transpose, reshape, _), tensor_map, _, _ in matcher.match_patterns():
             x = tensor_map["x"]
             w = tensor_map["w"]
             transpose_out = tensor_map["transpose_out"]
