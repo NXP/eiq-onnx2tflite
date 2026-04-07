@@ -121,6 +121,7 @@ class QDQClustersRecognizer:
         "Sigmoid",
         "Slice",
         "Softmax",
+        "SpaceToDepth",
         "Split",
         "Squeeze",
         "Sub",
@@ -881,7 +882,7 @@ class QDQQuantizer:
         # "Sin",  # TFLite doesn't support quantized version of this operator, only float is supported https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L504
         "Slice",
         "Softmax",
-        # "SpaceToDepth",
+        "SpaceToDepth",
         "Split",
         # "Sqrt",  # TFLite doesn't support quantized version of this operator
         "Squeeze",
@@ -933,6 +934,7 @@ class QDQQuantizer:
         QDQRegistry["ScatterND"] = QDQScatterND
         QDQRegistry["Sigmoid"] = QDQSigmoid
         QDQRegistry["Softmax"] = QDQSoftmax
+        QDQRegistry["SpaceToDepth"] = QDQDirect8BitOp
         QDQRegistry["Tanh"] = QDQTanh
         QDQRegistry["Tile"] = QDQDirect8BitOp
         QDQRegistry["Where"] = QDQWhere
