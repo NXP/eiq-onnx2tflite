@@ -86,6 +86,7 @@ class QDQClustersRecognizer:
         "Concat",
         "Conv",
         "ConvTranspose",
+        "DepthToSpace",
         "Equal",
         "Expand",
         "Flatten",
@@ -819,7 +820,7 @@ class QDQQuantizer:
         "ConvTranspose",
         # "Cos",  # TFLite supports only float https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L512
         # "CumSum",  # TFLite doesn't support quantized version of this operator, https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/cumsum.cc#L39
-        # "DepthToSpace",
+        "DepthToSpace",
         # "Div",  # TFLite supports only quantized uint8 https://github.com/tensorflow/tensorflow/issues/42882
         # "Dropout",  # Not supported by the nature of the operator
         # "Einsum",  # Represented as Flex Operator
@@ -907,6 +908,7 @@ class QDQQuantizer:
         QDQRegistry["ArgMin"] = QDQOperatorBase
         QDQRegistry["Clip"] = QDQClip
         QDQRegistry["Concat"] = QDQConcat
+        QDQRegistry["DepthToSpace"] = QDQDirect8BitOp
         QDQRegistry["Expand"] = QDQDirect8BitOp
         QDQRegistry["Flatten"] = QDQDirect8BitOp
         QDQRegistry["GatherND"] = QDQDirect8BitOp
