@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -7,6 +7,7 @@
 import os.path
 import pathlib
 
+import numpy as np
 import onnx
 import onnx.shape_inference
 import pytest
@@ -292,6 +293,35 @@ def test_slice___negative_int_max_ends():
 
     assert inferred_model.graph.output[0].type.tensor_type.shape.dim[0].dim_value == 4
     assert inferred_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value == 2
+
+
+def test_einsum__with_ellipsis():
+    x_shape = [1, 2, 2]
+    y_shape = [1, 280, 7, 2]
+    equation = 'tij,t...j -> t...i'
+
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node('Einsum', ['a', 'b'], ['y'], equation=equation)],
+        'Einsum test',
+        [
+            onnx.helper.make_tensor_value_info('a', TensorProto.FLOAT, x_shape),
+            onnx.helper.make_tensor_value_info('b', TensorProto.FLOAT, y_shape)
+        ],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
+    )
+    model = onnx.helper.make_model(graph)
+
+    inferred_model = ModelShapeInference.infer_shapes(model)
+
+    x = np.ones(x_shape)
+    y = np.ones(y_shape)
+
+    output_shape = np.einsum(equation, x, y).shape
+
+    assert inferred_model.graph.output[0].type.tensor_type.shape.dim[0].dim_value == output_shape[0] # 1
+    assert inferred_model.graph.output[0].type.tensor_type.shape.dim[1].dim_value == output_shape[1] # 280
+    assert inferred_model.graph.output[0].type.tensor_type.shape.dim[2].dim_value == output_shape[2] # 7
+    assert inferred_model.graph.output[0].type.tensor_type.shape.dim[3].dim_value == output_shape[3] # 2
 
 
 def test_incomplete_shape_inference__best_effort_model__generated():
