@@ -130,6 +130,7 @@ class QDQClustersRecognizer:
         "Tanh",
         "Tile",
         "Transpose",
+        "TopK",
         "Unsqueeze",
         "Where",
     ]
@@ -893,6 +894,7 @@ class QDQQuantizer:
         "Tanh",
         "Tile",
         "Transpose",
+        "TopK",
         "Unsqueeze",
         # "Upsample",  # `Upsample` was deprecated in opset 10. This quantizer requires at least 11.
         "Where",
@@ -939,6 +941,7 @@ class QDQQuantizer:
         QDQRegistry["SpaceToDepth"] = QDQDirect8BitOp
         QDQRegistry["Tanh"] = QDQTanh
         QDQRegistry["Tile"] = QDQDirect8BitOp
+        QDQRegistry["TopK"] = QDQDirect8BitOp
         QDQRegistry["Where"] = QDQWhere
 
     # noinspection PyUnresolvedReferences

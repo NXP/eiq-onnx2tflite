@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 - `[onnx2tflite]` Support for QDQ variant of DepthToSpace and SpaceToDepth operators
+- `[onnx2tflite]` Support for TopK operator (quantized and float variant)
 - `[onnx2tflite]` Support for DepthToSpace with mode="CRD"
 
 ### Fixed

@@ -59,7 +59,8 @@ class TopKConverter(NodeConverter):
         k = t_op.tmp_inputs[1]
         rank = len(x.shape.vector)
 
-        self.assert_type_allowed(x.type)
+        if not t_op.is_qdq_quantized():
+            self.assert_type_allowed(x.type)
 
         if not tensor_has_data(k):
             logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of 'TopK' with dynamic 'k' tensor in not possible.")
