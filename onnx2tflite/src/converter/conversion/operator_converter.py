@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -138,6 +138,7 @@ class OperatorConverter:
         "Tan": node_converters.TanConverter,
         "Tanh": node_converters.TanhConverter,
         "Tile": node_converters.TileConverter,
+        "TopK": node_converters.TopKConverter,
         "Transpose": node_converters.TransposeConverter,
         "Unsqueeze": node_converters.UnsqueezeConverter,
         "Upsample": node_converters.UpsampleConverter,

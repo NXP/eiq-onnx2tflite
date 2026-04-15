@@ -15,17 +15,14 @@ from onnx2tflite.src.converter import convert
 
 
 def test_unsupported_models_logged():
-    k = 3
     graph = onnx.helper.make_graph(
-        [onnx.helper.make_node('TopK', ['x', 'k'], ['y', 'i'])],
-        'TopK test',
+        [onnx.helper.make_node('LpNormalization', ['x'], ['y'])],
+        'LpNormalization test',
         [
-            onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, [1, 10]),
-            onnx.helper.make_tensor_value_info('k', TensorProto.INT64, [1])
+            onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, [1, 10])
         ],
         [
-            onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, [1, k]),
-            onnx.helper.make_tensor_value_info('i', TensorProto.INT64, [1, k])
+            onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, [1, 10]),
         ],
     )
     onnx_model = onnx.helper.make_model(graph)
@@ -35,4 +32,4 @@ def test_unsupported_models_logged():
 
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.UNSUPPORTED_OPERATOR
     parser_logs = logger.conversion_log.get_logs()["onnx_parser"]
-    assert any(["Model contains unsupported nodes: [TopK]." in parser_logs[0]["message"]])
+    assert any(["Model contains unsupported nodes: [LpNormalization]." in parser_logs[0]["message"]])

@@ -1635,13 +1635,13 @@ NODE = {
     # "test_thresholdedrelu_expanded_ver18": {},
     "test_tile": {CONVERSION_ARGS: {"skip_shape_inference": True}},
     "test_tile_precomputed": {CONVERSION_ARGS: {"skip_shape_inference": True}},
-    # "test_top_k": {},
-    # "test_top_k_negative_axis": {},
-    # "test_top_k_same_values": {},
-    # "test_top_k_same_values_2d": {},
-    # "test_top_k_same_values_largest": {},
-    # "test_top_k_smallest": {},
-    # "test_top_k_uint64": {},
+    # "test_top_k": {},  # K input tensor is dynamic -> shape inference fails
+    # "test_top_k_negative_axis": {},  # K input tensor is dynamic -> shape inference fails
+    # "test_top_k_same_values": {},  # K input tensor is dynamic -> shape inference fails
+    # "test_top_k_same_values_2d": {},  # K input tensor is dynamic -> shape inference fails
+    # "test_top_k_same_values_largest": {},  # K input tensor is dynamic -> shape inference fails
+    # "test_top_k_smallest": {},  # K input tensor is dynamic -> shape inference fails
+    # "test_top_k_uint64": {},  # K input tensor is dynamic -> shape inference fails
     "test_training_dropout": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
     "test_training_dropout_default": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},
     "test_training_dropout_default_mask": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")},

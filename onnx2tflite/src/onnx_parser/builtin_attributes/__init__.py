@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -67,6 +67,7 @@ from .softmax_attributes import Softmax
 from .space_to_depth_attributes import SpaceToDepth
 from .split_attributes import Split
 from .squeeze_attributes import Squeeze
+from .topk_attributes import TopK
 from .transpose_attributes import Transpose
 from .unsqueeze_attributes import Unsqueeze
 from .upsample_attributes import Upsample
@@ -78,6 +79,6 @@ __all__ = [
     HardSigmoid, InstanceNormalization, LayerNormalization, LeakyRelu, LogSoftmax, LRN, LSTM, MatMul, MaxPool, Mod,
     Multinomial, OneHot, Pad, QGemm, QLinearAveragePool, QLinearConcat, QLinearConv, QLinearGlobalAveragePool,
     QLinearSoftmax, QuantizeLinear, QuickGelu, ReduceL2, ReduceMax, ReduceMean, ReduceMin, ReduceProd, ReduceSum, Relu,
-    Reshape, Resize, ReverseSequence, RNN, ScatterND, Shape, Slice, Softmax, SpaceToDepth, Split, Squeeze, Transpose,
-    Unsqueeze, Upsample, Where
+    Reshape, Resize, ReverseSequence, RNN, ScatterND, Shape, Slice, Softmax, SpaceToDepth, Split, Squeeze, TopK,
+    Transpose, Unsqueeze, Upsample, Where
 ]

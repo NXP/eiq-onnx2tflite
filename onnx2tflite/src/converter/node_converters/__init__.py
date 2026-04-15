@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -109,6 +109,7 @@ from .sum_converter import SumConverter
 from .tan_converter import TanConverter
 from .tanh_converter import TanhConverter
 from .tile_converter import TileConverter
+from .topk_converter import TopKConverter
 from .transpose_converter import TransposeConverter
 from .unsqueeze_converter import UnsqueezeConverter
 from .upsample_converter import UpsampleConverter
@@ -134,6 +135,6 @@ __all__ = [
     ReduceMinConverter, ReduceProdConverter, ReduceSumConverter, ReluConverter, ReshapeConverter, ResizeConverter,
     ReverseSequenceConverter, RoundConverter, ScatterNDConverter, ShapeConverter, SigmoidConverter, SignConverter,
     SinConverter, SliceConverter, SoftmaxConverter, SpaceToDepthConverter, SplitConverter, SqrtConverter,
-    SqueezeConverter, SubConverter, SumConverter, TanhConverter, TanConverter, TileConverter, TransposeConverter,
-    UnsqueezeConverter, UpsampleConverter, WhereConverter, XorConverter
+    SqueezeConverter, SubConverter, SumConverter, TanhConverter, TanConverter, TileConverter, TopKConverter,
+    TransposeConverter, UnsqueezeConverter, UpsampleConverter, WhereConverter, XorConverter
 ]

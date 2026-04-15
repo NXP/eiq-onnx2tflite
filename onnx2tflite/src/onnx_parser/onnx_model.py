@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -310,6 +310,7 @@ class NodeProto(meta.ONNXObject):
         "Tanh": None,
         "Tile": None,
         "Transpose": builtin_attributes.Transpose,
+        "TopK": builtin_attributes.TopK,
         "Unsqueeze": builtin_attributes.Unsqueeze,
         "Upsample": builtin_attributes.Upsample,
         "Where": builtin_attributes.Where,
