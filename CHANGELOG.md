@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 
+- `[onnx2tflite]` Support for QDQ variant of DepthToSpace and SpaceToDepth operators
+- `[onnx2tflite]` Support for DepthToSpace with mode="CRD"
+
+### Fixed
+
+- `[onnx2tflite]` Fixed shape inference for Einsum operator
+
 ## [0.10.0] - 2026-03-31
 
 ### Added
