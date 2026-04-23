@@ -86,6 +86,7 @@ class QDQClustersRecognizer:
         "Concat",
         "Conv",
         "ConvTranspose",
+        "DepthToSpace",
         "Equal",
         "Expand",
         "Flatten",
@@ -121,6 +122,7 @@ class QDQClustersRecognizer:
         "Sigmoid",
         "Slice",
         "Softmax",
+        "SpaceToDepth",
         "Split",
         "Squeeze",
         "Sub",
@@ -818,7 +820,7 @@ class QDQQuantizer:
         "ConvTranspose",
         # "Cos",  # TFLite supports only float https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L512
         # "CumSum",  # TFLite doesn't support quantized version of this operator, https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/cumsum.cc#L39
-        # "DepthToSpace",
+        "DepthToSpace",
         # "Div",  # TFLite supports only quantized uint8 https://github.com/tensorflow/tensorflow/issues/42882
         # "Dropout",  # Not supported by the nature of the operator
         # "Einsum",  # Represented as Flex Operator
@@ -881,7 +883,7 @@ class QDQQuantizer:
         # "Sin",  # TFLite doesn't support quantized version of this operator, only float is supported https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/elementwise.cc#L504
         "Slice",
         "Softmax",
-        # "SpaceToDepth",
+        "SpaceToDepth",
         "Split",
         # "Sqrt",  # TFLite doesn't support quantized version of this operator
         "Squeeze",
@@ -906,6 +908,7 @@ class QDQQuantizer:
         QDQRegistry["ArgMin"] = QDQOperatorBase
         QDQRegistry["Clip"] = QDQClip
         QDQRegistry["Concat"] = QDQConcat
+        QDQRegistry["DepthToSpace"] = QDQDirect8BitOp
         QDQRegistry["Expand"] = QDQDirect8BitOp
         QDQRegistry["Flatten"] = QDQDirect8BitOp
         QDQRegistry["GatherND"] = QDQDirect8BitOp
@@ -933,6 +936,7 @@ class QDQQuantizer:
         QDQRegistry["ScatterND"] = QDQScatterND
         QDQRegistry["Sigmoid"] = QDQSigmoid
         QDQRegistry["Softmax"] = QDQSoftmax
+        QDQRegistry["SpaceToDepth"] = QDQDirect8BitOp
         QDQRegistry["Tanh"] = QDQTanh
         QDQRegistry["Tile"] = QDQDirect8BitOp
         QDQRegistry["Where"] = QDQWhere

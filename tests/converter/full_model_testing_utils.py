@@ -6,6 +6,8 @@
 #
 
 import functools
+import logging
+import logging
 import os
 import warnings
 from typing import List, Optional, Dict
@@ -18,10 +20,15 @@ import pytest
 import tests.converter.enabled_onnx_tests as enabled_onnx_tests
 from onnx2quant.qdq_quantization import RandomDataCalibrationDataReader, QDQQuantizer
 from onnx2quant.quantization_config import QuantizationConfig
+from onnx2tflite.lib.tflite.BuiltinOptions import BuiltinOptions
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
+from onnx2tflite.src.tflite_generator.builtin_options import quantize_options, dequantize_options, transpose_options
+from tests.conftest import intermediate_tflite_model_provider
 from tests.executors import OnnxExecutor, TFLiteExecutor
+
+pylogger = logging.getLogger("onnx2tflite")
 
 
 def load_test_artifacts(root_dir, subdir, enabled_tests: Optional[Dict]) -> List[pytest.param]:
@@ -144,16 +151,25 @@ def full_quantized_model_test(func):
 
         tfl_model = convert.convert_model(quantized_onnx_model, ConversionConfig(conversion_args))
 
-        onnx_executor = OnnxExecutor(quantized_onnx_model.SerializeToString())
+        onnx_executor = OnnxExecutor(quantized_onnx_model.SerializeToString(), save_model=True)
         output_onnx = onnx_executor.inference(input_data_onnx)
 
-        tflite_executor = TFLiteExecutor(model_content=bytes(tfl_model))
+        tflite_executor = TFLiteExecutor(model_content=bytes(tfl_model), save_model=True)
         tflite_output = tflite_executor.inference(input_data_tflite)
+
+        if 'intermediate_tflite_model_provider' in kwargs:
+            intermediate_tflite_model_provider = kwargs['intermediate_tflite_model_provider']
+            quantize_op_count = intermediate_tflite_model_provider.get_op_count(quantize_options.Quantize)
+            dequantize_op_count = intermediate_tflite_model_provider.get_op_count(dequantize_options.Dequantize)
+            transpose_op_count = intermediate_tflite_model_provider.get_op_count(transpose_options.Transpose)
+            pylogger.info("TFLite op counts: Quantize=%s | Dequantize=%s | Transpose=%s", quantize_op_count,
+                          dequantize_op_count,
+                          transpose_op_count),
 
         def _compare_output_tensors(onnx_tensor: np.ndarray, tflite_tensor: np.ndarray, tensor_name=None,
                                     atol=kwargs['atol']):
-            print(
-                f"[{test_name}][tensor: {tensor_name}] Maximum output difference: {np.max(np.abs(tflite_tensor - onnx_tensor))} (atol = {atol})")
+            diff = np.max(np.abs(tflite_tensor - onnx_tensor))
+            pylogger.info(f"[{test_name}][tensor: {tensor_name}] Maximum output difference: {diff} (atol = {atol})")
             assert np.allclose(onnx_tensor, tflite_tensor, atol=atol)
 
         # If model has multiple outputs, they are stored as dictionary
@@ -202,10 +218,19 @@ def full_model_test(func):
         tflite_executor = TFLiteExecutor(model_content=converted_tflite)
         tflite_output = tflite_executor.inference(input_data_tflite)
 
+        if 'intermediate_tflite_model_provider' in kwargs:
+            intermediate_tflite_model_provider = kwargs['intermediate_tflite_model_provider']
+            quantize_op_count = intermediate_tflite_model_provider.get_op_count(quantize_options.Quantize)
+            dequantize_op_count = intermediate_tflite_model_provider.get_op_count(dequantize_options.Dequantize)
+            transpose_op_count = intermediate_tflite_model_provider.get_op_count(transpose_options.Transpose)
+            pylogger.info("TFLite op counts: Quantize=%s | Dequantize=%s | Transpose=%s", quantize_op_count,
+                          dequantize_op_count,
+                          transpose_op_count),
+
         def _compare_output_tensors(onnx_tensor: np.ndarray, tflite_tensor: np.ndarray, tensor_name=None,
                                     atol=kwargs['atol']):
-            print(
-                f"[{test_name}][tensor: {tensor_name}] Maximum output difference: {np.max(np.abs(tflite_tensor - onnx_tensor))} (atol = {atol})")
+            diff = np.max(np.abs(tflite_tensor - onnx_tensor))
+            pylogger.info(f"[{test_name}][tensor: {tensor_name}] Maximum output difference: {diff} (atol = {atol})")
             assert np.allclose(onnx_tensor, tflite_tensor, atol=atol)
 
         # If model has multiple outputs, they are stored as dictionary

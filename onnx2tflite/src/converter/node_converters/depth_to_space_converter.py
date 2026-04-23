@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -27,19 +27,24 @@ class DepthToSpaceConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `DepthToSpace` operator to TFLite `DepthToSpace`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `DepthToSpace` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `DepthToSpace` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
+            )
 
         x = t_op.tmp_inputs[0]
-        self.assert_type_allowed(x.type)
+        if not t_op.is_qdq_quantized():
+            self.assert_type_allowed(x.type)
 
         attrs = cast(depth_to_space_attributes.DepthToSpace, node.attributes)
 
         if attrs.mode != "DCR":
             # TFLite `DepthToSpace` always uses the `DCR` mode. Other modes would have to be converted into expanded
             #  form: Reshape -> Transpose -> Reshape, as defined in the ONNX documentation for other modes.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX `DepthToSpace` with `mode={attrs.mode}` is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of ONNX `DepthToSpace` with `mode={attrs.mode}` is not yet supported.",
+            )
 
         t_op.builtin_options = DepthToSpace(attrs.block_size)
 

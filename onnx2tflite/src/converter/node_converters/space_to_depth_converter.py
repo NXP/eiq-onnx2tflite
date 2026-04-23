@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -31,7 +31,8 @@ class SpaceToDepthConverter(NodeConverter):
                      f"ONNX `SpaceToDepth` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
-        self.assert_type_allowed(x.type)
+        if not t_op.is_qdq_quantized():
+            self.assert_type_allowed(x.type)
 
         attrs = cast(space_to_depth_attributes.SpaceToDepth, node.attributes)
         t_op.builtin_options = SpaceToDepth(attrs.block_size)

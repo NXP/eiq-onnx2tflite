@@ -85,7 +85,8 @@ ONNX_FULL_MODEL_SPECS = load_full_model_specs(_ARTIFACTS_DIR, "downloaded", enab
 
 @pytest.mark.parametrize("onnx_artifact_dir, atol, conversion_args", ONNX_FULL_MODEL_SPECS)
 @full_model_test
-def test_output__full_onnx_models(onnx_artifact_dir: str, atol: float, conversion_args: dict):
+def test_output__full_onnx_models(onnx_artifact_dir: str, atol: float, conversion_args: dict,
+                                  intermediate_tflite_model_provider):
     model_path = os.path.join(onnx_artifact_dir, "model.onnx")
     input_data_onnx, input_data_tflite = _load_input_tensors(os.path.join(onnx_artifact_dir, "test_data_set_0"))
 
@@ -98,7 +99,8 @@ ONNX_MODELS_QUANTIZABLE = load_full_model_specs(_ARTIFACTS_DIR, "downloaded",
 
 @pytest.mark.parametrize("onnx_artifact_dir, atol, conversion_args", ONNX_MODELS_QUANTIZABLE)
 @full_quantized_model_test
-def test_output_of_onnx_models_quantized(onnx_artifact_dir: str, atol: float, conversion_args: dict):
+def test_output_of_onnx_models_quantized(onnx_artifact_dir: str, atol: float, conversion_args: dict,
+                                         intermediate_tflite_model_provider):
     model_path = os.path.join(onnx_artifact_dir, "model.onnx")
     input_data_onnx, input_data_tflite = _load_input_tensors(os.path.join(onnx_artifact_dir, "test_data_set_0"))
 
