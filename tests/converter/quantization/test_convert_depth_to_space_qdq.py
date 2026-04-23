@@ -39,3 +39,32 @@ def test_convert_depth_to_space_qdq(intermediate_tflite_model_provider):
         BuiltinOperator.DEPTH_TO_SPACE,
         BuiltinOperator.DEQUANTIZE, BuiltinOperator.RESHAPE,
     ])
+
+
+def test_convert_depth_to_space_qdq__crd(intermediate_tflite_model_provider):
+    input_shape = [2, 4, 4, 6]
+
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node("DepthToSpace", ["x"], ["output"], blocksize=2, mode="CRD")],
+        'DepthToSpace test',
+        [onnx.helper.make_tensor_value_info("x", TensorProto.FLOAT, input_shape)],
+        [onnx.helper.make_tensor_value_info("output", TensorProto.FLOAT, ())],
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    calibration_data_reader = RandomDataCalibrationDataReader({"x": InputSpec(input_shape, np.float32)})
+
+    quantized_model = QDQQuantizer().quantize_model(onnx_model, calibration_data_reader.to_config())
+    quantized_model = ModelShapeInference.infer_shapes(quantized_model)
+
+    input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
+
+    executors.convert_run_compare(quantized_model, input_data)
+
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([
+        BuiltinOperator.TRANSPOSE, BuiltinOperator.QUANTIZE,
+        BuiltinOperator.RESHAPE,
+        BuiltinOperator.TRANSPOSE,
+        BuiltinOperator.RESHAPE,
+        BuiltinOperator.DEQUANTIZE, BuiltinOperator.RESHAPE,
+    ])

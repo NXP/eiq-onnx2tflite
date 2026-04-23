@@ -581,7 +581,7 @@ NODE = {
     "test_cumsum_2d_negative_axis": {CONVERSION_ERROR: conversion_impossible("Conversion of the ONNX operator `CumSum` with type `FLOAT64`, is not possible.")},
     # "test_deform_conv_with_mask_bias": {},
     # "test_deform_conv_with_multiple_offset_groups": {},
-    "test_depthtospace_crd_mode_example": {CONVERSION_ERROR: not_implemented("Conversion of ONNX `DepthToSpace` with `mode=CRD` is not yet supported.")},
+    "test_depthtospace_crd_mode_example": {},
     "test_depthtospace_example": {},
     "test_dequantizelinear": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},
     "test_dequantizelinear_axis": {CONVERSION_ERROR: conversion_impossible("Conversion of ONNX 'DequantizeLinear' is only possible when the quantization parameters are static!")},

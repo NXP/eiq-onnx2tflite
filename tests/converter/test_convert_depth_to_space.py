@@ -26,14 +26,15 @@ from tests import executors
         (18, 3),
         (50, 5),
     ])
-def test_convert_depth_to_space(channels: int, block_size: int):
+@pytest.mark.parametrize("mode", ["CRD", "DCR"])
+def test_convert_depth_to_space(channels: int, block_size: int, mode: str):
     shape = [2, channels, 3, 4]
 
     np.random.seed(42)
     data = np.random.random(shape).astype('float32')
 
     graph = onnx.helper.make_graph(
-        [onnx.helper.make_node('DepthToSpace', ['x'], ['y'], blocksize=block_size)],
+        [onnx.helper.make_node('DepthToSpace', ['x'], ['y'], blocksize=block_size, mode=mode)],
         'DepthToSpace test',
         [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
         [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
@@ -103,24 +104,6 @@ def test_convert_depth_to_space__format_handling(intermediate_tflite_model_provi
     intermediate_tflite_model_provider.assert_converted_model_has_operators([
         BuiltinOperator.TRANSPOSE, BuiltinOperator.DEPTH_TO_SPACE, BuiltinOperator.TRANSPOSE
     ])
-
-
-def test_convert_depth_to_space__unsupported_mode():
-    mode = 'CRD'
-
-    shape = [2, 16, 3, 4]
-    graph = onnx.helper.make_graph(
-        [onnx.helper.make_node('DepthToSpace', ['x'], ['y'], blocksize=2, mode=mode)],
-        'DepthToSpace test',
-        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
-        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
-    )
-    onnx_model = onnx.helper.make_model(graph)
-
-    with pytest.raises(logger.Error):
-        convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert 'CRD' in logger.conversion_log.get_node_error_message(0)
 
 
 @pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
