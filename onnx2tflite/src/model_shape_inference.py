@@ -58,6 +58,7 @@ class ModelShapeInference(SymbolicShapeInference):
         self.dispatcher_["ConstantOfShape"] = self._infer_ConstantOfShape
         self.dispatcher_["Dropout"] = self._infer_Dropout
         self.dispatcher_["Expand"] = self._infer_Expand
+        self.dispatcher_["Einsum"] = self._infer_Einsum
         self.dispatcher_["Flatten"] = self._infer_Flatten
         self.dispatcher_["Identity"] = self._infer_Identity
         self.dispatcher_["Mod"] = self._infer_Mod
@@ -103,6 +104,27 @@ class ModelShapeInference(SymbolicShapeInference):
         except BaseException: # noqa: BLE001
             # Data inference failed. Continue.
             pass
+
+    def _infer_Einsum(self, node):  # noqa: N802
+        equation = get_attribute(node, "equation")
+        equation = equation.replace(b" ", b"")
+
+        node_input_shapes = [self._get_shape(node, idx) for idx in range(len(node.input))]
+        shapes_defined = [all(shape) for shape in node_input_shapes]
+
+        if not all(shapes_defined):
+            # Shapes are not well-defined, fallback to original implementation
+            super()._infer_Einsum(node)
+            return
+
+        # Dry-run einsum to get output shape
+        input_data = [np.ones(shape) for shape in node_input_shapes]
+        output_shape = np.einsum(equation, *input_data).shape
+
+        output_dtype = self.known_vi_[node.input[0]].type.tensor_type.elem_type
+        vi = self.known_vi_[node.output[0]]
+        vi.CopyFrom(helper.make_tensor_value_info(node.output[0], output_dtype, output_shape))
+
 
     def _infer_Upsample(self, node: onnx.NodeProto) -> None:  # noqa: N802
         # Originally there was no dispatcher for this operator, and the inference only worked for v7.
