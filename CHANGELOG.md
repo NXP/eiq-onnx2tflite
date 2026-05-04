@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `[onnx2tflite]` Conversion of 1D QLinearConv, quantized Gelu and IsNaN operators
 - `[onnx2quant]` Support for Gelu QDQ quantization
 
+### Changed
+
+- `[onnx2tflite|onnx2quant]` Migrated to ONNX 1.20.0 & ORT 1.24.3
+
 ## [0.9.0] - 2026-02-06
 
 ### Added
