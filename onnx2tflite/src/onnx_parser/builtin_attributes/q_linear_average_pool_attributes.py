@@ -56,10 +56,14 @@ class QLinearAveragePool(meta.ONNXOperatorAttributes):
 
         if self.kernel_shape is None:
             # Required attribute
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX QLinearAveragePool is missing the 'kernel_shape'!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearAveragePool is missing the 'kernel_shape'!"
+            )
 
         if self.channels_last != 0:
             # The converter doesn't really consider this option right now.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearAveragePool with channels_last = "
-                                                  f"'{self.channels_last}' is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX QLinearAveragePool with channels_last = "
+                f"'{self.channels_last}' is not yet implemented.",
+            )

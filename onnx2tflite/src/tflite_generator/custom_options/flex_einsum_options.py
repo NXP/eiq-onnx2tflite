@@ -10,7 +10,6 @@ from onnx2tflite.src.tflite_generator.meta.meta import CustomOptions
 
 
 class Einsum(CustomOptions):
-
     def __init__(self, equation: str, num_operands: int, data_type: TensorType) -> None:
         """Custom options of the `FlexEinsum` operator.
 
@@ -46,29 +45,78 @@ class Einsum(CustomOptions):
 
         internal_type = translator.tflite_type_to_tensor_flow_data_type(data_type)
 
-        data = [
-                   6, 69, 105, 110, 115, 117, 109, 0,  # "Einsum"
-
-                   eq_len + 48, 18,  # Metadata
-
-                   6, 69, 105, 110, 115, 117, 109, 26, 0, 26, 0,  # "Einsum" + metadata
-
-                   42, 7, 10, 1,  # Separator (*)
-
-                   78, 18, 2, 24, num_operands,  # Attribute 'N' (number of operands in the equation)
-
-                   42, 7, 10, 1,  # Separator (*)
-
-                   84, 18, 2, 48, internal_type,  # Attribute 'T' (type).
-
-                   42, eq_len + 14, 10, 8,  # Separator (*) + metadata
-
-                   101, 113, 117, 97, 116, 105, 111, 110,  # "equation"
-
-                   18, eq_len + 2, 18, eq_len  # Metadata
-
-               ] + equation_ascii + [
-                   50, 0, 0, 2, eq_len + 58, eq_len + 51, 20, 20, 4, 40, 1  # Metadata
-               ]
+        data = (
+            [
+                6,
+                69,
+                105,
+                110,
+                115,
+                117,
+                109,
+                0,  # "Einsum"
+                eq_len + 48,
+                18,  # Metadata
+                6,
+                69,
+                105,
+                110,
+                115,
+                117,
+                109,
+                26,
+                0,
+                26,
+                0,  # "Einsum" + metadata
+                42,
+                7,
+                10,
+                1,  # Separator (*)
+                78,
+                18,
+                2,
+                24,
+                num_operands,  # Attribute 'N' (number of operands in the equation)
+                42,
+                7,
+                10,
+                1,  # Separator (*)
+                84,
+                18,
+                2,
+                48,
+                internal_type,  # Attribute 'T' (type).
+                42,
+                eq_len + 14,
+                10,
+                8,  # Separator (*) + metadata
+                101,
+                113,
+                117,
+                97,
+                116,
+                105,
+                111,
+                110,  # "equation"
+                18,
+                eq_len + 2,
+                18,
+                eq_len,  # Metadata
+            ]
+            + equation_ascii
+            + [
+                50,
+                0,
+                0,
+                2,
+                eq_len + 58,
+                eq_len + 51,
+                20,
+                20,
+                4,
+                40,
+                1,  # Metadata
+            ]
+        )
 
         super().__init__("FlexEinsum", bytearray(data))

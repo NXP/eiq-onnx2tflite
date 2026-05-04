@@ -31,12 +31,19 @@ logger.addHandler(syslog)
 def _get_preprocessing_parser() -> argparse.ArgumentParser:
     """Return a parser which handles options used by the pre-processing stage that comes before quantization."""
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--replace-div-with-mul", action=argparse.BooleanOptionalAction, default=True,
-                        help="Replace some 'Div' operators with 'Mul'. 'Div' doesn't support int8 quantization in "
-                             "TFLite so this is replacement can avoid having to compute 'Div' in float32.")
-    parser.add_argument("--replace-constant-with-static-tensor", action=argparse.BooleanOptionalAction,
-                        default=False,
-                        help="Remove 'Constant' nodes and directly assign static data to their output tensors.")
+    parser.add_argument(
+        "--replace-div-with-mul",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Replace some 'Div' operators with 'Mul'. 'Div' doesn't support int8 quantization in "
+        "TFLite so this is replacement can avoid having to compute 'Div' in float32.",
+    )
+    parser.add_argument(
+        "--replace-constant-with-static-tensor",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Remove 'Constant' nodes and directly assign static data to their output tensors.",
+    )
 
     return parser
 
@@ -50,47 +57,88 @@ def _parse_arguments() -> argparse.Namespace:
             Some operators can be QDQ quantized even if there isn't quantized variant 
             in ONNX but TFLite supports quantized version of this specific operator.
         """,
-        parents=[_get_preprocessing_parser()]
+        parents=[_get_preprocessing_parser()],
     )
     parser.add_argument("onnx_model", help="Path to input ONNX '*.onnx' model.")
-    parser.add_argument("-o", "--output", type=str, required=False,
-                        help="Path to the resulting quantized ONNX model. (default: '<input_model_name>_quant.onnx')")
-    parser.add_argument("--per-channel", action=argparse.BooleanOptionalAction,
-                        required=False, default=PER_CHANNEL_DEFAULT,
-                        help="Quantize some weight tensors per-channel instead of per-tensor. This should result in a "
-                             "higher accuracy.")
-    parser.add_argument("-l", "--allow-opset-10-and-lower", action=argparse.BooleanOptionalAction,
-                        required=False, default=False,
-                        help="Allow quantization of models with opset version 10 and lower. Quantization of such models "
-                             "can produce invalid models because opset is forcefully updated to version 11. This applies "
-                             "especially to models with operators: Clip, Dropout, BatchNormalization and Split.")
-    parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
-                        type=str, action="extend", nargs="+", metavar="DIM_NAME:SIZE",
-                        help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
-                             "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
-                             "can be used multiple times.")
-    parser.add_argument("-m", "--set-input-shape", dest="input_shapes_mapping",
-                        type=str, action="extend", nargs="+", metavar="INPUT_NAME:SHAPE",
-                        help="Override model input shape. Provided mapping must follow format '<input_name>:(<dim_0>,"
-                             "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
-                             "times.")
-    parser.add_argument("--generate-artifacts-after-failed-shape-inference", action=argparse.BooleanOptionalAction,
-                        default=True,
-                        help="If the shape inference fails or is incomplete, generate the partially inferred ONNX model "
-                             "as 'sym_shape_infer_temp.onnx'.")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        required=False,
+        help="Path to the resulting quantized ONNX model. (default: '<input_model_name>_quant.onnx')",
+    )
+    parser.add_argument(
+        "--per-channel",
+        action=argparse.BooleanOptionalAction,
+        required=False,
+        default=PER_CHANNEL_DEFAULT,
+        help="Quantize some weight tensors per-channel instead of per-tensor. This should result in a higher accuracy.",
+    )
+    parser.add_argument(
+        "-l",
+        "--allow-opset-10-and-lower",
+        action=argparse.BooleanOptionalAction,
+        required=False,
+        default=False,
+        help="Allow quantization of models with opset version 10 and lower. Quantization of such models "
+        "can produce invalid models because opset is forcefully updated to version 11. This applies "
+        "especially to models with operators: Clip, Dropout, BatchNormalization and Split.",
+    )
+    parser.add_argument(
+        "-s",
+        "--symbolic-dimension-into-static",
+        dest="symbolic_dimensions_mapping",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="DIM_NAME:SIZE",
+        help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
+        "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
+        "can be used multiple times.",
+    )
+    parser.add_argument(
+        "-m",
+        "--set-input-shape",
+        dest="input_shapes_mapping",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="INPUT_NAME:SHAPE",
+        help="Override model input shape. Provided mapping must follow format '<input_name>:(<dim_0>,"
+        "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
+        "times.",
+    )
+    parser.add_argument(
+        "--generate-artifacts-after-failed-shape-inference",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If the shape inference fails or is incomplete, generate the partially inferred ONNX model "
+        "as 'sym_shape_infer_temp.onnx'.",
+    )
 
     calibration_dataset_arguments = parser.add_mutually_exclusive_group(required=True)
-    calibration_dataset_arguments.add_argument("-c", "--calibration-dataset-mapping", dest="calibration_dataset_mapping",
-                        type=str, action="extend", nargs="+", metavar="INPUT_NAME;DATASET_PATH",
-                        help="Mapping between model input and calibration dataset directory with *.npy files. Value must "
-                             "be in format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument "
-                             "can be used multiple times to specify multiple inputs for the model. In case model "
-                             "has semicolon in input tensor's name, it has to be renamed.")
-    calibration_dataset_arguments.add_argument("-u", "--use-random-calibration-dataset", action="store_true",
-                        default=False, dest="use_random_calibration_dataset",
-                        help="Use a random dataset for calibration instead of providing a real calibration dataset. "
-                             "Note that random dataset does not provide reliable quantization results.")
-
+    calibration_dataset_arguments.add_argument(
+        "-c",
+        "--calibration-dataset-mapping",
+        dest="calibration_dataset_mapping",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="INPUT_NAME;DATASET_PATH",
+        help="Mapping between model input and calibration dataset directory with *.npy files. Value must "
+        "be in format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument "
+        "can be used multiple times to specify multiple inputs for the model. In case model "
+        "has semicolon in input tensor's name, it has to be renamed.",
+    )
+    calibration_dataset_arguments.add_argument(
+        "-u",
+        "--use-random-calibration-dataset",
+        action="store_true",
+        default=False,
+        dest="use_random_calibration_dataset",
+        help="Use a random dataset for calibration instead of providing a real calibration dataset. "
+        "Note that random dataset does not provide reliable quantization results.",
+    )
 
     return parser.parse_args()
 
@@ -111,9 +159,11 @@ def _parse_calibration_dataset_mapping(mapped_calibration_dataset: list[str] | s
         mapping_details = mapping.split(";")
 
         if len(mapping_details) != 2:
-            context_logger.e(context_logger.Code.INVALID_INPUT,
-                             f"Calibration dataset mapping '{mapping}' in invalid format. Must be "
-                             f"'<input_name>;<path_to_dataset>' for example 'input_1;data_3_224/'.")
+            context_logger.e(
+                context_logger.Code.INVALID_INPUT,
+                f"Calibration dataset mapping '{mapping}' in invalid format. Must be "
+                f"'<input_name>;<path_to_dataset>' for example 'input_1;data_3_224/'.",
+            )
         parsed_mapping[mapping_details[0]] = mapping_details[1]
 
     return parsed_mapping
@@ -127,7 +177,11 @@ def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: d
     :param args: Quantization arguments as dict provided via CLI.
     """
 
-    calibration_data_reader = None if args.get("use_random_calibration_dataset", False) else NpyCalibrationDataReader(args["calibration_dataset_mapping"])
+    calibration_data_reader = (
+        None
+        if args.get("use_random_calibration_dataset", False)
+        else NpyCalibrationDataReader(args["calibration_dataset_mapping"])
+    )
     quantization_config = QuantizationConfig(calibration_data_reader, args)
     quantized_model = QDQQuantizer().quantize_model(onnx_model, quantization_config=quantization_config)
 
@@ -135,7 +189,6 @@ def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: d
 
 
 class NpyCalibrationDataReader(CalibrationDataReader):
-
     def __init__(self, calibration_dataset_mapping: dict[str, str]):
         """CalibrationDataReader for data saved as numpy arrays (*.npy files).
 
@@ -150,16 +203,16 @@ class NpyCalibrationDataReader(CalibrationDataReader):
 
             filepaths = self._get_filepaths(dir_path)
             if len(filepaths) == 0:
-                context_logger.e(context_logger.Code.INVALID_INPUT,
-                                 f"No *.npy files found in directory '{dir_path}'")
+                context_logger.e(context_logger.Code.INVALID_INPUT, f"No *.npy files found in directory '{dir_path}'")
 
             self.input_data_paths.append(filepaths)
 
         input_lens = [len(dataset) for dataset in self.input_data_paths]
 
         if len(set(input_lens)) != 1:
-            context_logger.e(context_logger.Code.INVALID_INPUT,
-                             "Input dataset dirs don't contain same number of *.npy files.")
+            context_logger.e(
+                context_logger.Code.INVALID_INPUT, "Input dataset dirs don't contain same number of *.npy files."
+            )
 
         self.dataset_length = input_lens[0]
 
@@ -215,7 +268,8 @@ def run_quantization() -> None:
             if args.symbolic_dimensions_mapping:
                 assert isinstance(args.symbolic_dimensions_mapping, list)
                 args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
-                    args.symbolic_dimensions_mapping)
+                    args.symbolic_dimensions_mapping
+                )
 
             if args.input_shapes_mapping:
                 assert isinstance(args.input_shapes_mapping, list)
@@ -225,25 +279,29 @@ def run_quantization() -> None:
                 assert isinstance(args.calibration_dataset_mapping, list)
                 args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
         except Exception as e:  # noqa: BLE001
-            context_logger.e(context_logger.Code.INVALID_INPUT,
-                             f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}")
+            context_logger.e(
+                context_logger.Code.INVALID_INPUT, f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}"
+            )
 
         try:
             onnx_model = onnx.load(args.onnx_model)
 
             _quantize_model(onnx_model, output_onnx_model_path, vars(args))
         except google.protobuf.message.DecodeError as e:
-            context_logger.e(context_logger.Code.INVALID_INPUT, f"Failed to parse file '{args.onnx_model}'!",
-                             exception=e)
+            context_logger.e(
+                context_logger.Code.INVALID_INPUT, f"Failed to parse file '{args.onnx_model}'!", exception=e
+            )
         except FileNotFoundError as e:
-            context_logger.e(context_logger.Code.INVALID_INPUT, f"File '{args.onnx_model}' couldn't be found!",
-                             exception=e)
+            context_logger.e(
+                context_logger.Code.INVALID_INPUT, f"File '{args.onnx_model}' couldn't be found!", exception=e
+            )
         except Error as e:
             # Just propagate the error
             raise e
         except Exception as e:  # noqa: BLE001
-            context_logger.e(context_logger.Code.INTERNAL_ERROR,
-                             f"Internal error ({type(e).__name__}). {traceback.format_exc()}")
+            context_logger.e(
+                context_logger.Code.INTERNAL_ERROR, f"Internal error ({type(e).__name__}). {traceback.format_exc()}"
+            )
 
 
 def run_quantization_wrapper() -> None:

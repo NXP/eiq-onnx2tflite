@@ -27,15 +27,21 @@ class ReverseSequenceConverter(NodeConverter):
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/reverse_sequence.cc#L136-L158
-    tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT16, TensorType.INT32,
-                              TensorType.INT64]
+    tflite_supported_types = [
+        TensorType.FLOAT32,
+        TensorType.UINT8,
+        TensorType.INT16,
+        TensorType.INT32,
+        TensorType.INT64,
+    ]
     verified_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT16, TensorType.INT32, TensorType.INT64]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `ReverseSequence` operator into TFLite `ReverseSequence`."""
         if len(t_op.tmp_inputs) != 2 or len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     "ONNX `ReverseSequence` has invalid number of input and output tensors.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL, "ONNX `ReverseSequence` has invalid number of input and output tensors."
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -65,8 +71,10 @@ class ReverseSequenceConverter(NodeConverter):
 
         time_axis, batch_axis = attrs.time_axis, attrs.batch_axis
         if (time_axis, batch_axis) not in [(0, 1), (1, 0)]:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `ReverseSequence` has invalid `time_axis` ({time_axis}) or `batch_axis` ({batch_axis}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `ReverseSequence` has invalid `time_axis` ({time_axis}) or `batch_axis` ({batch_axis}).",
+            )
 
         # When `sequence_lens` contains `0`, ONNX will just fill that output slice with `0`s, instead of taking it
         #  to mean that a sequence of length `0` should be reversed. TFLite does nothing in these cases, which is
@@ -74,12 +82,17 @@ class ReverseSequenceConverter(NodeConverter):
         sequence_lens_tensor = t_op.tmp_inputs[1]
         if tensor_has_data(sequence_lens_tensor):
             if any(val == 0 for val in sequence_lens_tensor.tmp_buffer.data.flat):
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `ReverseSequence` with a `sequence_lens` "
-                                                      "input which contains the value `0` is not supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX `ReverseSequence` with a `sequence_lens` "
+                    "input which contains the value `0` is not supported.",
+                )
         else:
             # We could add extra operators which would set the corresponding values to `0` if needed.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `ReverseSequence` with a dynamic `sequence_lens` input is not supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX `ReverseSequence` with a dynamic `sequence_lens` input is not supported.",
+            )
 
         t_op.builtin_options = reverse_sequence_options.ReverseSequence(time_axis, batch_axis)
 

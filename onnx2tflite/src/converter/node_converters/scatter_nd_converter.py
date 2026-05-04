@@ -33,8 +33,14 @@ class ScatterNDConverter(NodeConverter):
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/comparisons.cc#L173-L212
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/scatter_nd.cc#L152-L176
-    tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.BOOL, TensorType.INT8, TensorType.INT32,
-                              TensorType.INT64]
+    tflite_supported_types = [
+        TensorType.FLOAT32,
+        TensorType.UINT8,
+        TensorType.BOOL,
+        TensorType.INT8,
+        TensorType.INT32,
+        TensorType.INT64,
+    ]
     # With int8 and uint8 TFLite inference crashes badly (Fatal Python error: Aborted) if the tensors are not quantized.
     verified_types = [TensorType.FLOAT32, TensorType.BOOL, TensorType.INT32, TensorType.INT64]
 
@@ -49,8 +55,10 @@ class ScatterNDConverter(NodeConverter):
 
         if not updates_tensor.shape.is_well_defined():
             # The shape must be known in order to compute the mask.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of `ONNX` ScatterND with `updates` operand with an "
-                                                        "unknown shape is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of `ONNX` ScatterND with `updates` operand with an unknown shape is not possible.",
+            )
 
         # Create TFLite operator, which will compute the mask at runtime.
         output_mask_tensor = self.builder.duplicate_tensor(x, empty_buffer=True)
@@ -99,14 +107,18 @@ class ScatterNDConverter(NodeConverter):
                 #  have to be reshaped and permuted accordingly.
                 # It seems that real models use `ScatterND` only with formatless data. Therefore, conversion is not
                 #  yet implemented.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX `ScatterND` with channels first inputs is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX `ScatterND` with channels first inputs is not yet supported.",
+                )
 
             else:
                 # The indices are dynamic. The preprocessing described in the comment above would be too complicated to
                 #  implement by adding extra operators.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX `ScatterND` with dynamic channels first inputs is not supported.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX `ScatterND` with dynamic channels first inputs is not supported.",
+                )
 
         # Create a TFLite operator which will compute the tensor at runtime.
         updated_values = self.builder.duplicate_tensor(x, empty_buffer=True)
@@ -123,16 +135,24 @@ class ScatterNDConverter(NodeConverter):
             if tensor_has_data(updates_tensor):
                 if updates_tensor.quantization is None:
                     # Updates tensor not quantized and data available -> quantize
-                    scatter_nd.tmp_inputs[1] = quantize_static_float_tensor(self.builder, updates_tensor, x.type, scale, zp)
+                    scatter_nd.tmp_inputs[1] = quantize_static_float_tensor(
+                        self.builder, updates_tensor, x.type, scale, zp
+                    )
                 elif x.quantization != updates_tensor.quantization:
                     # Updates tensor is quantized but quantization params doesn't match -> re-quantize
-                    scatter_nd.tmp_inputs[1] = re_quantize_static_tensor(self.builder, updates_tensor, x.type, scale, zp)
-                    logger.w("Requantizing 'updates' tensor of ScatterND operator. onnx2quant quantizer can potentially"
-                             " avoid this.")
+                    scatter_nd.tmp_inputs[1] = re_quantize_static_tensor(
+                        self.builder, updates_tensor, x.type, scale, zp
+                    )
+                    logger.w(
+                        "Requantizing 'updates' tensor of ScatterND operator. onnx2quant quantizer can potentially"
+                        " avoid this."
+                    )
             elif updates_tensor.quantization is None or x.quantization != updates_tensor.quantization:
                 # 'updates' tensor is quantized and data not available -> prepend with Quantize
-                logger.w("Requantizing 'updates' tensor of ScatterND operator. onnx2quant quantizer can potentially"
-                         " avoid this.")
+                logger.w(
+                    "Requantizing 'updates' tensor of ScatterND operator. onnx2quant quantizer can potentially"
+                    " avoid this."
+                )
 
                 ops.append(self.builder.create_quantize_operator_before(scatter_nd, 1, x.type, scale, zp))
 
@@ -140,8 +160,9 @@ class ScatterNDConverter(NodeConverter):
 
         return updated_values
 
-    def _ensure_tensor_is_same_as_in_onnx_model(self, t_op: tflite_model.Operator, input_index: int,
-                                                ops: list[tflite_model.Operator]) -> None:
+    def _ensure_tensor_is_same_as_in_onnx_model(
+        self, t_op: tflite_model.Operator, input_index: int, ops: list[tflite_model.Operator]
+    ) -> None:
         """If the input tensor of `t_op` on index `input_index` is `channels last`, this method will turn it to
         `channels first` to match the ONNX model. Static tensor is permuted statically and for dynamic tensors, a
         `Transpose` operator is prepended and it is added to `ops`.
@@ -204,12 +225,15 @@ class ScatterNDConverter(NodeConverter):
         attrs = cast(scatter_nd_attributes.ScatterND, node.attributes)
         if attrs.reduction != "none":
             # Other values must be converter to Flex delegate operators. See comment above.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX `ScatterND` with `reduction={attrs.reduction}` is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of ONNX `ScatterND` with `reduction={attrs.reduction}` is not yet supported.",
+            )
 
         if len(t_op.tmp_inputs) != 3:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `ScatterND` has {len(t_op.tmp_inputs)} inputs instead of 3.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL, f"ONNX `ScatterND` has {len(t_op.tmp_inputs)} inputs instead of 3."
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -226,8 +250,10 @@ class ScatterNDConverter(NodeConverter):
 
         if not y.shape.is_well_defined():
             # TFLite ScatterND takes the output shape as an input operand. So it must be known.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `ScatterND` with an unknown output shape is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `ScatterND` with an unknown output shape is not possible.",
+            )
 
         pre_ops = []
         ops = []
@@ -261,8 +287,10 @@ class ScatterNDConverter(NodeConverter):
                 indices_data = indices_data.reshape([-1, innermost_dim])  # Flatten all dimensions except the last one.
                 if len(indices_data.shape) != 2:
                     # This shouldn't happen.
-                    logger.e(logger.Code.NOT_IMPLEMENTED,
-                             "Conversion of ONNX `ScatterND` with negative `indices` is not yet supported.")
+                    logger.e(
+                        logger.Code.NOT_IMPLEMENTED,
+                        "Conversion of ONNX `ScatterND` with negative `indices` is not yet supported.",
+                    )
 
                 # `indices_data` is now a 2D matrix where the rows are vectors of indices to `x`.
                 #  Iterate over the vectors and for each vector, normalize the index to range [0, dim_size - 1].
@@ -289,10 +317,12 @@ class ScatterNDConverter(NodeConverter):
         else:
             # Dynamic cast.
             if not self.context.conversion_config.guarantee_non_negative_indices:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX `ScatterND` with dynamic `indices` is not supported, because they may "
-                         "contain negative values, which is not supported by TFLite. " +
-                         logger.Message.GUARANTEE_NON_NEGATIVE_INDICES)
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX `ScatterND` with dynamic `indices` is not supported, because they may "
+                    "contain negative values, which is not supported by TFLite. "
+                    + logger.Message.GUARANTEE_NON_NEGATIVE_INDICES,
+                )
 
             ops.append(self.builder.create_cast_before(t_op, 1, TensorType.INT32))
 

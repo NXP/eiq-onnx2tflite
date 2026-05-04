@@ -41,7 +41,7 @@ class RemoveCancellingTransposes(BaseOptimization):
             [
                 Op(["Transpose"], ["x", "perm1"], ["a"]),
                 Op(["Reshape"], ["a"], ["b"]),
-                Op(["Transpose"], ["b", "perm2"], ["y"])
+                Op(["Transpose"], ["b", "perm2"], ["y"]),
             ],
             [
                 TensorsHaveOneConsumer(["a", "b"]),
@@ -50,9 +50,9 @@ class RemoveCancellingTransposes(BaseOptimization):
                     TensorHasStaticValue("perm2", [0, 2, 1]),
                     TensorHasStaticValue("perm2", [0, 2, 3, 1]),
                 ),
-                TensorDimensionsMatch("a", 0, "b", 0), # Reshape preserves batch dimension
-                TensorDimensionsMatch("a", 1, "b", 1), # Reshape preserves channel dimension
-            ]
+                TensorDimensionsMatch("a", 0, "b", 0),  # Reshape preserves batch dimension
+                TensorDimensionsMatch("a", 1, "b", 1),  # Reshape preserves channel dimension
+            ],
         )
 
         to_remove = []

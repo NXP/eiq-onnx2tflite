@@ -47,14 +47,16 @@ def permute_static_tensor(tensor: tflite_model.Tensor, perm: list[int]) -> None:
     tensor.shape = tflite_model.Shape(shape)
 
 
-def get_tflite_tensor_shape_with_explicit_padding(tflite_shape: list[int], explicit_padding: list[list[int]]
-                                                  ) -> list[int]:
+def get_tflite_tensor_shape_with_explicit_padding(
+    tflite_shape: list[int], explicit_padding: list[list[int]]
+) -> list[int]:
     """Get the resulting shape of a tensor with shape 'tflite_shape' (in TFLite format), after 'explicit_padding' is
     applied to it.
     """
     if (len(tflite_shape) != len(explicit_padding)) or any([len(sub_list) != 2 for sub_list in explicit_padding]):
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 f"Cannot apply padding '{explicit_padding}' to TFLite shape '{tflite_shape}'!")
+        logger.e(
+            logger.Code.INTERNAL_ERROR, f"Cannot apply padding '{explicit_padding}' to TFLite shape '{tflite_shape}'!"
+        )
 
     total_padding = [start + end for start, end in explicit_padding]  # Total padding for each dimension
 
@@ -70,8 +72,10 @@ def get_tflite_tensor_shape_with_explicit_padding(tflite_shape: list[int], expli
 
         else:
             # Cannot add padding to a variable dimension.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Adding explicit padding to a variable sized tensor is not supported!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Adding explicit padding to a variable sized tensor is not supported!",
+            )
 
     return padded_shape
 
@@ -129,16 +133,18 @@ def collections_equal(col_a, col_b) -> bool:
     if len(col_a) != len(col_b):
         return False
 
-    for (a, b) in zip(col_a, col_b, strict=False):
+    for a, b in zip(col_a, col_b, strict=False):
         if a != b:
             return False
     return True
 
 
-@deprecated.deprecated(reason="This implementation of total required padding is deprecated, "
-                              "use _tflite_compute_padding_with_offset")
-def _calculate_total_required_padding(tflite_input_shape: list[int], tflite_output_shape: list[int],
-                                      effective_kernel_shape: list[int], strides: list[int]) -> list[int]:
+@deprecated.deprecated(
+    reason="This implementation of total required padding is deprecated, use _tflite_compute_padding_with_offset"
+)
+def _calculate_total_required_padding(
+    tflite_input_shape: list[int], tflite_output_shape: list[int], effective_kernel_shape: list[int], strides: list[int]
+) -> list[int]:
     """Calculate the total padding required for each dimension for a particular setting.
     :param tflite_input_shape: The TFLite (channels last) shape of the input tensor.
     :param tflite_output_shape: The TFLite (channels last) shape of the output tensor.
@@ -159,9 +165,7 @@ def _calculate_total_required_padding(tflite_input_shape: list[int], tflite_outp
 
     for i in range(rank):
         total_padding[i] = (
-                (spatial_output_shape[i] - 1) * strides[i]
-                + effective_kernel_shape[i]
-                - spatial_input_shape[i]
+            (spatial_output_shape[i] - 1) * strides[i] + effective_kernel_shape[i] - spatial_input_shape[i]
         )
 
     return total_padding
@@ -177,25 +181,31 @@ def _calculate_effective_kernel_shape(kernel_shape: list[int], dilations: list[i
     return [(k - 1) * d + 1 for k, d in zip(kernel_shape, dilations, strict=False)]
 
 
-def _same_upper_equals_same_lower(tflite_input_shape: list[int], tflite_output_shape: list[int],
-                                  o_kernel_shape: list[int],
-                                  o_strides: list[int] | None = None,
-                                  o_dilations: list[int] | None = None) -> bool:
+def _same_upper_equals_same_lower(
+    tflite_input_shape: list[int],
+    tflite_output_shape: list[int],
+    o_kernel_shape: list[int],
+    o_strides: list[int] | None = None,
+    o_dilations: list[int] | None = None,
+) -> bool:
     """Determine if in a given particular setting, the values of the ONNX `auto_pads` attribute SAME_UPPER and
     SAME_LOWER represent the exact same padding.
     """
-    padding, offset = tflite_compute_padding_with_offset(tflite_input_shape, o_kernel_shape, tflite_output_shape,
-                                                         o_strides, o_dilations)
+    padding, offset = tflite_compute_padding_with_offset(
+        tflite_input_shape, o_kernel_shape, tflite_output_shape, o_strides, o_dilations
+    )
 
     # Only if offset for every dimension is 0, SAME_UPPER and SAME_LOWER will behave equally.
     return all([elt == 0 for elt in offset])
 
 
-def _tflite_padding_compute_output_size(padding: tflPadding.Padding,
-                                        tflite_spatial_input_shape: list[int],
-                                        tflite_kernel_shape: list[int],
-                                        strides: list[int] | None = None,
-                                        dilations: list[int] | None = None) -> list[int]:
+def _tflite_padding_compute_output_size(
+    padding: tflPadding.Padding,
+    tflite_spatial_input_shape: list[int],
+    tflite_kernel_shape: list[int],
+    strides: list[int] | None = None,
+    dilations: list[int] | None = None,
+) -> list[int]:
     """Calculates the output shape of the tensor with particular setting as tflite would. Implementation corresponds to
     tensorflow/lite/kernels/padding.h:ComputeOutSize()
     :param padding: TFLite Padding value - 'Same' or 'Valid'
@@ -211,18 +221,26 @@ def _tflite_padding_compute_output_size(padding: tflPadding.Padding,
     effective_kernel_shape = _calculate_effective_kernel_shape(tflite_kernel_shape, dilations)
 
     if padding == tflPadding.Padding.SAME:
-        return [(in_shape + stride - 1) // stride for in_shape, stride in zip(tflite_spatial_input_shape, strides, strict=False)]
+        return [
+            (in_shape + stride - 1) // stride
+            for in_shape, stride in zip(tflite_spatial_input_shape, strides, strict=False)
+        ]
     if padding == tflPadding.Padding.VALID:
-        return [(in_shape + stride - ef_kernel_shape) // stride
-                for in_shape, stride, ef_kernel_shape in
-                zip(tflite_spatial_input_shape, strides, effective_kernel_shape, strict=False)]
+        return [
+            (in_shape + stride - ef_kernel_shape) // stride
+            for in_shape, stride, ef_kernel_shape in zip(
+                tflite_spatial_input_shape, strides, effective_kernel_shape, strict=False
+            )
+        ]
 
 
-def tflite_compute_padding_with_offset(tflite_input_shape: list[int],
-                                       tflite_kernel_shape: list[int],
-                                       tflite_output_shape: list[int],
-                                       strides: list[int] | None = None,
-                                       dilations: list[int] | None = None) -> (list[int], list[int]):
+def tflite_compute_padding_with_offset(
+    tflite_input_shape: list[int],
+    tflite_kernel_shape: list[int],
+    tflite_output_shape: list[int],
+    strides: list[int] | None = None,
+    dilations: list[int] | None = None,
+) -> (list[int], list[int]):
     """Calculate padding and offset for each dimension for particular convolution setting as TFLite.
     Implementation corresponds to tensorflow/lite/kernels/padding.h:ComputePaddingWithOffset()
     :param tflite_input_shape: tensorflow lite input shape
@@ -241,9 +259,12 @@ def tflite_compute_padding_with_offset(tflite_input_shape: list[int],
 
     effective_kernel_shape = _calculate_effective_kernel_shape(tflite_kernel_shape, dilations)
 
-    total_padding = [(spatial_output - 1) * stride + effective_kernel - spatial_input
-                     for spatial_output, stride, effective_kernel, spatial_input
-                     in zip(spatial_output_shape, strides, effective_kernel_shape, spatial_input_shape, strict=False)]
+    total_padding = [
+        (spatial_output - 1) * stride + effective_kernel - spatial_input
+        for spatial_output, stride, effective_kernel, spatial_input in zip(
+            spatial_output_shape, strides, effective_kernel_shape, spatial_input_shape, strict=False
+        )
+    ]
 
     padding = [tp // 2 for tp in total_padding]
     offset = [tp % 2 for tp in total_padding]
@@ -251,9 +272,14 @@ def tflite_compute_padding_with_offset(tflite_input_shape: list[int],
     return padding, offset
 
 
-def _is_same_padding(o_pads: list[int], tflite_input_shape: list[int], tflite_output_shape: list[int],
-                     o_kernel_shape: list[int],
-                     o_strides: list[int] | None = None, o_dilations: list[int] | None = None) -> bool:
+def _is_same_padding(
+    o_pads: list[int],
+    tflite_input_shape: list[int],
+    tflite_output_shape: list[int],
+    o_kernel_shape: list[int],
+    o_strides: list[int] | None = None,
+    o_dilations: list[int] | None = None,
+) -> bool:
     """Determine if given ONNX 'pads' padding can be represented exactly with the TFLite 'SAME' padding type.
 
     :param o_pads: ONNX 'pads' attribute.
@@ -264,14 +290,17 @@ def _is_same_padding(o_pads: list[int], tflite_input_shape: list[int], tflite_ou
     :param o_dilations: ONNX 'dilations' attribute. Can be omitted.
     """
     if len(tflite_input_shape) == 0 or len(tflite_output_shape) == 0:
-        logger.e(logger.Code.INVALID_TENSOR_SHAPE,
-                 f"Cannot verify that padding '{o_pads}' can be represented as 'SAME' for input shape "
-                 f"'{tflite_input_shape}' and output shape '{tflite_output_shape}'.")
+        logger.e(
+            logger.Code.INVALID_TENSOR_SHAPE,
+            f"Cannot verify that padding '{o_pads}' can be represented as 'SAME' for input shape "
+            f"'{tflite_input_shape}' and output shape '{tflite_output_shape}'.",
+        )
 
     # Calculate if the output shape corresponds to Same padding setting in TFLite
     tflite_spatial_input_shape = tflite_input_shape[1:-1]
-    tmp_spatial_output_shape = _tflite_padding_compute_output_size(tflPadding.Padding.SAME, tflite_spatial_input_shape,
-                                                                   o_kernel_shape, o_strides, o_dilations)
+    tmp_spatial_output_shape = _tflite_padding_compute_output_size(
+        tflPadding.Padding.SAME, tflite_spatial_input_shape, o_kernel_shape, o_strides, o_dilations
+    )
     if tmp_spatial_output_shape != tflite_output_shape[1:-1]:
         return False
 
@@ -280,8 +309,9 @@ def _is_same_padding(o_pads: list[int], tflite_input_shape: list[int], tflite_ou
     # TFLite represents this in the offset. The offset is added to the end of particular dimension,
     # i.e. bottom for H dim, right for W dim and so on.
     # ONNX represents this in 'pads' as [x1_begin, x2_begin,... , x1_end, x2_end,...].
-    padding, offset = tflite_compute_padding_with_offset(tflite_input_shape, o_kernel_shape, tflite_output_shape,
-                                                         o_strides, o_dilations)
+    padding, offset = tflite_compute_padding_with_offset(
+        tflite_input_shape, o_kernel_shape, tflite_output_shape, o_strides, o_dilations
+    )
     start_padding = padding
     end_padding = [p + o for p, o in zip(padding, offset, strict=False)]
     effective_padding = start_padding + end_padding
@@ -344,8 +374,8 @@ def onnx_explicit_padding_to_tflite(onnx_pads: list[int]) -> list[list[int]]:
 
     This function does NOT take tensor formats into consideration.
     """
-    start_padding = onnx_pads[:len(onnx_pads) // 2]  # Padding at the start of each dimension
-    end_padding = onnx_pads[len(onnx_pads) // 2:]  # Padding at the end of each dimension
+    start_padding = onnx_pads[: len(onnx_pads) // 2]  # Padding at the start of each dimension
+    end_padding = onnx_pads[len(onnx_pads) // 2 :]  # Padding at the end of each dimension
 
     return list(zip(start_padding, end_padding, strict=False))
 
@@ -363,10 +393,13 @@ def onnx_pads_to_tflite_explicit_padding(onnx_pads: list[int]) -> list[list[int]
     return tflite_padding
 
 
-def _get_explicit_tflite_padding_for_same_lower(tflite_input_shape: list[int], tflite_output_shape: list[int],
-                                                o_kernel_shape: list[int],
-                                                o_strides: list[int] | None = None,
-                                                o_dilations: list[int] | None = None) -> list[list[int]]:
+def _get_explicit_tflite_padding_for_same_lower(
+    tflite_input_shape: list[int],
+    tflite_output_shape: list[int],
+    o_kernel_shape: list[int],
+    o_strides: list[int] | None = None,
+    o_dilations: list[int] | None = None,
+) -> list[list[int]]:
     """Get the TFLite explicit padding required to represent ONNX 'SAME_LOWER' auto_pad for a particular setting.
 
     :param tflite_input_shape: TFLite (NHWC) shape of the input tensor of the operator.
@@ -377,10 +410,13 @@ def _get_explicit_tflite_padding_for_same_lower(tflite_input_shape: list[int], t
 
     :return: A TFLite style explicit padding, compatible with the TFLite 'Pad' operator.
     """
-    padding, offset = tflite_compute_padding_with_offset(tflite_input_shape, o_kernel_shape, tflite_output_shape,
-                                                         o_strides, o_dilations)
+    padding, offset = tflite_compute_padding_with_offset(
+        tflite_input_shape, o_kernel_shape, tflite_output_shape, o_strides, o_dilations
+    )
 
-    start_padding = [p + o for p, o in zip(padding, offset, strict=False)]  # In case of odd padding, the excess is added at the start
+    start_padding = [
+        p + o for p, o in zip(padding, offset, strict=False)
+    ]  # In case of odd padding, the excess is added at the start
     end_padding = padding
 
     onnx_explicit_padding = start_padding + end_padding
@@ -389,11 +425,15 @@ def _get_explicit_tflite_padding_for_same_lower(tflite_input_shape: list[int], t
     return onnx_pads_to_tflite_explicit_padding(onnx_explicit_padding)
 
 
-def convert_padding(o_auto_pad: str, o_pads: list[int],
-                    tflite_input_shape: list[int], tflite_output_shape: list[int],
-                    o_kernel_shape: list[int], o_strides: list[int] | None,
-                    o_dilations: list[int] | None = None,
-                    ) -> tuple[tflPadding.Padding, list[list[int]] | None]:
+def convert_padding(
+    o_auto_pad: str,
+    o_pads: list[int],
+    tflite_input_shape: list[int],
+    tflite_output_shape: list[int],
+    o_kernel_shape: list[int],
+    o_strides: list[int] | None,
+    o_dilations: list[int] | None = None,
+) -> tuple[tflPadding.Padding, list[list[int]] | None]:
     """Convert ONNX operator attributes 'pads' and 'auto_pad' to TFLite.
 
     :param o_auto_pad: ONNX operator attribute 'auto_pad'
@@ -414,16 +454,18 @@ def convert_padding(o_auto_pad: str, o_pads: list[int],
         return tflPadding.Padding.SAME, None
 
     if o_auto_pad == "SAME_LOWER":
-        if _same_upper_equals_same_lower(tflite_input_shape, tflite_output_shape, o_kernel_shape, o_strides,
-                                         o_dilations):
+        if _same_upper_equals_same_lower(
+            tflite_input_shape, tflite_output_shape, o_kernel_shape, o_strides, o_dilations
+        ):
             return tflPadding.Padding.SAME, None
 
-        logger.d("'SAME_LOWER' auto_pad cannot be exactly represented in TFLite as padding 'SAME' or 'VALID'. "
-                 "Inserting an extra 'Pad' operator.")
-        tflite_explicit_padding = _get_explicit_tflite_padding_for_same_lower(tflite_input_shape,
-                                                                              tflite_output_shape,
-                                                                              o_kernel_shape, o_strides,
-                                                                              o_dilations)
+        logger.d(
+            "'SAME_LOWER' auto_pad cannot be exactly represented in TFLite as padding 'SAME' or 'VALID'. "
+            "Inserting an extra 'Pad' operator."
+        )
+        tflite_explicit_padding = _get_explicit_tflite_padding_for_same_lower(
+            tflite_input_shape, tflite_output_shape, o_kernel_shape, o_strides, o_dilations
+        )
         return tflPadding.Padding.VALID, tflite_explicit_padding
 
     if o_auto_pad == "VALID":
@@ -441,8 +483,9 @@ def convert_padding(o_auto_pad: str, o_pads: list[int],
     # 'pads' cannot be converted directly. Return 'VALID' and the required explicit padding and caller must
     # implement conversion by adding a 'Pad' operator.
 
-    logger.d("Explicit ONNX 'pads' cannot be represented directly as 'SAME' or 'VALID'. "
-             "Inserting an extra 'Pad' operator.")
+    logger.d(
+        "Explicit ONNX 'pads' cannot be represented directly as 'SAME' or 'VALID'. Inserting an extra 'Pad' operator."
+    )
 
     # ONNX 'pads' uses different format than TFLite 'Pad' operator. Convert the explicit padding.
     tflite_explicit_padding = onnx_pads_to_tflite_explicit_padding(o_pads)
@@ -461,8 +504,11 @@ def convert_tensor_data(o_tensor: onnx_tensor.TensorProto) -> np.ndarray:
     # Product of all dimensions multiplied together (total size)
     size = math.prod(o_tensor.dims)
     if size != len(o_tensor.data.flatten()):
-        logger.e(logger.Code.INVALID_TENSOR_SHAPE, f"Numpy array for tensor of shape '{o_tensor.dims}' should have "
-                                                   f"'{size}' elements, but has '{len(o_tensor.data)}'!")
+        logger.e(
+            logger.Code.INVALID_TENSOR_SHAPE,
+            f"Numpy array for tensor of shape '{o_tensor.dims}' should have "
+            f"'{size}' elements, but has '{len(o_tensor.data)}'!",
+        )
 
     # Assign 'data' its current shape
     o_tensor.data.shape = o_tensor.dims
@@ -473,8 +519,10 @@ def convert_tensor_data(o_tensor: onnx_tensor.TensorProto) -> np.ndarray:
     # Check if it worked
     nhwc_shape = dims_to_channels_last(o_tensor.dims)
     if not collections_equal(data.shape, nhwc_shape):
-        logger.e(logger.Code.INVALID_TENSOR_SHAPE,
-                 f"Failed to convert data from shape '{o_tensor.dims}'! Got '{data.shape}', expected '{nhwc_shape}'.")
+        logger.e(
+            logger.Code.INVALID_TENSOR_SHAPE,
+            f"Failed to convert data from shape '{o_tensor.dims}'! Got '{data.shape}', expected '{nhwc_shape}'.",
+        )
 
     return data
 
@@ -487,8 +535,10 @@ def convert_data_to_channels_first(array: np.ndarray) -> np.ndarray:
     :return: The transformed data.
     """
     if len(array.shape) < 3:
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 f"translator.convert_data_to_channels_first(): 'array' only has '{len(array.shape)}' dimensions!")
+        logger.e(
+            logger.Code.INTERNAL_ERROR,
+            f"translator.convert_data_to_channels_first(): 'array' only has '{len(array.shape)}' dimensions!",
+        )
 
     return np.moveaxis(array, -1, 1)  # Move last axis (C), to index 1
 
@@ -501,8 +551,10 @@ def convert_data_to_channels_last(array: np.ndarray) -> np.ndarray:
     :return: The transformed data.
     """
     if len(array.shape) < 3:
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 f"translator.convert_data_to_channels_last(): 'array' only has '{len(array.shape)}' dimensions!")
+        logger.e(
+            logger.Code.INTERNAL_ERROR,
+            f"translator.convert_data_to_channels_last(): 'array' only has '{len(array.shape)}' dimensions!",
+        )
 
     return np.moveaxis(array, 1, -1)  # Move the second axis (C), to the end
 
@@ -588,14 +640,16 @@ def create_axis_to_last_perm(axis, num_dims) -> np.ndarray:
     if axis == num_dims - 1:
         return dims
     if axis >= num_dims or axis < 0:
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 f"translator.create_axis_to_last_perm({axis},{num_dims}). Inputs don't make sense!")
+        logger.e(
+            logger.Code.INTERNAL_ERROR,
+            f"translator.create_axis_to_last_perm({axis},{num_dims}). Inputs don't make sense!",
+        )
 
     # Remember axis dimension
     axis_dim = dims[axis]
 
     # Move dimensions after 'axis' to the left
-    dims[axis:-1] = dims[axis + 1:-1]
+    dims[axis:-1] = dims[axis + 1 : -1]
 
     # Add axis dimension to the end
     dims.append(axis_dim)
@@ -611,8 +665,10 @@ def apply_permutation_to(target: list[Any], permutation: Collection[int]) -> lis
     :return: Permuted list.
     """
     if len(target) != len(permutation):
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 "translator.apply_permutation_to(): 'target' and 'permutation' have different length!")
+        logger.e(
+            logger.Code.INTERNAL_ERROR,
+            "translator.apply_permutation_to(): 'target' and 'permutation' have different length!",
+        )
 
     return [target[perm] for perm in permutation]
 
@@ -862,8 +918,9 @@ def tflite_type_to_tensor_flow_data_type(tfl_type: TensorType) -> TensorFlowData
 
         case _:
             # All TFLite types are covered. Must be an invalid type.
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     f"tflite_type_to_tensor_flow_data_type(): invalid TFLite type `{tfl_type}`.")
+            logger.e(
+                logger.Code.INTERNAL_ERROR, f"tflite_type_to_tensor_flow_data_type(): invalid TFLite type `{tfl_type}`."
+            )
 
 
 def infer_kernel_shape(weight_tensor: tflite_model.Tensor) -> list[int]:

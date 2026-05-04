@@ -47,8 +47,10 @@ class GeluConverter(NodeConverter):
             approximate = True
 
         else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX `Gelu` has invalid value `{o_gelu.approximate}` of the `approximate` attribute.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX `Gelu` has invalid value `{o_gelu.approximate}` of the `approximate` attribute.",
+            )
 
         # noinspection PyUnboundLocalVariable
         t_op.builtin_options = gelu_options.Gelu(approximate)

@@ -9,6 +9,7 @@
 
 Module implements functions for logging, error messages and custom assertions.
 """
+
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -53,19 +54,27 @@ MIN_OUTPUT_IMPORTANCE = MessageImportance.WARNING
 class Message:
     """Custom messages, that are printed to console from different locations in the code."""
 
-    ALLOW_SELECT_OPS = "If you want to convert the model using the SELECT_TF_OPS, run the conversion again with " \
-                       f"the flag {Style.bold + Style.cyan}--allow-select-ops{Style.end}."
+    ALLOW_SELECT_OPS = (
+        "If you want to convert the model using the SELECT_TF_OPS, run the conversion again with "
+        f"the flag {Style.bold + Style.cyan}--allow-select-ops{Style.end}."
+    )
 
-    GUARANTEE_NON_NEGATIVE_INDICES = f"{Style.green}If you know that the indices are always non-negative, you can run" \
-                                     f" the converter with the flag {Style.bold + Style.cyan}--guarantee-non-negative-indices" \
-                                     f"{Style.end}."
+    GUARANTEE_NON_NEGATIVE_INDICES = (
+        f"{Style.green}If you know that the indices are always non-negative, you can run"
+        f" the converter with the flag {Style.bold + Style.cyan}--guarantee-non-negative-indices"
+        f"{Style.end}."
+    )
 
-    CAST_INT64_TO_INT32 = f"Use option {Style.bold + Style.cyan}--cast-int64-to-int32{Style.end} to disable this " \
-                          "check and re-cast input/output to INT32."
+    CAST_INT64_TO_INT32 = (
+        f"Use option {Style.bold + Style.cyan}--cast-int64-to-int32{Style.end} to disable this "
+        "check and re-cast input/output to INT32."
+    )
 
-    IGNORE_OPSET_VERSION = "If you want to try and convert the model anyway, run the conversion again with the flag " \
-                           f"{Style.bold + Style.cyan}--skip-opset-version-check{Style.end}. Keep in mind that the output" \
-                           " TFLite model may potentially be invalid."
+    IGNORE_OPSET_VERSION = (
+        "If you want to try and convert the model anyway, run the conversion again with the flag "
+        f"{Style.bold + Style.cyan}--skip-opset-version-check{Style.end}. Keep in mind that the output"
+        " TFLite model may potentially be invalid."
+    )
 
 
 class Code(Enum):
@@ -95,7 +104,6 @@ class Code(Enum):
 
 
 class Error(Exception):
-
     def __init__(self, err_code: Code, msg, exception: Exception | None = None):
         self.error_code = err_code
         self.msg = msg
@@ -126,8 +134,7 @@ class LoggingContext:
 
 
 class BasicLoggingContext(LoggingContext):
-    """Basic logging contexts specified by its name.
-    """
+    """Basic logging contexts specified by its name."""
 
     GLOBAL = LoggingContext("global")
     SHAPE_INFERENCE = LoggingContext("shape_inference")
@@ -139,8 +146,7 @@ class BasicLoggingContext(LoggingContext):
 
 
 class NodeLoggingContext(LoggingContext):
-    """ONNX node specific context. Logs reported within this context are related to node with index 'node_id'.
-    """
+    """ONNX node specific context. Logs reported within this context are related to node with index 'node_id'."""
 
     def __init__(self, node_id):
         self.node_id = node_id
@@ -245,6 +251,7 @@ class loggingContext:  # noqa: N801
 
     def __exit__(self, _exc_type: Any, _exc_val: Any, _exc_tb: Any):
         conversion_log.pop_last_context()
+
 
 def d(msg: str) -> None:
     """Log internal debug message with given parameters."""

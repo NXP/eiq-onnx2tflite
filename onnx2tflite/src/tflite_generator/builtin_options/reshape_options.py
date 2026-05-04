@@ -9,7 +9,6 @@
 Representation of the TFLite operator 'Reshape'.
 """
 
-
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
@@ -27,8 +26,7 @@ class Reshape(meta.BuiltinOptions):
     new_shape: NewShape | None
 
     def __init__(self, new_shape: list[int] | None) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.ReshapeOptions,
-                         libBuiltinOperator.BuiltinOperator.RESHAPE)
+        super().__init__(libBuiltinOptions.BuiltinOptions.ReshapeOptions, libBuiltinOperator.BuiltinOperator.RESHAPE)
         if new_shape is not None:
             self.new_shape = NewShape(new_shape)
         else:

@@ -13,7 +13,6 @@ PER_CHANNEL_DEFAULT = False
 
 
 class QuantizationConfig:
-
     def __init__(self, calibration_data_reader: CalibrationDataReader, args: dict | None = None):
         """Quantization configuration passed through command line arguments or gathered during
         the quantization process.
@@ -38,7 +37,10 @@ class QuantizationConfig:
                 if key in self.__dict__:
                     setattr(self, key, value)
 
-        logger.internal_assert((self.calibration_data_reader is not None) ^ self.use_random_calibration_dataset, "Calibration data reader not provided!")
+        logger.internal_assert(
+            (self.calibration_data_reader is not None) ^ self.use_random_calibration_dataset,
+            "Calibration data reader not provided!",
+        )
 
     def __repr__(self):
         attrs = []

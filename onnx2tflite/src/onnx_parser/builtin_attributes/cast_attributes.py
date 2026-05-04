@@ -29,9 +29,11 @@ class Cast(meta.ONNXOperatorAttributes):
                     enum_name = TensorProto.DataType.Name(attr.i)
                     self.to = TensorProto.DataType.Value(enum_name)
                 except ValueError as e:
-                    logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                             "Failed to parse the `to` attribute of ONNX `Cast`.",
-                             exception=e)
+                    logger.e(
+                        logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                        "Failed to parse the `to` attribute of ONNX `Cast`.",
+                        exception=e,
+                    )
             else:
                 logger.w(f"ONNX Cast attribute '{attr.name}' is not supported!")
 

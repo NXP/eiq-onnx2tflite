@@ -70,8 +70,10 @@ class InstanceNormalizationConverter(NodeConverter):
                                     Y
         """
         if len(t_op.tmp_inputs) != 3:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `InstanceNormalization` has {len(t_op.tmp_inputs)} inputs instead of 3.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `InstanceNormalization` has {len(t_op.tmp_inputs)} inputs instead of 3.",
+            )
 
         x = t_op.tmp_inputs[0]
         scale = t_op.tmp_inputs[1]
@@ -80,15 +82,20 @@ class InstanceNormalizationConverter(NodeConverter):
 
         if x.shape.len() < 3:
             # The input must have at least 3 dimensions.
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX `InstanceNormalization` has main input with {x.shape.len()}"
-                                                     " dimensions. At least 3 are expected.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `InstanceNormalization` has main input with {x.shape.len()}"
+                " dimensions. At least 3 are expected.",
+            )
 
         # The ONNX `InstanceNormalization` uses `channels_first` tensors. This should be recognized by the converter in
         #  the `tensor_format_inference.py`.
         # Since the `TensorConverter` would have already converted the format to `channels_last` before this point, we
         #  have to check for `channels_last` here.
-        logger.internal_assert(x.tensor_format.is_channels_last(),
-                               "InstanceNormalization should use `channels_first` in the `tensor_format_inference.py`")
+        logger.internal_assert(
+            x.tensor_format.is_channels_last(),
+            "InstanceNormalization should use `channels_first` in the `tensor_format_inference.py`",
+        )
 
         self.assert_type_allowed(x.type)
 
@@ -139,8 +146,9 @@ class InstanceNormalizationConverter(NodeConverter):
         # ---- RSqrt(add_1_out) ----  (1 / sqrt(variance + epsilon))
         rsqrt_out = self.builder.duplicate_tensor(add_1_out, name_suffix="_reverse_square_root")
 
-        rsqrt = tflite_model.Operator(builtin_options=None,
-                                      opcode_index=self.builder.op_code_index_for_op_type(BuiltinOperator.RSQRT))
+        rsqrt = tflite_model.Operator(
+            builtin_options=None, opcode_index=self.builder.op_code_index_for_op_type(BuiltinOperator.RSQRT)
+        )
         rsqrt.tmp_inputs = [add_1_out]
         rsqrt.tmp_outputs = [rsqrt_out]
 

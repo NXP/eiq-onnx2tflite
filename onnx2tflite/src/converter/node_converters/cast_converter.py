@@ -26,44 +26,77 @@ class CastConverter(NodeConverter):
         if from_type == TensorType.UINT16:
             # For some reason, I couldn't run the TFLite model with uint16 input. Some weird error was raised when
             # 'SetTensor' was called. I couldn't find any test, where we used uint16 input tensors.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `Cast` with input type `UINT16` is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX `Cast` with input type `UINT16` is not yet implemented.",
+            )
 
         if from_type in {TensorType.UINT64, TensorType.STRING}:
             # Unsupported by TFLite.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not possible.",
+            )
 
         if from_type in {TensorType.COMPLEX64, TensorType.COMPLEX128}:
             # ONNXRT: Unsupported by ONNX/ORT.
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not supported.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not supported.",
+            )
 
-        if from_type not in {TensorType.UINT8, TensorType.UINT32,
-                             TensorType.INT8, TensorType.INT16, TensorType.INT32, TensorType.INT64,
-                             TensorType.FLOAT16, TensorType.FLOAT32, TensorType.FLOAT64, TensorType.BOOL}:
+        if from_type not in {
+            TensorType.UINT8,
+            TensorType.UINT32,
+            TensorType.INT8,
+            TensorType.INT16,
+            TensorType.INT32,
+            TensorType.INT64,
+            TensorType.FLOAT16,
+            TensorType.FLOAT32,
+            TensorType.FLOAT64,
+            TensorType.BOOL,
+        }:
             # Only these types are verified.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of ONNX `Cast` with input type `{name_for_type(from_type)}` is not implemented.",
+            )
 
     # noinspection PyMethodMayBeStatic
     def _check_output_type(self, to_type: TensorType) -> None:
         if to_type in {TensorType.UINT64, TensorType.STRING}:
             # Not supported by TFLite
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `Cast` with output type `{name_for_type(to_type)}` is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Cast` with output type `{name_for_type(to_type)}` is not possible.",
+            )
 
         if to_type in {TensorType.COMPLEX64, TensorType.COMPLEX128}:
             # ONNXRT: Not supported by ONNX/ORT
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"Conversion of ONNX `Cast` with output type `{name_for_type(to_type)}` is not supported.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"Conversion of ONNX `Cast` with output type `{name_for_type(to_type)}` is not supported.",
+            )
 
-        if to_type not in {TensorType.UINT8, TensorType.UINT16, TensorType.UINT32,
-                           TensorType.INT8, TensorType.INT16, TensorType.INT32, TensorType.INT64,
-                           TensorType.FLOAT16, TensorType.FLOAT32, TensorType.FLOAT64, TensorType.BOOL}:
+        if to_type not in {
+            TensorType.UINT8,
+            TensorType.UINT16,
+            TensorType.UINT32,
+            TensorType.INT8,
+            TensorType.INT16,
+            TensorType.INT32,
+            TensorType.INT64,
+            TensorType.FLOAT16,
+            TensorType.FLOAT32,
+            TensorType.FLOAT64,
+            TensorType.BOOL,
+        }:
             # Only these types are verified.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX `Cast` with output type `{name_for_type(to_type)}` is not implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of ONNX `Cast` with output type `{name_for_type(to_type)}` is not implemented.",
+            )
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX Cast operator into TFLite.
@@ -98,7 +131,8 @@ class CastConverter(NodeConverter):
                 # It makes sense to do nothing, because the `Cast` doesn't care that the input is quantized, and simply
                 #  converts the raw data to a different type. This behavior is the same in ONNX and TFLite.
                 logger.w(
-                    "ONNX `Cast` has a quantized input, which is not standard usage. Output model might not be valid.")
+                    "ONNX `Cast` has a quantized input, which is not standard usage. Output model might not be valid."
+                )
 
         if y.type != to_type:
             # This probably indicates an error in shape inference.

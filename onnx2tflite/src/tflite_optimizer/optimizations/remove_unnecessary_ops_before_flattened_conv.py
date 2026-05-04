@@ -9,7 +9,10 @@ from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import Bas
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
 from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     TensorHasStaticValue,
-    TensorsHaveOneConsumer, TensorHasRank, TensorHasDimensionOfSize, TensorIsNotModelOutput,
+    TensorsHaveOneConsumer,
+    TensorHasRank,
+    TensorHasDimensionOfSize,
+    TensorIsNotModelOutput,
 )
 
 
@@ -33,6 +36,7 @@ class RemoveUnnecessaryOpsBeforeFlattenedConv(BaseOptimization):
           ▼                                  ▼
 
     """
+
     def __call__(self):
         matcher = PatternMatcher(
             self._builder,
@@ -43,23 +47,20 @@ class RemoveUnnecessaryOpsBeforeFlattenedConv(BaseOptimization):
             ],
             [
                 TensorsHaveOneConsumer(["x", "transpose_out", "reshape_out"]),
-
                 # Transpose IO tensors should not be model outputs
                 TensorIsNotModelOutput("x"),
                 TensorIsNotModelOutput("transpose_out"),
                 TensorIsNotModelOutput("reshape_out"),
-
                 # Transpose only switches 2D dimensions
                 TensorHasRank("x", 2),
                 TensorHasRank("transpose_out", 2),
                 TensorHasStaticValue("perm", [1, 0]),
-
                 # Conv input in format (1, 1, 1, N)
                 TensorHasRank("reshape_out", 4),
                 TensorHasDimensionOfSize("reshape_out", 0, 1),
                 TensorHasDimensionOfSize("reshape_out", 1, 1),
                 TensorHasDimensionOfSize("reshape_out", 2, 1),
-            ]
+            ],
         )
 
         to_remove = []

@@ -28,8 +28,9 @@ class TanConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Tan` operator into TFLite `Sin`, `Cos` and `Div`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Tan` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL, f"ONNX `Tan` has unexpected number of inputs ({len(t_op.tmp_inputs)})."
+            )
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)

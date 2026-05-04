@@ -21,9 +21,13 @@ class TransposeConv(meta.BuiltinOptions):
     stride_h: int
     fused_activation_function: ActivationFunctionType
 
-    def __init__(self, padding: Padding = Padding.SAME,
-                 stride_w: int = 1, stride_h: int = 1,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        padding: Padding = Padding.SAME,
+        stride_w: int = 1,
+        stride_h: int = 1,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.TransposeConvOptions, BuiltinOperator.TRANSPOSE_CONV)
         self.padding = padding
         self.stride_w = stride_w

@@ -22,7 +22,6 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import (
 
 
 class PermuteFullyConnectedWeightsAfterReshape(BaseOptimization):
-
     def __call__(self) -> bool:
         """Search for the pattern:
 
@@ -73,7 +72,7 @@ class PermuteFullyConnectedWeightsAfterReshape(BaseOptimization):
                 TensorIsFormatless("z"),
                 TensorHasRank("z", 2),
                 TensorsHaveData(["perm", "w"]),
-            ]
+            ],
         )
 
         to_remove = []
@@ -97,8 +96,10 @@ class PermuteFullyConnectedWeightsAfterReshape(BaseOptimization):
             fc.tmp_inputs[1] = new_weights
 
             # Remove the `Transpose`.
-            logger.i(f"Permuting the `weights`({w.name}) of a FullyConnected operator and removing an artificial "
-                     "Transpose operator.")
+            logger.i(
+                f"Permuting the `weights`({w.name}) of a FullyConnected operator and removing an artificial "
+                "Transpose operator."
+            )
             reshape.tmp_inputs[0] = transpose.tmp_inputs[0]
             to_remove.append(transpose)
 

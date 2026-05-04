@@ -43,16 +43,18 @@ from onnx2tflite.src.tflite_optimizer.optimizations.prune_transpose_operators im
     RemoveIdentityTransposeOperators,
 )
 from onnx2tflite.src.tflite_optimizer.optimizations.remove_cancelling_transposes import RemoveCancellingTransposes
-from onnx2tflite.src.tflite_optimizer.optimizations.remove_unnecessary_ops_before_flattened_conv import \
-    RemoveUnnecessaryOpsBeforeFlattenedConv
+from onnx2tflite.src.tflite_optimizer.optimizations.remove_unnecessary_ops_before_flattened_conv import (
+    RemoveUnnecessaryOpsBeforeFlattenedConv,
+)
 from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_buffers import (
     RemoveUnusedTensorsAndBuffers,
 )
 from onnx2tflite.src.tflite_optimizer.optimizations.replace_average_pool_before_fully_connected_with_sum import (
     ReplaceAveragePoolBeforeFullyConnectedWithSum,
 )
-from onnx2tflite.src.tflite_optimizer.optimizations.replace_input_invariant_transpose_to_reshape import \
-    ReplaceInputInvariantTransposeWithReshape
+from onnx2tflite.src.tflite_optimizer.optimizations.replace_input_invariant_transpose_to_reshape import (
+    ReplaceInputInvariantTransposeWithReshape,
+)
 
 
 class Optimization(Enum):
@@ -104,35 +106,46 @@ class Optimizer:
             Optimization.FUSE_ACTIVATION_FUNCTIONS: FuseActivationFunctions(builder, conversion_config),
             Optimization.FUSE_FULLY_CONNECTED_AND_ADD: FuseFullyConnectedAndAddOperators(builder, conversion_config),
             Optimization.FUSE_RESHAPE_OPERATORS: FuseReshapeOperators(builder, conversion_config),
-            Optimization.REMOVE_RESHAPE_OPERATORS_WITH_NO_EFFECT:
-                RemoveReshapeOperatorsWithNoEffect(builder, conversion_config),
+            Optimization.REMOVE_RESHAPE_OPERATORS_WITH_NO_EFFECT: RemoveReshapeOperatorsWithNoEffect(
+                builder, conversion_config
+            ),
             Optimization.FUSE_TRANSPOSE_OPERATORS: FuseTransposeOperators(builder, conversion_config),
-            Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS:
-                RemoveIdentityTransposeOperators(builder, conversion_config),
+            Optimization.REMOVE_IDENTITY_TRANSPOSE_OPERATORS: RemoveIdentityTransposeOperators(
+                builder, conversion_config
+            ),
             Optimization.PRUNE_QUANTIZE_OPERATORS: PruneQuantizeOperators(builder, conversion_config),
             Optimization.FUSE_PARALLEL_QUANTIZE_OPERATORS: FuseParallelQuantizeOperators(builder, conversion_config),
             Optimization.FUSE_QUANTIZE_INTO_PRECEDING_OPS: FuseQuantizeIntoPrecedingOps(builder, conversion_config),
             Optimization.REMOVE_UNUSED_TENSORS: RemoveUnusedTensorsAndBuffers(builder, conversion_config),
             Optimization.ELIMINATE_DEAD_BRANCHES: EliminateDeadBranches(builder, conversion_config),
-            Optimization.PERMUTE_FULLY_CONNECTED_WEIGHTS_AFTER_RESHAPE:
-                PermuteFullyConnectedWeightsAfterReshape(builder, conversion_config),
+            Optimization.PERMUTE_FULLY_CONNECTED_WEIGHTS_AFTER_RESHAPE: PermuteFullyConnectedWeightsAfterReshape(
+                builder, conversion_config
+            ),
             Optimization.FUSE_CAST_OPERATORS: FuseCastOperators(builder, conversion_config),
-            Optimization.REMOVE_CAST_OPERATORS_WITH_NO_EFFECT:
-                RemoveCastOperatorsWithNoEffect(builder, conversion_config),
+            Optimization.REMOVE_CAST_OPERATORS_WITH_NO_EFFECT: RemoveCastOperatorsWithNoEffect(
+                builder, conversion_config
+            ),
             Optimization.MOVE_ACTIVATION_BEFORE_CONCAT: MoveActivationBeforeConcatenation(builder, conversion_config),
-            Optimization.COMBINE_HARD_SIGMOID_AND_MUL_INTO_HARD_SWISH:
-                CombineHardSigmoidAndMulIntoHardSwish(builder, conversion_config),
-            Optimization.REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM:
-                ReplaceAveragePoolBeforeFullyConnectedWithSum(builder, conversion_config),
+            Optimization.COMBINE_HARD_SIGMOID_AND_MUL_INTO_HARD_SWISH: CombineHardSigmoidAndMulIntoHardSwish(
+                builder, conversion_config
+            ),
+            Optimization.REPLACE_AVERAGE_POOL_BEFORE_FULLY_CONNECTED_WITH_SUM: ReplaceAveragePoolBeforeFullyConnectedWithSum(
+                builder, conversion_config
+            ),
             Optimization.REMOVE_CANCELLING_TRANSPOSES: RemoveCancellingTransposes(builder, conversion_config),
-            Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE:
-                ReplaceInputInvariantTransposeWithReshape(builder, conversion_config),
-            Optimization.REMOVE_UNNECESSARY_OPS_BEFORE_FLATTENED_CONV:
-                RemoveUnnecessaryOpsBeforeFlattenedConv(builder, conversion_config),
+            Optimization.REPLACE_INPUT_INVARIANT_TRANSPOSE_WITH_RESHAPE: ReplaceInputInvariantTransposeWithReshape(
+                builder, conversion_config
+            ),
+            Optimization.REMOVE_UNNECESSARY_OPS_BEFORE_FLATTENED_CONV: RemoveUnnecessaryOpsBeforeFlattenedConv(
+                builder, conversion_config
+            ),
         }
 
-    def optimize(self, optimization_whitelist: list[Optimization] | None = None,
-                 optimization_blacklist: list[Optimization] | None = None) -> None:
+    def optimize(
+            self,
+            optimization_whitelist: list[Optimization] | None = None,
+            optimization_blacklist: list[Optimization] | None = None,
+    ) -> None:
         """Apply optimizations to the TFLite model encapsulated by 'self._builder'.
         :param optimization_whitelist: A list of optimizations to apply to the model.
         :param optimization_blacklist: A list of optimizations to NOT apply to the model.
@@ -143,8 +156,7 @@ class Optimizer:
         The optimizations will be applied multiple times in a loop, until the model is fully optimized.
         """
         if optimization_whitelist is not None and optimization_blacklist is not None:
-            logger.e(logger.Code.INVALID_OPTIMIZATION,
-                     "Optimization whitelist and blacklist cannot both be specified.")
+            logger.e(logger.Code.INVALID_OPTIMIZATION, "Optimization whitelist and blacklist cannot both be specified.")
 
         if optimization_whitelist is not None:
             optimizations = optimization_whitelist
@@ -165,8 +177,10 @@ class Optimizer:
 
             for optimization in optimizations:
                 if optimization not in self.optimization_map:
-                    logger.e(logger.Code.INVALID_OPTIMIZATION,
-                             f"The converter doesn't recognise the '{optimization}' optimization.")
+                    logger.e(
+                        logger.Code.INVALID_OPTIMIZATION,
+                        f"The converter doesn't recognise the '{optimization}' optimization.",
+                    )
 
                 # Call the optimization
                 made_changes = self.optimization_map[optimization]()

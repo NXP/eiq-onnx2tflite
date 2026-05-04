@@ -49,13 +49,15 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
         # which causes issues.
         if self.model.ir_version < 10:
             if len(dequantize_nodes_multiple_consumers) > 0:
-                logger.w("Model contains DequantizeLinear nodes with multiple consumers but model's IR version < 10. "
-                         "This will lead to unnecessary Dequantize ops in produced TFLite model and some operators "
-                         "will not run quantized fashion. Use model with IR version >= 10.")
+                logger.w(
+                    "Model contains DequantizeLinear nodes with multiple consumers but model's IR version < 10. "
+                    "This will lead to unnecessary Dequantize ops in produced TFLite model and some operators "
+                    "will not run quantized fashion. Use model with IR version >= 10."
+                )
             return
 
         # Process each DequantizeLinear node
-        for (node, index, consumers) in dequantize_nodes_multiple_consumers:
+        for node, index, consumers in dequantize_nodes_multiple_consumers:
             # Get the output tensor name
             dq_linear_output = node.output[0]
             dq_linear_output_tensor = self.get_value_info(dq_linear_output)
@@ -75,7 +77,6 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
 
             # For each consumer, create a new DequantizeLinear node with unique tensor names
             for i, consumer in enumerate(consumers):
-
                 # Make sure output of DequantizeLinear op is used only once as input of this specific consumer
                 if list(consumer.input).count(dq_linear_output) != 1:
                     continue
@@ -101,16 +102,13 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
                 # Create output tensor
                 output_shape = [dim.dim_value for dim in dq_linear_output_tensor.type.tensor_type.shape.dim]
                 output_tensor_value_info = make_tensor_value_info(
-                    output_name,
-                    dq_linear_output_tensor.type.tensor_type.elem_type,
-                    output_shape)
+                    output_name, dq_linear_output_tensor.type.tensor_type.elem_type, output_shape
+                )
                 self.model.graph.value_info.append(output_tensor_value_info)
 
                 # Create new DequantizeLinear node
                 new_node = onnx.helper.make_node(
-                    "DequantizeLinear",
-                    inputs=[input_name, scale_name, zero_point_name],
-                    outputs=[output_name]
+                    "DequantizeLinear", inputs=[input_name, scale_name, zero_point_name], outputs=[output_name]
                 )
 
                 self.model.graph.node.insert(index, new_node)

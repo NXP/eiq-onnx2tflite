@@ -39,14 +39,18 @@ class UpsampleConverter(NodeConverter):
             scales = attrs.scales
             if scales is None:
                 # The attribute is required.
-                logger.e(logger.Code.INVALID_ONNX_MODEL,
-                         f"ONNX `Upsample` v {node.version} is missing the required attribute `scales`.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_MODEL,
+                    f"ONNX `Upsample` v {node.version} is missing the required attribute `scales`.",
+                )
 
         else:
             # The `scales` are an input tensor.
             if len(t_op.tmp_inputs) != 2:
-                logger.e(logger.Code.INVALID_ONNX_MODEL,
-                         f"ONNX `Upsample` version {node.version} has {len(t_op.tmp_inputs)} inputs instead of 2.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_MODEL,
+                    f"ONNX `Upsample` version {node.version} has {len(t_op.tmp_inputs)} inputs instead of 2.",
+                )
 
             scales_tensor = t_op.tmp_inputs[1]
             if tensor_has_data(scales_tensor):
@@ -58,8 +62,10 @@ class UpsampleConverter(NodeConverter):
                 # The scales are dynamic. Shape inference would have already failed.
                 # If shape inference is skipped, conversion may be possible by using the `Shape` and `Mul` operators
                 #  to multiply the input shape by the dynamic scales, and use the result as the `size` for the Resize*.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX `Upsample` with a dynamic `scales` input is not supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX `Upsample` with a dynamic `scales` input is not supported.",
+                )
 
         return list(scales)
 
@@ -82,8 +88,10 @@ class UpsampleConverter(NodeConverter):
          `QuantizeLinear`.
         """
         if len(t_op.tmp_inputs) not in {1, 2}:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Upsample` has unexpected number of inputs. Got {len(t_op.tmp_inputs)}, expected 1 or 2.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Upsample` has unexpected number of inputs. Got {len(t_op.tmp_inputs)}, expected 1 or 2.",
+            )
 
         self._check_types(t_op)
 
@@ -93,8 +101,9 @@ class UpsampleConverter(NodeConverter):
             # TFLite `ResizeBilinear` and `ResizeNearestNeighbor` are only implemented for 4D inputs.
             # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/resize_bilinear.cc#L75
             # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/resize_nearest_neighbor.cc#L73
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Upsample` is only supported for 4D inputs.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Upsample` is only supported for 4D inputs."
+            )
 
         if x.quantization is not None or y.quantization is not None:
             # ONNX quantization related operators were introduces in opset 10.
@@ -104,14 +113,18 @@ class UpsampleConverter(NodeConverter):
 
         scales = self._get_scales(node, t_op)
         if len(scales) != x.rank:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Upsample` has `scales` with {len(scales)} elements and a {x.rank}D input.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Upsample` has `scales` with {len(scales)} elements and a {x.rank}D input.",
+            )
 
         # ONNX allows scaling of the batch and channels as well, which isn't supported by TFLite.
         # The `scales` refer to channels first dimensions (N, C, H, W).
         if any(s != 1 for s in scales[:2]):
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `Upsample` with scales = {scales} is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Upsample` with scales = {scales} is not possible.",
+            )
 
         if any(s < 1 for s in scales):
             logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Upsample` has some `scales` < 1.")
@@ -132,8 +145,10 @@ class UpsampleConverter(NodeConverter):
         if not y.shape.is_well_defined():
             # The shape of `y` contains symbolic dimensions.
             # Conversion may be possible by adding `Shape` and `Mul` operators.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `Upsample` with unknown tensor shapes is not supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX `Upsample` with unknown tensor shapes is not supported.",
+            )
 
         # Create the `size` TFLite input based on the output shape.
         h, w = y.shape[1:3]  # `y` has shape NHWC.

@@ -15,10 +15,8 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class SelectV2(meta.BuiltinOptions):
-
     def __init__(self) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.SelectV2Options,
-                         libBuiltinOperator.BuiltinOperator.SELECT_V2)
+        super().__init__(libBuiltinOptions.BuiltinOptions.SelectV2Options, libBuiltinOperator.BuiltinOperator.SELECT_V2)
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         libSelectV2Options.Start(builder)

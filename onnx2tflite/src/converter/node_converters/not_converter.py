@@ -25,8 +25,10 @@ class NotConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Not` operator to TFLite `LogicalNot`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Not` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Not` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.",
+            )
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 

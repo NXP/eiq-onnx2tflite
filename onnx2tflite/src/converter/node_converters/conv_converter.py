@@ -40,8 +40,9 @@ class ConvConverter(NodeConverter):
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT8, TensorType.INT16, TensorType.UINT8]
     verified_types = [TensorType.FLOAT32]
 
-    def _convert_1d_conv(self, o_conv_attributes: conv_attributes.Conv,
-                         t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def _convert_1d_conv(
+        self, o_conv_attributes: conv_attributes.Conv, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Conv' operator with a 1D kernel to TFLite 'Conv2D'.
         TFLite doesn't support 1D convolution, but this behaviour can be represented using
                Reshape -> Conv2D -> Reshape.
@@ -140,8 +141,9 @@ class ConvConverter(NodeConverter):
 
         return conversion_result
 
-    def _convert_2d_conv(self, conv_attributes: conv_attributes.Conv,
-                         t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def _convert_2d_conv(
+        self, conv_attributes: conv_attributes.Conv, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         if conv_utils.group_conv_convertible_as_depthwise(conv_attributes, t_op, weight_tensor_index=1):
             t_op.builtin_options = depthwise_conv_2d_options.DepthwiseConv2D()
 
@@ -214,8 +216,9 @@ class ConvConverter(NodeConverter):
         elif len(o_conv_attributes.dilations) == 3:
             t_conv.dilation_d_factor, t_conv.dilation_h_factor, t_conv.dilation_w_factor = o_conv_attributes.dilations
         else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX Conv with a 3D kernel doesn't have 3D dilations!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Conv with a 3D kernel doesn't have 3D dilations!"
+            )
 
         conversion_result = conv_utils.ConvConversionResult(input_tensor, weight_tensor, bias_tensor, output_tensor)
         conversion_result.ops_list.middle_op = t_op
@@ -237,13 +240,15 @@ class ConvConverter(NodeConverter):
 
         return conversion_result
 
-    def _convert_3d_conv(self, o_conv_attributes: conv_attributes.Conv,
-                         t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def _convert_3d_conv(
+        self, o_conv_attributes: conv_attributes.Conv, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         t_op.builtin_options = conv_3d_options.Conv3D()
 
         if conv_utils.group_conv_convertible_into_multiple_convolutions(o_conv_attributes, t_op):
             return conv_utils.create_separated_convolutions_based_on_group(
-                o_conv_attributes, t_op, self.builder, self._convert_unpadded_3D, conv_utils.conv_op_factory, 4)
+                o_conv_attributes, t_op, self.builder, self._convert_unpadded_3D, conv_utils.conv_op_factory, 4
+            )
         if o_conv_attributes.group != 1:
             logger.e(logger.Code.NOT_IMPLEMENTED, "ONNX Conv with a 3D kernel and unsupported 'group' value!")
 
@@ -256,8 +261,7 @@ class ConvConverter(NodeConverter):
 
         return conversion_result.ops_list.flatten()
 
-    def convert(self, conv_node: onnx_model.NodeProto,
-                t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def convert(self, conv_node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Conv' operator to TFLite 'Conv2D' and potential 'Reshape' operators.
 
         :param conv_node: ONNX Conv node.
@@ -267,8 +271,10 @@ class ConvConverter(NodeConverter):
         o_conv_attributes = cast(conv_attributes.Conv, conv_node.attributes)
 
         if not (2 <= len(t_op.tmp_inputs) <= 3):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX Conv has invalid number of inputs. Got '{len(t_op.tmp_inputs)}', expected 2 or 3.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX Conv has invalid number of inputs. Got '{len(t_op.tmp_inputs)}', expected 2 or 3.",
+            )
 
         input_tensor = t_op.tmp_inputs[0]
         weight_tensor = t_op.tmp_inputs[1]
@@ -276,8 +282,7 @@ class ConvConverter(NodeConverter):
         if o_conv_attributes.kernel_shape is None:
             o_conv_attributes.kernel_shape = translator.infer_kernel_shape(weight_tensor)
         elif o_conv_attributes.kernel_shape != translator.infer_kernel_shape(weight_tensor):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     "Weight tensor shape not corresponds to kernel_shape attribute")
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
 
         if t_op.is_quantized_without_qdq():
             # Not supported by ONNX. Keep this check just in case.
@@ -289,8 +294,11 @@ class ConvConverter(NodeConverter):
         else:
             # Only INT8 and UINT8 quantization is supported.
             if input_tensor.type not in [TensorType.INT8, TensorType.UINT8]:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Conv` quantized with type "
-                                                      f"`{name_for_type(input_tensor.type)}` is not supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX `Conv` quantized with type "
+                    f"`{name_for_type(input_tensor.type)}` is not supported.",
+                )
 
             # (U)INT8 Conv is basically QLinearConv -> use already prepared conversion code
             return QLinearConvConverter(self.context).convert(conv_node, t_op)
@@ -306,5 +314,6 @@ class ConvConverter(NodeConverter):
         if kernel_rank == 3:
             return self._convert_3d_conv(o_conv_attributes, t_op)
 
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                 f"Conversion of ONNX Conv with a {kernel_rank}D kernel is not possible!")
+        logger.e(
+            logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX Conv with a {kernel_rank}D kernel is not possible!"
+        )

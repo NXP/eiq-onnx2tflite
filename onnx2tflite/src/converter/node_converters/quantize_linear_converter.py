@@ -50,12 +50,13 @@ class QuantizeLinearConverter(NodeConverter):
             zp = np.zeros(scale.shape, np.uint8)  # Default according to the documentation
 
         if scale is None or zp is None:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX 'QuantizeLinear' with dynamic quantization parameters is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX 'QuantizeLinear' with dynamic quantization parameters is not possible.",
+            )
 
         if not quantization_utils.is_quantization_valid(scale, zp):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     "ONNX `QuantizeLinear` has invalid quantization parameters.")
+            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `QuantizeLinear` has invalid quantization parameters.")
 
         # Set up the quantized dimension (axis in ONNX file).
         # The axis is ignored for per-tensor quantization [https://onnx.ai/onnx/operators/onnx__QuantizeLinear.html]
@@ -69,21 +70,25 @@ class QuantizeLinearConverter(NodeConverter):
                 quantized_dimension += rank
 
             if not (0 <= quantized_dimension < rank):
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                         f"ONNX QuantizeLinear has invalid 'axis'. '{ql_attributes.axis}' "
-                         f"must be in range [-{rank}, {rank - 1}]!")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                    f"ONNX QuantizeLinear has invalid 'axis'. '{ql_attributes.axis}' "
+                    f"must be in range [-{rank}, {rank - 1}]!",
+                )
 
             if t_op.tmp_inputs[0].tensor_format.is_channels_last():
                 # Convert the quantized dimension index from ONNX to TFLite format
                 quantized_dimension = translator.create_channels_last_to_channels_first_permutation(rank)[
-                    quantized_dimension]
+                    quantized_dimension
+                ]
         else:
             quantized_dimension = 0
 
         return scale, zp, quantized_dimension
 
-    def convert_into_tensor(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator
-                            ) -> list[tflite_model.Operator]:
+    def convert_into_tensor(
+        self, node: onnx_model.NodeProto, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         """Convert quantization parameters (scale & zero point) of ONNX operator 'QuantizeLinear'
         into its input tensor and skip the operator. Operators converted by this function are part
         of QDQ cluster of some float operator.
@@ -93,9 +98,12 @@ class QuantizeLinearConverter(NodeConverter):
         :return: Empty list of new operators added to the graph.
         """
         if len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "'QuantizeLinear' operators that are part of QDQ cluster can "
-                                                  "currently have only one output. Use extra option 'DedicatedQDQPair'"
-                                                  " when quantizing the model with ONNX quantizer.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "'QuantizeLinear' operators that are part of QDQ cluster can "
+                "currently have only one output. Use extra option 'DedicatedQDQPair'"
+                " when quantizing the model with ONNX quantizer.",
+            )
 
         ql_attributes = cast(QuantizeLinearAttrs, node.attributes)
 
@@ -122,26 +130,38 @@ class QuantizeLinearConverter(NodeConverter):
 
         output_type = t_op.tmp_outputs[0].type
         if output_type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX QuantizeLinear with output type "
-                                                  f"'{name_for_type(output_type)}' is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX QuantizeLinear with output type "
+                f"'{name_for_type(output_type)}' is not yet supported.",
+            )
 
         ql_attributes = cast(QuantizeLinearAttrs, node.attributes)
 
         if ql_attributes.block_size != 0:
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Attribute 'block_size' of ONNX operator 'QuantizeLinear' is not supported yet.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Attribute 'block_size' of ONNX operator 'QuantizeLinear' is not supported yet.",
+            )
 
         if ql_attributes.output_dtype != 0:
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Attribute 'output_dtype' of ONNX operator 'QuantizeLinear' is not supported yet.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Attribute 'output_dtype' of ONNX operator 'QuantizeLinear' is not supported yet.",
+            )
 
         if ql_attributes.precision != 0:
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Attribute 'precision' of ONNX operator 'QuantizeLinear' is not supported yet.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Attribute 'precision' of ONNX operator 'QuantizeLinear' is not supported yet.",
+            )
 
         if ql_attributes.saturate != 1:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX operator 'QuantizeLinear' with attribute "
-                                                        f"'saturate' = '{ql_attributes.saturate}' is not possible!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX operator 'QuantizeLinear' with attribute "
+                f"'saturate' = '{ql_attributes.saturate}' is not possible!",
+            )
 
         scale, zero_point, quantized_dimension = self._extract_quant_params(ql_attributes, t_op)
 

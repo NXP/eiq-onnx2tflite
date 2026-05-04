@@ -214,9 +214,11 @@ class ONNXModelInspector:
         if len(matching_initializers) > 1:
             logger.e(logger.Code.INVALID_ONNX_MODEL, f'Found multiple initializers for tensor "{tensor_name}".')
 
-        matching_value_infos = ([i for i in self.model.graph.inputs if i.name == tensor_name] +
-                                [i for i in self.model.graph.outputs if i.name == tensor_name] +
-                                [i for i in self.model.graph.value_info if i.name == tensor_name])
+        matching_value_infos = (
+            [i for i in self.model.graph.inputs if i.name == tensor_name]
+            + [i for i in self.model.graph.outputs if i.name == tensor_name]
+            + [i for i in self.model.graph.value_info if i.name == tensor_name]
+        )
 
         if len(matching_value_infos) == 1:
             return matching_value_infos[0]
@@ -224,8 +226,10 @@ class ONNXModelInspector:
             logger.w(f'Found multiple value infos for tensor "{tensor_name}". Returning first one.')
             return matching_value_infos[0]
 
-        logger.e(logger.Code.INVALID_ONNX_MODEL,
-                 f'Tensor with name: "{tensor_name}" not found! Did you run model shape inference?')
+        logger.e(
+            logger.Code.INVALID_ONNX_MODEL,
+            f'Tensor with name: "{tensor_name}" not found! Did you run model shape inference?',
+        )
 
     def get_all_tensors(self) -> dict[str, onnx_tensor.TensorProto]:
         """Get all tensors in model as a dictionary mapping tensor name to 'TensorProto' object.

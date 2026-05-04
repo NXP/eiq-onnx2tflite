@@ -30,10 +30,7 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
 
 # Dictionary mapping names of activation functions to corresponding TFLite ActivationFunctionType enum values.
-act_fun_for_name = {
-    "Tanh": ActivationFunctionType.TANH,
-    "Relu": ActivationFunctionType.RELU
-}
+act_fun_for_name = {"Tanh": ActivationFunctionType.TANH, "Relu": ActivationFunctionType.RELU}
 
 
 def _get_activation_function_for_name(name: str) -> ActivationFunctionType:
@@ -42,8 +39,9 @@ def _get_activation_function_for_name(name: str) -> ActivationFunctionType:
         return act_fun
 
     # Couldn't find a corresponding activation function
-    logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-             f"Conversion of ONNX LSTM with activation function '{name}' is not possible.")
+    logger.e(
+        logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX LSTM with activation function '{name}' is not possible."
+    )
 
 
 def _validate_activations(activations: list[str] | None, bidirectional: bool = False) -> list[str]:
@@ -66,27 +64,36 @@ def _validate_activations(activations: list[str] | None, bidirectional: bool = F
         return ["Sigmoid", "Tanh", "Tanh"] * 2 if bidirectional else ["Sigmoid", "Tanh", "Tanh"]
 
     if len(activations) != activations_len:
-        logger.e(logger.Code.INVALID_ONNX_MODEL,
-                 f"ONNX LSTM 'activations' attribute has '{len(activations)}' elements instead of {activations_len}.")
+        logger.e(
+            logger.Code.INVALID_ONNX_MODEL,
+            f"ONNX LSTM 'activations' attribute has '{len(activations)}' elements instead of {activations_len}.",
+        )
 
     f_is_sigmoid = activations[0] == "Sigmoid"
     if bidirectional:
         f_is_sigmoid = f_is_sigmoid and activations[3] == "Sigmoid"
     if not f_is_sigmoid:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                 "Conversion of ONNX LSTM is only possible when the activation function 'f' is a Sigmoid function.")
+        logger.e(
+            logger.Code.CONVERSION_IMPOSSIBLE,
+            "Conversion of ONNX LSTM is only possible when the activation function 'f' is a Sigmoid function.",
+        )
 
     g_and_h_are_the_same = activations[1] == activations[2]
     if bidirectional:
         g_and_h_are_the_same = g_and_h_are_the_same and activations[4] == activations[5] == activations[1]
     if not g_and_h_are_the_same:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                 "Conversion of ONNX LSTM with different activations functions 'h' and 'g' is not possible.")
+        logger.e(
+            logger.Code.CONVERSION_IMPOSSIBLE,
+            "Conversion of ONNX LSTM with different activations functions 'h' and 'g' is not possible.",
+        )
 
     g_h_supported = activations[1] in act_fun_for_name
     if not g_h_supported:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX LSTM with '{activations[1]}' as the  'h' "
-                                                    f"and 'g' activations functions is not possible.")
+        logger.e(
+            logger.Code.CONVERSION_IMPOSSIBLE,
+            f"Conversion of ONNX LSTM with '{activations[1]}' as the  'h' "
+            f"and 'g' activations functions is not possible.",
+        )
 
     return activations
 
@@ -109,8 +116,7 @@ def _get_clip_values(onnx_clip_attribute: float | None) -> tuple[float, float]:
     if onnx_clip_attribute is not None and onnx_clip_attribute != float("inf"):
         # Possibly we could allow the clip to be > 100 or something, if the user just put a large number, instead of
         #  omitting the attribute.
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                 "Conversion of ONNX LSTM with a 'clip' attribute is not possible.")
+        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with a 'clip' attribute is not possible.")
 
     return float("inf"), float("inf")  # No clipping.
 
@@ -124,8 +130,9 @@ class LSTMConverter(NodeConverter):
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8, TensorType.INT8]
     verified_types = [TensorType.FLOAT32]
 
-    def _get_1_directional_peephole_weights(self, t_op: tflite_model.Operator) -> \
-            tuple[tflite_model.Tensor, tflite_model.Tensor, tflite_model.Tensor]:
+    def _get_1_directional_peephole_weights(
+        self, t_op: tflite_model.Operator
+    ) -> tuple[tflite_model.Tensor, tflite_model.Tensor, tflite_model.Tensor]:
         """Get the peephole to input, forget and output weights from the 't_op' operator.
              The LSTM must be either 'forward' or 'backward'.
 
@@ -135,18 +142,17 @@ class LSTMConverter(NodeConverter):
         if peephole := try_get_input(t_op, 7):
             if not tensor_has_data(peephole):
                 # Add a Split operator. (not sure if this would ever happen)
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.",
+                )
 
             peephole_to_input_data, peephole_to_output_data, peephole_to_forget_data = np.split(
                 peephole.tmp_buffer.data.squeeze(0), 3
             )
-            peephole_to_input = self.builder.create_tensor_for_data(peephole_to_input_data,
-                                                                    "peephole_to_input")
-            peephole_to_forget = self.builder.create_tensor_for_data(peephole_to_forget_data,
-                                                                     "peephole_to_forget")
-            peephole_to_output = self.builder.create_tensor_for_data(peephole_to_output_data,
-                                                                     "peephole_to_output")
+            peephole_to_input = self.builder.create_tensor_for_data(peephole_to_input_data, "peephole_to_input")
+            peephole_to_forget = self.builder.create_tensor_for_data(peephole_to_forget_data, "peephole_to_forget")
+            peephole_to_output = self.builder.create_tensor_for_data(peephole_to_output_data, "peephole_to_output")
         else:
             # No peephole specified -> use null tensors.
             peephole_to_input = self.builder.create_null_tensor("peephole_to_input")
@@ -155,8 +161,9 @@ class LSTMConverter(NodeConverter):
 
         return peephole_to_input, peephole_to_forget, peephole_to_output
 
-    def _get_1_directional_biases(self, t_op: tflite_model.Operator, hidden_size: int) -> \
-            tuple[tflite_model.Tensor, tflite_model.Tensor, tflite_model.Tensor, tflite_model.Tensor]:
+    def _get_1_directional_biases(
+        self, t_op: tflite_model.Operator, hidden_size: int
+    ) -> tuple[tflite_model.Tensor, tflite_model.Tensor, tflite_model.Tensor, tflite_model.Tensor]:
         """Get the bias tensors from the 't_op' operator representing an ONNX LSTM.
              The LSTM must be either 'forward' or 'backward'.
 
@@ -175,8 +182,10 @@ class LSTMConverter(NodeConverter):
 
             if not tensor_has_data(input_bias):
                 # Prepend 'Split', 'Add' and 'Split' operators. (not sure if this would ever happen)
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.",
+                )
 
             w_b, r_b = np.split(np.squeeze(input_bias.tmp_buffer.data, 0), 2)
             bias = w_b + r_b
@@ -189,19 +198,16 @@ class LSTMConverter(NodeConverter):
 
         else:
             # No biases specified, set them all to 0. Using null tensors didn't work.
-            input_bias = self.builder.create_zeros_tensor([hidden_size], "input_bias",
-                                                          np.dtype("float32"), True)
-            forget_bias = self.builder.create_zeros_tensor([hidden_size], "forget_bias",
-                                                           np.dtype("float32"), True)
-            cell_bias = self.builder.create_zeros_tensor([hidden_size], "output_bias",
-                                                         np.dtype("float32"), True)
-            output_bias = self.builder.create_zeros_tensor([hidden_size], "cell_bias",
-                                                           np.dtype("float32"), True)
+            input_bias = self.builder.create_zeros_tensor([hidden_size], "input_bias", np.dtype("float32"), True)
+            forget_bias = self.builder.create_zeros_tensor([hidden_size], "forget_bias", np.dtype("float32"), True)
+            cell_bias = self.builder.create_zeros_tensor([hidden_size], "output_bias", np.dtype("float32"), True)
+            output_bias = self.builder.create_zeros_tensor([hidden_size], "cell_bias", np.dtype("float32"), True)
 
         return input_bias, forget_bias, cell_bias, output_bias
 
-    def _convert_forward_lstm(self, o_lstm: lstm_attributes.LSTM, t_op: tflite_model.Operator,
-                              ops: OpsList) -> list[tflite_model.Operator]:
+    def _convert_forward_lstm(
+        self, o_lstm: lstm_attributes.LSTM, t_op: tflite_model.Operator, ops: OpsList
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX LSTM with 'forward' direction attribute to TFLite UnidirectionalSequenceLSTM.
 
         :param o_lstm: Attributes of the ONNX LSTM operator.
@@ -211,7 +217,8 @@ class LSTMConverter(NodeConverter):
         """
         # Convert to TFLite 'UnidirectionalSequenceLSTM'.
         t_op.builtin_options = unidirectional_sequence_lstm_options.UnidirectionalSequenceLSTM(
-            *_get_clip_values(o_lstm.clip), time_major=True)
+            *_get_clip_values(o_lstm.clip), time_major=True
+        )
 
         o_lstm.activations = _validate_activations(o_lstm.activations)
 
@@ -257,13 +264,11 @@ class LSTMConverter(NodeConverter):
         projection_bias = self.builder.create_null_tensor("projection_bias")
 
         # Output state variable tensor.
-        output_state = self.builder.create_empty_tensor("output_state", TensorType.FLOAT32,
-                                                        [batch_size * hidden_size])
+        output_state = self.builder.create_empty_tensor("output_state", TensorType.FLOAT32, [batch_size * hidden_size])
         output_state.is_variable = True
 
         # Cell state variable tensor.
-        cell_state = self.builder.create_empty_tensor("cell_state", TensorType.FLOAT32,
-                                                      [batch_size * hidden_size])
+        cell_state = self.builder.create_empty_tensor("cell_state", TensorType.FLOAT32, [batch_size * hidden_size])
         cell_state.is_variable = True
 
         t_op.tmp_inputs = [
@@ -276,10 +281,17 @@ class LSTMConverter(NodeConverter):
             self.builder.create_tensor_for_data(recurrent_to_forget, "recurrent_to_forget"),
             self.builder.create_tensor_for_data(recurrent_to_cell, "recurrent_to_cell"),
             self.builder.create_tensor_for_data(recurrent_to_output, "recurrent_to_output"),
-            peephole_to_input, peephole_to_forget, peephole_to_output,
-            input_bias, forget_bias, cell_bias, output_bias,
-            projection_weights, projection_bias,
-            output_state, cell_state
+            peephole_to_input,
+            peephole_to_forget,
+            peephole_to_output,
+            input_bias,
+            forget_bias,
+            cell_bias,
+            output_bias,
+            projection_weights,
+            projection_bias,
+            output_state,
+            cell_state,
         ]
 
         # ONNX output has shape [seq_length, num_directions, batch_size, hidden_size]. TFLite UnidirectionalSequenceLSTM
@@ -294,8 +306,9 @@ class LSTMConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _convert_bidirectional_lstm(self, o_lstm: lstm_attributes.LSTM, t_op: tflite_model.Operator,
-                                    ops: OpsList) -> list[tflite_model.Operator]:
+    def _convert_bidirectional_lstm(
+        self, o_lstm: lstm_attributes.LSTM, t_op: tflite_model.Operator, ops: OpsList
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX LSTM with 'bidirectional' direction attribute to TFLite BidirectionalSequenceLSTM.
 
         :param o_lstm: Attributes of the ONNX LSTM operator.
@@ -305,7 +318,8 @@ class LSTMConverter(NodeConverter):
         """
         # Convert to TFLite 'BidirectionalSequenceLSTM'.
         t_op.builtin_options = bidirectional_sequence_lstm_options.BidirectionalSequenceLSTM(
-            *_get_clip_values(o_lstm.clip), time_major=True, merge_outputs=True)
+            *_get_clip_values(o_lstm.clip), time_major=True, merge_outputs=True
+        )
 
         o_lstm.activations = _validate_activations(o_lstm.activations, bidirectional=True)
 
@@ -349,8 +363,10 @@ class LSTMConverter(NodeConverter):
         # Peephole connections.
         if peephole := try_get_input(t_op, 7):
             if not tensor_has_data(peephole):
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.",
+                )
 
             fw_peephole, bw_peephole = np.split(peephole.tmp_buffer.data, 2)
             fw_p_2_i_data, fw_p_2_o_data, fw_p_2_f_data = np.split(fw_peephole.squeeze(), 3)
@@ -376,8 +392,10 @@ class LSTMConverter(NodeConverter):
 
             if not tensor_has_data(input_bias):
                 # Prepend 'Split', 'Add' and 'Split' operators. (not sure if this would ever happen)
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.",
+                )
 
             # 'B' has shape [2, 8 * hidden_size]
             fw_b, bw_b = np.split(input_bias.tmp_buffer.data, 2)
@@ -417,17 +435,21 @@ class LSTMConverter(NodeConverter):
         projection_weights = self.builder.create_null_tensor("projection_weights")
         projection_bias = self.builder.create_null_tensor("projection_bias")
 
-        fw_output_state = self.builder.create_empty_tensor("fw_output_state", TensorType.FLOAT32,
-                                                           [batch_size * hidden_size])
+        fw_output_state = self.builder.create_empty_tensor(
+            "fw_output_state", TensorType.FLOAT32, [batch_size * hidden_size]
+        )
         fw_output_state.is_variable = True
-        fw_cell_state = self.builder.create_empty_tensor("fw_cell_state", TensorType.FLOAT32,
-                                                         [batch_size * hidden_size])
+        fw_cell_state = self.builder.create_empty_tensor(
+            "fw_cell_state", TensorType.FLOAT32, [batch_size * hidden_size]
+        )
         fw_cell_state.is_variable = True
-        bw_output_state = self.builder.create_empty_tensor("fw_output_state", TensorType.FLOAT32,
-                                                           [batch_size * hidden_size])
+        bw_output_state = self.builder.create_empty_tensor(
+            "fw_output_state", TensorType.FLOAT32, [batch_size * hidden_size]
+        )
         bw_output_state.is_variable = True
-        bw_cell_state = self.builder.create_empty_tensor("fw_cell_state", TensorType.FLOAT32,
-                                                         [batch_size * hidden_size])
+        bw_cell_state = self.builder.create_empty_tensor(
+            "fw_cell_state", TensorType.FLOAT32, [batch_size * hidden_size]
+        )
         bw_cell_state.is_variable = True
 
         null_tensor = self.builder.create_null_tensor()
@@ -442,10 +464,15 @@ class LSTMConverter(NodeConverter):
             self.builder.create_tensor_for_data(fw_r_2_f, "fw_recurrent_to_forget"),
             self.builder.create_tensor_for_data(fw_r_2_c, "fw_recurrent_to_cell"),
             self.builder.create_tensor_for_data(fw_r_2_o, "fw_recurrent_to_output"),
-            fw_p_2_i, fw_p_2_f, fw_p_2_o,
-            fw_i_bias, fw_f_bias, fw_c_bias, fw_o_bias,
-            projection_weights, projection_bias,
-
+            fw_p_2_i,
+            fw_p_2_f,
+            fw_p_2_o,
+            fw_i_bias,
+            fw_f_bias,
+            fw_c_bias,
+            fw_o_bias,
+            projection_weights,
+            projection_bias,
             self.builder.create_tensor_for_data(bw_i_2_i, "bw_input_to_input"),
             self.builder.create_tensor_for_data(bw_i_2_f, "bw_input_to_forget"),
             self.builder.create_tensor_for_data(bw_i_2_c, "bw_input_to_cell"),
@@ -454,16 +481,29 @@ class LSTMConverter(NodeConverter):
             self.builder.create_tensor_for_data(bw_r_2_f, "bw_recurrent_to_forget"),
             self.builder.create_tensor_for_data(bw_r_2_c, "bw_recurrent_to_cell"),
             self.builder.create_tensor_for_data(bw_r_2_o, "bw_recurrent_to_output"),
-            bw_p_2_i, bw_p_2_f, bw_p_2_o,
-            bw_i_bias, bw_f_bias, bw_c_bias, bw_o_bias,
-            projection_weights, projection_bias,
-
-            fw_output_state, fw_cell_state,
-            bw_output_state, bw_cell_state,
-
+            bw_p_2_i,
+            bw_p_2_f,
+            bw_p_2_o,
+            bw_i_bias,
+            bw_f_bias,
+            bw_c_bias,
+            bw_o_bias,
+            projection_weights,
+            projection_bias,
+            fw_output_state,
+            fw_cell_state,
+            bw_output_state,
+            bw_cell_state,
             # Auxiliary inputs. Not necessary for conversion.
-            null_tensor, null_tensor, null_tensor, null_tensor, null_tensor, null_tensor, null_tensor, null_tensor,
-            null_tensor
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
         ]
 
         # TFLite BidirectionalSequenceLSTM has output shape [seq_len, batch_size, 2 * hidden_size]
@@ -483,8 +523,9 @@ class LSTMConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _convert_reverse_lstm(self, o_lstm: lstm_attributes.LSTM, t_op: tflite_model.Operator,
-                              ops: OpsList) -> list[tflite_model.Operator]:
+    def _convert_reverse_lstm(
+        self, o_lstm: lstm_attributes.LSTM, t_op: tflite_model.Operator, ops: OpsList
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX LSTM with 'reverse' direction attribute to TFLite BidirectionalSequenceLSTM.
              There is no direct equivalent to 'reverse' LSTM in TFLite. But we can use the BidirectionalSequenceLSTM and
              just use the backward part of the operator. We can do this by setting all 'forward' weights and biases to
@@ -497,7 +538,8 @@ class LSTMConverter(NodeConverter):
         """
         # Convert to TFLite 'BidirectionalSequenceLSTM'.
         t_op.builtin_options = bidirectional_sequence_lstm_options.BidirectionalSequenceLSTM(
-            *_get_clip_values(o_lstm.clip), time_major=True, merge_outputs=False)
+            *_get_clip_values(o_lstm.clip), time_major=True, merge_outputs=False
+        )
 
         # Using 'merge_outputs = False' and we only need the second output. (First output is the forward part, second is
         #  backward.)
@@ -550,18 +592,15 @@ class LSTMConverter(NodeConverter):
         projection_bias = self.builder.create_null_tensor("projection_bias")
 
         # Output state variable tensor.
-        output_state = self.builder.create_empty_tensor("output_state", TensorType.FLOAT32,
-                                                        [batch_size * hidden_size])
+        output_state = self.builder.create_empty_tensor("output_state", TensorType.FLOAT32, [batch_size * hidden_size])
         output_state.is_variable = True
 
         # Cell state variable tensor.
-        cell_state = self.builder.create_empty_tensor("cell_state", TensorType.FLOAT32,
-                                                      [batch_size * hidden_size])
+        cell_state = self.builder.create_empty_tensor("cell_state", TensorType.FLOAT32, [batch_size * hidden_size])
         cell_state.is_variable = True
 
         # Forward state (will always be 0)
-        fw_state = self.builder.create_empty_tensor("forward_state", TensorType.FLOAT32,
-                                                    [batch_size * hidden_size])
+        fw_state = self.builder.create_empty_tensor("forward_state", TensorType.FLOAT32, [batch_size * hidden_size])
         fw_state.is_variable = True
 
         null_tensor = self.builder.create_null_tensor()
@@ -569,29 +608,26 @@ class LSTMConverter(NodeConverter):
 
         t_op.tmp_inputs = [
             x,
-
             # Forward W  (only the first one can be null)
             null_tensor,
             self.builder.create_zeros_tensor([hidden_size, input_size], "wb", float_dtype),
             self.builder.create_zeros_tensor([hidden_size, input_size], "wc", float_dtype),
             self.builder.create_zeros_tensor([hidden_size, input_size], "wd", float_dtype),
-
             # Forward R  (only the first one can be null)
             null_tensor,
             self.builder.create_zeros_tensor([hidden_size, hidden_size], "b", float_dtype),
             self.builder.create_zeros_tensor([hidden_size, hidden_size], "c", float_dtype),
             self.builder.create_zeros_tensor([hidden_size, hidden_size], "d", float_dtype),
-
-            null_tensor, null_tensor, null_tensor,  # Forward peephole
-
+            null_tensor,
+            null_tensor,
+            null_tensor,  # Forward peephole
             # Forward Bias (only the first one can be null)
             null_tensor,
             self.builder.create_zeros_tensor([hidden_size], "ba", float_dtype),
             self.builder.create_zeros_tensor([hidden_size], "ba", float_dtype),
             self.builder.create_zeros_tensor([hidden_size], "ba", float_dtype),
-
-            null_tensor, null_tensor,  # Forward projection
-
+            null_tensor,
+            null_tensor,  # Forward projection
             # Backward weights
             self.builder.create_tensor_for_data(input_to_input, "input_to_input"),
             self.builder.create_tensor_for_data(input_to_forget, "input_to_forget"),
@@ -601,16 +637,28 @@ class LSTMConverter(NodeConverter):
             self.builder.create_tensor_for_data(recurrent_to_forget, "recurrent_to_forget"),
             self.builder.create_tensor_for_data(recurrent_to_cell, "recurrent_to_cell"),
             self.builder.create_tensor_for_data(recurrent_to_output, "recurrent_to_output"),
-            peephole_to_input, peephole_to_forget, peephole_to_output,
-            input_bias, forget_bias, cell_bias, output_bias,
-            projection_weights, projection_bias,
-
-            fw_state, fw_state,  # Forward state tensors (dummy)
-
-            output_state, cell_state,  # Backward state tensors
-
+            peephole_to_input,
+            peephole_to_forget,
+            peephole_to_output,
+            input_bias,
+            forget_bias,
+            cell_bias,
+            output_bias,
+            projection_weights,
+            projection_bias,
+            fw_state,
+            fw_state,  # Forward state tensors (dummy)
+            output_state,
+            cell_state,  # Backward state tensors
             # Auxiliary inputs
-            null_tensor, null_tensor, null_tensor, null_tensor, null_tensor, null_tensor, null_tensor, null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
+            null_tensor,
             null_tensor,
         ]
 
@@ -650,8 +698,9 @@ class LSTMConverter(NodeConverter):
             #  the input activations are computed 'i', and then instead of computing the forget activations, '1.0 - i'
             #  is used.
             # So I don't think conversion is possible.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX LSTM with 'input_forget' != 0 is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'input_forget' != 0 is not possible."
+            )
 
         if initial_h := try_get_input(t_op, 5):
             if tensor_has_data(initial_h):
@@ -660,17 +709,20 @@ class LSTMConverter(NodeConverter):
             else:
                 initial_h_data = self.context.onnx_inspector.try_get_inferred_tensor_data(initial_h.name)
                 if initial_h_data is not None:
-                    logger.i(f"Using inferred tensor data to assume that the LSTM 'initial_h' input tensor named "
-                             f"'{initial_h.name}' will always contain only '0' values during runtime. If this is not "
-                             f"the case, converted TFLite model may produce incorrect results.")
+                    logger.i(
+                        f"Using inferred tensor data to assume that the LSTM 'initial_h' input tensor named "
+                        f"'{initial_h.name}' will always contain only '0' values during runtime. If this is not "
+                        f"the case, converted TFLite model may produce incorrect results."
+                    )
 
             if initial_h_data is None or any(val != 0.0 for val in np.asarray(initial_h_data).flatten()):
                 # The initial values for the 'hidden' are specified and are not zero. TFLite has the
                 #  'input_activation_state' input tensor, which could be initially set to 'initial_h', but it is a
                 #  'variable' tensor and TFLite doesn't support variable tensors with initial static data right now.
                 # Therefore, I believe conversion is not possible.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX LSTM with 'initial_h' input is not possible.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'initial_h' input is not possible."
+                )
 
         if initial_c := try_get_input(t_op, 6):
             if tensor_has_data(initial_c):
@@ -679,14 +731,17 @@ class LSTMConverter(NodeConverter):
             else:
                 initial_c_data = self.context.onnx_inspector.try_get_inferred_tensor_data(initial_c.name)
                 if initial_c_data is not None:
-                    logger.i(f"Using inferred tensor data to assume that the LSTM 'initial_c' input tensor named "
-                             f"'{initial_c.name}' will always contain only '0' values during runtime. If this is not "
-                             f"the case, converted TFLite model may produce incorrect results.")
+                    logger.i(
+                        f"Using inferred tensor data to assume that the LSTM 'initial_c' input tensor named "
+                        f"'{initial_c.name}' will always contain only '0' values during runtime. If this is not "
+                        f"the case, converted TFLite model may produce incorrect results."
+                    )
 
             if initial_c_data is None or any(val != 0.0 for val in np.asarray(initial_c_data).flatten()):
                 # See the comment above, for 'initial_h'. This time the TFLite 'input_cell_state' operand is relevant.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX LSTM with 'initial_c' input is not possible.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'initial_c' input is not possible."
+                )
 
         if len(t_op.tmp_outputs) != 1:
             # TODO At least 'Y_h' output might be possible to compute by appending a 'Gather' operator.
@@ -694,16 +749,20 @@ class LSTMConverter(NodeConverter):
             # If the extra outputs are not used, conversion can proceed.
             for output_tensor in t_op.tmp_outputs[1:]:
                 if self.inspector.get_number_of_onnx_consumers_safe(output_tensor.name) != 0:
-                    logger.e(logger.Code.NOT_IMPLEMENTED,
-                             "Conversion of ONNX LSTM with more than 1 output is not yet supported.")
+                    logger.e(
+                        logger.Code.NOT_IMPLEMENTED,
+                        "Conversion of ONNX LSTM with more than 1 output is not yet supported.",
+                    )
 
             # Remove the unused outputs.
             t_op.tmp_outputs[1:] = []
 
         if o_lstm.layout != 0:
             # ORT doesn't support this.
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"Conversion of ONNX LSTM with layout = '{o_lstm.layout}' is not supported.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"Conversion of ONNX LSTM with layout = '{o_lstm.layout}' is not supported.",
+            )
 
         ensure_correct_tensor_formatting(t_op, self.builder, ops)
 
@@ -716,5 +775,7 @@ class LSTMConverter(NodeConverter):
         if o_lstm.direction == "reverse":
             return self._convert_reverse_lstm(o_lstm, t_op, ops)
 
-        logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                 f"ONNX LSTM has unexpected value of the direction attribute ('{o_lstm.direction}').")
+        logger.e(
+            logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+            f"ONNX LSTM has unexpected value of the direction attribute ('{o_lstm.direction}').",
+        )

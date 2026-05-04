@@ -14,10 +14,10 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Dequantize(meta.BuiltinOptions):
-
     def __init__(self) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.DequantizeOptions,
-                         libBuiltinOperator.BuiltinOperator.DEQUANTIZE)
+        super().__init__(
+            libBuiltinOptions.BuiltinOptions.DequantizeOptions, libBuiltinOperator.BuiltinOperator.DEQUANTIZE
+        )
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         libQuantizeOptions.Start(builder)

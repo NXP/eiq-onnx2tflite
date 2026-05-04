@@ -29,22 +29,34 @@ class SliceConverter(NodeConverter):
 
     onnx_supported_types = ALL_TYPES
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/slice.cc#L229-L261
-    tflite_supported_types = INTS + [TensorType.FLOAT32, TensorType.UINT8, TensorType.UINT32, TensorType.BOOL,
-                                     TensorType.STRING]
-    verified_types = INTS + [TensorType.FLOAT32, TensorType.UINT8, TensorType.UINT32, TensorType.BOOL,
-                             TensorType.STRING]
+    tflite_supported_types = INTS + [
+        TensorType.FLOAT32,
+        TensorType.UINT8,
+        TensorType.UINT32,
+        TensorType.BOOL,
+        TensorType.STRING,
+    ]
+    verified_types = INTS + [
+        TensorType.FLOAT32,
+        TensorType.UINT8,
+        TensorType.UINT32,
+        TensorType.BOOL,
+        TensorType.STRING,
+    ]
 
-    def _load_v_1_attributes(self, o_slice_attributes: slice_attributes.Slice, input_rank: int) -> \
-            tuple[list[int], list[int], list[int], list[int]]:
+    def _load_v_1_attributes(
+        self, o_slice_attributes: slice_attributes.Slice, input_rank: int
+    ) -> tuple[list[int], list[int], list[int], list[int]]:
         """Load the starts, ends, axes and steps attributes from the ONNX Slice attributes version 1.
-    
+
         :param o_slice_attributes: ONNX Slice attributes v1.
         :return: starts, ends, axes and steps
         """
         starts = o_slice_attributes.starts
         if starts is None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX 'Slice' v1 has attribute 'starts' uninitialized!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Slice' v1 has attribute 'starts' uninitialized!"
+            )
 
         ends = o_slice_attributes.ends
         if ends is None:
@@ -59,10 +71,11 @@ class SliceConverter(NodeConverter):
 
         return starts, ends, axes, steps
 
-    def _clamp_starts_and_ends(self, starts: list[int], ends: list[int], axes: list[int], steps: list[int],
-                               input_shape: list[int]) -> None:
+    def _clamp_starts_and_ends(
+        self, starts: list[int], ends: list[int], axes: list[int], steps: list[int], input_shape: list[int]
+    ) -> None:
         """Clamp the ONNX Slice attributes 'starts' and 'ends' according to the documentation.
-    
+
         :param starts: ONNX Slice attribute 'starts'
         :param ends: ONNX Slice attribute 'ends'
         :param axes: ONNX Slice attribute 'axes'
@@ -82,24 +95,25 @@ class SliceConverter(NodeConverter):
 
     def _validate_axes(self, axes: list[int], input_rank: int) -> list[int]:
         """Make sure the ONNX Sice 'axes' operand is valid and return the corresponding TFLite slice 'axes' operand.
-    
+
         :param axes: ONNX Slice operand axes.
         :param input_rank: The rank of the main input tensor of the Slice operator.
         :return: The TFLite Slice operand 'axes'.
         """
         axes = [axis if axis >= 0 else axis + input_rank for axis in axes]
         if not all(0 <= axis < input_rank for axis in axes):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX Slice attribute 'axes' contains invalid indices!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attribute 'axes' contains invalid indices!"
+            )
         if common.contains_duplicates(axes):
             # Behavior is undefined according to documentation
             logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attribute 'axes' contains duplicates!")
 
         return axes
 
-    def _validate_starts_and_ends(self, starts: list[int], ends: list[int], axes: list[int],
-                                  main_input_shape: list[int],
-                                  steps: list[int]) -> None:
+    def _validate_starts_and_ends(
+        self, starts: list[int], ends: list[int], axes: list[int], main_input_shape: list[int], steps: list[int]
+    ) -> None:
         # Replace negative indices in 'starts' and 'ends'
         for i, axis in enumerate(axes):
             if starts[i] < 0:
@@ -141,20 +155,27 @@ class SliceConverter(NodeConverter):
             # ONNX Slice v10+
 
             if not (3 <= len(t_op.tmp_inputs) <= 5):
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR, f"ONNX 'Slice' has unexpected number of "
-                                                            f"inputs! Expected 3 to 5, got '{len(t_op.tmp_inputs)}'.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR,
+                    f"ONNX 'Slice' has unexpected number of inputs! Expected 3 to 5, got '{len(t_op.tmp_inputs)}'.",
+                )
 
             starts_tensor = self._try_get_tensor_with_data(t_op.tmp_inputs[1])
             ends_tensor = self._try_get_tensor_with_data(t_op.tmp_inputs[2])
             axes_tensor = self._try_get_tensor_with_data(try_get_input(t_op, 3))
             steps_tensor = self._try_get_tensor_with_data(try_get_input(t_op, 4))
 
-            if any(t is not None and not tensor_has_data(t) for t in
-                   [starts_tensor, ends_tensor, axes_tensor, steps_tensor]):
+            if any(
+                t is not None and not tensor_has_data(t)
+                for t in [starts_tensor, ends_tensor, axes_tensor, steps_tensor]
+            ):
                 # Some inputs are dynamic.
                 # Conversion might be possible via combination with other operators. But that could be difficult.
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX Slice is only supported when"
-                                                      " the starts, ends, axes and steps input tensors are static!")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX Slice is only supported when"
+                    " the starts, ends, axes and steps input tensors are static!",
+                )
 
             starts = list(starts_tensor.tmp_buffer.data)
             ends = list(ends_tensor.tmp_buffer.data)
@@ -164,8 +185,10 @@ class SliceConverter(NodeConverter):
         # -- starts, ends, axes and steps are all initialized --
 
         if not (len(starts) == len(ends) == len(axes) == len(steps)):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attributes 'starts', 'ends', 'axes' and "
-                                                                  "steps' don't have matching lengths!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                "ONNX Slice attributes 'starts', 'ends', 'axes' and steps' don't have matching lengths!",
+            )
 
         axes = self._validate_axes(axes, input_rank)
 
@@ -190,7 +213,8 @@ class SliceConverter(NodeConverter):
             if main_input.quantization != y.quantization:
                 logger.w(
                     f"Re-quantizing input tensor '{main_input.name}' of Slice op to match output tensor's q-params. "
-                    f"This can decrease accuracy of the model.")
+                    f"This can decrease accuracy of the model."
+                )
                 # Re-quantize input based on output's q-params
                 scale = y.quantization.scale.vector
                 zp = y.quantization.zero_point.vector
@@ -216,8 +240,14 @@ class SliceConverter(NodeConverter):
         t_op.builtin_options = slice_options.Slice()
 
     def _convert_to_strided_slice(
-        self, t_op: tflite_model.Operator, main_input: tflite_model.Tensor, input_rank: int,
-        starts: list[np.ndarray], ends: list[np.ndarray], axes: list[np.ndarray], steps: list[np.ndarray]
+        self,
+        t_op: tflite_model.Operator,
+        main_input: tflite_model.Tensor,
+        input_rank: int,
+        starts: list[np.ndarray],
+        ends: list[np.ndarray],
+        axes: list[np.ndarray],
+        steps: list[np.ndarray],
     ) -> None:
         tf_begin = [0] * input_rank  # By default, start slice from 0
         tf_end = main_input.shape.vector.copy()  # By default, end slice at the end of dimension

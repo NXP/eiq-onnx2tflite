@@ -9,10 +9,8 @@ from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import Bas
 
 
 class RemoveUnusedTensorsAndBuffers(BaseOptimization):
-
     def _get_used_tensors_and_buffers(self) -> (set[tflite_model.Tensor], set[tflite_model.Buffer]):
-        """Get a set of all tensors used by the operators in the model, and a set of all buffers used by these tensors.
-        """
+        """Get a set of all tensors used by the operators in the model, and a set of all buffers used by these tensors."""
         used_tensors = set()
         used_buffers = set()
 

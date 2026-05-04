@@ -14,10 +14,8 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class BroadcastTo(meta.BuiltinOptions):
-
     def __init__(self) -> None:
-        super().__init__(BuiltinOptions.BroadcastToOptions,
-                         BuiltinOperator.BROADCAST_TO)
+        super().__init__(BuiltinOptions.BroadcastToOptions, BuiltinOperator.BROADCAST_TO)
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         libBroadcastToOptions.Start(builder)

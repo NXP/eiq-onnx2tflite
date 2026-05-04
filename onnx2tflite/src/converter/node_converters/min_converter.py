@@ -62,11 +62,14 @@ class MinConverter(NodeConverter):
                 # Re-quantize input tensors if they don't match with output quantization.
                 for idx, input_tensor in enumerate(t_op.tmp_inputs):
                     if input_tensor.quantization != y.quantization:
-                        logger.w(f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's "
-                                 f"q-params of Minimum op.")
+                        logger.w(
+                            f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's "
+                            f"q-params of Minimum op."
+                        )
                         if tensor_has_data(input_tensor):
-                            t_op.tmp_inputs[idx] = re_quantize_static_tensor(self.builder, input_tensor, y.type, scale,
-                                                                             zp)
+                            t_op.tmp_inputs[idx] = re_quantize_static_tensor(
+                                self.builder, input_tensor, y.type, scale, zp
+                            )
                         else:
                             ops.add_pre(self.builder.create_quantize_operator_before(t_op, idx, y.type, scale, zp))
 
@@ -77,7 +80,8 @@ class MinConverter(NodeConverter):
             # TFLite `Minimum` only supports 2 inputs.
             # Add a cascade of `Minimum` operators, which gradually compute the result.
             #  The number of added operators would be linear to the number of inputs.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `Min` with more than 2 inputs is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Min` with more than 2 inputs is not yet implemented."
+            )
 
         return ops.flatten()

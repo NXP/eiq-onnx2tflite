@@ -25,9 +25,17 @@ class Conv3D(meta.BuiltinOptions):
     dilation_d_factor: int
     fused_activation_function: ActivationFunctionType
 
-    def __init__(self, padding: Padding = Padding.SAME, stride_w: int = 1, stride_h: int = 1, stride_d: int = 1,
-                 dilation_w_factor: int = 1, dilation_h_factor: int = 1, dilation_d_factor: int = 1,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        padding: Padding = Padding.SAME,
+        stride_w: int = 1,
+        stride_h: int = 1,
+        stride_d: int = 1,
+        dilation_w_factor: int = 1,
+        dilation_h_factor: int = 1,
+        dilation_d_factor: int = 1,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.Conv3DOptions, BuiltinOperator.CONV_3D)
         self.padding = padding
         self.stride_w = stride_w

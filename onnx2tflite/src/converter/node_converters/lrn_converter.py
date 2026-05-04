@@ -50,15 +50,15 @@ class LRNConverter(NodeConverter):
         if x.rank != 4:
             # ONNXRT: Only input with rank 4 is supported by ONNX Runtime
             #  (onnxruntime/core/providers/cpu/nn/lrn.cc: Line 61)
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'LRN' input tensor has rank '{x.rank}' instead of '4'. "
-                                                     "This is not supported by ONNX Runtime and therefore conversion is"
-                                                     " not implemented.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'LRN' input tensor has rank '{x.rank}' instead of '4'. "
+                "This is not supported by ONNX Runtime and therefore conversion is"
+                " not implemented.",
+            )
 
         t_op.builtin_options = tfl_lrn_options.LRN(
-            radius=(attrs.size - 1) // 2,
-            bias=attrs.bias,
-            alpha=attrs.alpha / attrs.size,
-            beta=attrs.beta
+            radius=(attrs.size - 1) // 2, bias=attrs.bias, alpha=attrs.alpha / attrs.size, beta=attrs.beta
         )
 
         return [t_op]

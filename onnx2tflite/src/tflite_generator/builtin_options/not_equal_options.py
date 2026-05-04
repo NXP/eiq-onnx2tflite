@@ -14,7 +14,6 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class NotEqual(meta.BuiltinOptions):
-
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.NotEqualOptions, BuiltinOperator.NOT_EQUAL)
 

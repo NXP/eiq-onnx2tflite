@@ -19,8 +19,9 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 class Transpose(meta.BuiltinOptions):
     def __init__(self) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.TransposeOptions,
-                         libBuiltinOperator.BuiltinOperator.TRANSPOSE)
+        super().__init__(
+            libBuiltinOptions.BuiltinOptions.TransposeOptions, libBuiltinOperator.BuiltinOperator.TRANSPOSE
+        )
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         libTransposeOptions.Start(builder)

@@ -129,9 +129,12 @@ class TensorProto(meta.ONNXObject):
             # Some models use empty tensor with dimension [0]. Avoid reshaping.
             if self.dims != [0]:
                 self.data = np.reshape(self.data, self.dims)
-        except Exception as e: # noqa: BLE001
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'", exception=e)
+        except Exception as e:  # noqa: BLE001
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'",
+                exception=e,
+            )
 
     def _assign_data(self) -> None:
         """Assign tensor's data to the 'data' attribute from any initialized array in the descriptor.
@@ -161,9 +164,18 @@ class TensorProto(meta.ONNXObject):
         elif _has_data(self._descriptor.int32_data):
             # 'onnx-ml.proto' line '547'
             self._assert_type_allowed(
-                [onnx.TensorProto.INT32, onnx.TensorProto.INT16, onnx.TensorProto.INT8, onnx.TensorProto.UINT16,
-                 onnx.TensorProto.UINT8, onnx.TensorProto.BOOL, onnx.TensorProto.FLOAT16,
-                 onnx.TensorProto.BFLOAT16], "int32_data")
+                [
+                    onnx.TensorProto.INT32,
+                    onnx.TensorProto.INT16,
+                    onnx.TensorProto.INT8,
+                    onnx.TensorProto.UINT16,
+                    onnx.TensorProto.UINT8,
+                    onnx.TensorProto.BOOL,
+                    onnx.TensorProto.FLOAT16,
+                    onnx.TensorProto.BFLOAT16,
+                ],
+                "int32_data",
+            )
 
             if self.data_type == onnx.TensorProto.FLOAT16:
                 # int32_data is an array of int32. ONNX allows it to be used for float16, but numpy cannot correctly
@@ -223,8 +235,10 @@ class TensorProto(meta.ONNXObject):
         Return 'True' if type is allowed.
         """
         if self.data_type not in allowed_types:
-            logger.w(f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! "
-                     f"MUST be one of '{allowed_types}'.")
+            logger.w(
+                f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! "
+                f"MUST be one of '{allowed_types}'."
+            )
             return False
 
         return True
@@ -235,8 +249,10 @@ class TensorProto(meta.ONNXObject):
         Return 'True' if type is not banned.
         """
         if self.data_type in banned_types:
-            logger.w(f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! must NOT be "
-                     f"one of '{banned_types}'.")
+            logger.w(
+                f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! must NOT be "
+                f"one of '{banned_types}'."
+            )
             return False
 
         return True

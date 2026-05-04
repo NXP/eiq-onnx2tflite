@@ -27,8 +27,9 @@ class PReluConverter(NodeConverter):
     def convert(self, _, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `PRelu` to TFLite `PRelu`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"ONNX 'PRelu' has '{len(t_op.tmp_inputs)}' inputs! Expected '2'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR, f"ONNX 'PRelu' has '{len(t_op.tmp_inputs)}' inputs! Expected '2'."
+            )
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)
@@ -42,8 +43,10 @@ class PReluConverter(NodeConverter):
 
             except ValueError:
                 # Shapes are not broadcastable. This shouldn't happen. Possible cause is an invalid ONNX model.
-                logger.e(logger.Code.INTERNAL_ERROR,
-                         f"Failed to broadcast shapes '{a.shape.vector}' and '{b.shape.vector}' during PRelu conversion.")
+                logger.e(
+                    logger.Code.INTERNAL_ERROR,
+                    f"Failed to broadcast shapes '{a.shape.vector}' and '{b.shape.vector}' during PRelu conversion.",
+                )
 
         t_op.builtin_options = None  # TFLite PRelu has no builtin options.
         t_op.opcode_index = self.context.tflite_builder.op_code_index_for_op_type(BuiltinOperator.PRELU)

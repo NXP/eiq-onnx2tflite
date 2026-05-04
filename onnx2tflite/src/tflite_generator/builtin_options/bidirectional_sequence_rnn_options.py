@@ -19,8 +19,13 @@ class BidirectionalSequenceRNN(meta.BuiltinOptions):
     merge_outputs: bool
     asymmetric_quantize_inputs: bool
 
-    def __init__(self, time_major: bool = True, merge_outputs: bool = True, asymmetric_quantize_inputs: bool = False,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        time_major: bool = True,
+        merge_outputs: bool = True,
+        asymmetric_quantize_inputs: bool = False,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.BidirectionalSequenceRNNOptions, BuiltinOperator.BIDIRECTIONAL_SEQUENCE_RNN)
 
         self.time_major = time_major

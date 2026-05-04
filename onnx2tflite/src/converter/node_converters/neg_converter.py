@@ -26,8 +26,10 @@ class NegConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Neg` operator to TFLite `Neg`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Neg` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Neg` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.",
+            )
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)

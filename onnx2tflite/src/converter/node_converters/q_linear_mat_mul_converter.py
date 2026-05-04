@@ -9,7 +9,6 @@
 Convert ONNX operator QLinearMatMul to TFLite.
 """
 
-
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.meta.types as tfl_types
@@ -36,10 +35,7 @@ class QLinearMatMulConverter(NodeConverter):
 
     def _is_unsupported_type(self, data_type: TensorType) -> bool:
         """Determine if given TensorType is unsupported by the ONNX QLinearMatMul."""
-        return data_type not in {
-            TensorType.UINT8,
-            TensorType.INT8
-        }
+        return data_type not in {TensorType.UINT8, TensorType.INT8}
 
     def _per_channel_zero_points_are_supported(self, data_type: TensorType, zero_point: np.ndarray) -> bool:
         if data_type == TensorType.INT8:
@@ -50,9 +46,14 @@ class QLinearMatMulConverter(NodeConverter):
 
         return False
 
-    def _ensure_signed_quantized_input(self, input_tensor: tflite_model.Tensor, t_op: tflite_model.Operator,
-                                       input_index: int, input_zero_point: np.ndarray,
-                                       ops: OpsList) -> None:
+    def _ensure_signed_quantized_input(
+        self,
+        input_tensor: tflite_model.Tensor,
+        t_op: tflite_model.Operator,
+        input_index: int,
+        input_zero_point: np.ndarray,
+        ops: OpsList,
+    ) -> None:
         if input_tensor.type == TensorType.UINT8:
             if tensor_has_data(input_tensor):
                 # Tensor can be re-quantized statically
@@ -66,9 +67,9 @@ class QLinearMatMulConverter(NodeConverter):
                     new_zero_point = [new_zero_point.item()]
                 else:
                     new_zero_point = list(new_zero_point)
-                quantize_op = self.context.tflite_builder.create_quantize_operator_before(t_op, input_index,
-                                                                                          TensorType.INT8, None,
-                                                                                          new_zero_point)
+                quantize_op = self.context.tflite_builder.create_quantize_operator_before(
+                    t_op, input_index, TensorType.INT8, None, new_zero_point
+                )
                 ops.add_pre(quantize_op)
 
     def _at_least_1_is_none(self, *args) -> bool:
@@ -103,31 +104,41 @@ class QLinearMatMulConverter(NodeConverter):
             pass
         elif max_rank != 2:
             # Only 2D QLinearMatMul can be converted because of FullyConnected limitation.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"ONNX QLinearMatMul with '{max_rank}' dimensions and "
-                                                        f"per-channel quantization cannot be converted to TFLite! "
-                                                        f"Only 2D QLinearMatMul is supported.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"ONNX QLinearMatMul with '{max_rank}' dimensions and "
+                f"per-channel quantization cannot be converted to TFLite! "
+                f"Only 2D QLinearMatMul is supported.",
+            )
 
         if any(t.tensor_format.is_channels_last() for t in [a, b]):
             # This should be an extremely rare case since the inputs are almost always 2D (formatless).
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `QLinearMatMul` or quantized `MatMul` with per-channel quantization and "
-                     "channels first input is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX `QLinearMatMul` or quantized `MatMul` with per-channel quantization and "
+                "channels first input is not yet supported.",
+            )
 
         # FullyConnected silently only supports 0 zero points for int8 per-channel quantization
         if not self._per_channel_zero_points_are_supported(b.type, b_zp):
             data_type_name = tfl_types.name_for_type(b.type)
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"ONNX QLinearMatMul with second input zero point "
-                                                        f"'{b_zp}' and type '{data_type_name}' cannot be "
-                                                        f"converted to TFLite!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"ONNX QLinearMatMul with second input zero point "
+                f"'{b_zp}' and type '{data_type_name}' cannot be "
+                f"converted to TFLite!",
+            )
 
         # ONNXRT: Despite the documentation, ONNX Runtime only allows per-channel quantization for the last dimension.
         # In TFLite, per-channel quantization is only supported for 2D tensors, so the last dimension has index 1.
         b_quantized_dimension = 1
         size_of_quantized_dimension = b.shape.get(b_quantized_dimension)
         if size_of_quantized_dimension != 1 and size_of_quantized_dimension != b_scale.size:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     "ONNX 2D QLinearMatMul uses per-channel quantization, but the size of "
-                     "the quantization parameters doesn't match dimension 1. This is unexpected.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                "ONNX 2D QLinearMatMul uses per-channel quantization, but the size of "
+                "the quantization parameters doesn't match dimension 1. This is unexpected.",
+            )
 
         # Add the quantization parameters to the tensors
         if a.quantization is None:
@@ -165,8 +176,11 @@ class QLinearMatMulConverter(NodeConverter):
             if b.type == TensorType.UINT8:
                 # b must be re-quantized dynamically, but the TFLite Quantize operator silently doesn't support
                 # UINT8 to INT8 per-channel re-quantization
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of QLinearMatMul with a dynamic second input "
-                                                            "with per-channel quantization is not possible!")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of QLinearMatMul with a dynamic second input "
+                    "with per-channel quantization is not possible!",
+                )
 
             # A Transpose operator must be added
             transpose = self.context.tflite_builder.create_transpose_operator_before(t_op, 1, [1, 0])
@@ -185,8 +199,10 @@ class QLinearMatMulConverter(NodeConverter):
             else:
                 new_zero_output_point = list(new_zero_output_point)
             ops.add_post(
-                self.context.tflite_builder.create_quantize_operator_after(t_op, 0, TensorType.INT8, None,
-                                                                           new_zero_output_point))
+                self.context.tflite_builder.create_quantize_operator_after(
+                    t_op, 0, TensorType.INT8, None, new_zero_output_point
+                )
+            )
 
         return ops.flatten()
 
@@ -249,9 +265,9 @@ class QLinearMatMulConverter(NodeConverter):
         # In the case of static `weights`, either convert to `BatchMatMul` (currently implemented) or prepend a
         #  `Quantize` operator to change the zero point (which would decrease accuracy).
         zero_point_works_with_fully_connected = (
-                (not tensor_has_data(b)) or
-                (b.type == TensorType.INT8 and b.quantization.zero_point[0] == 0) or
-                (b.type == TensorType.UINT8 and b.quantization.zero_point[0] == 128)
+            (not tensor_has_data(b))
+            or (b.type == TensorType.INT8 and b.quantization.zero_point[0] == 0)
+            or (b.type == TensorType.UINT8 and b.quantization.zero_point[0] == 128)
         )
         if a.rank in (2, 3) and b.rank == 2 and zero_point_works_with_fully_connected:
             # Convert to `FullyConnected`.
@@ -282,13 +298,16 @@ class QLinearMatMulConverter(NodeConverter):
             else:
                 new_zero_output_point = list(new_zero_output_point)
             ops.add_post(
-                self.context.tflite_builder.create_quantize_operator_after(t_op, 0, TensorType.INT8, None,
-                                                                           new_zero_output_point))
+                self.context.tflite_builder.create_quantize_operator_after(
+                    t_op, 0, TensorType.INT8, None, new_zero_output_point
+                )
+            )
 
         return ops.flatten()
 
-    def _get_input_with_quant_params(self, node: onnx_model.NodeProto, t_op, input_idx
-                                     ) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
+    def _get_input_with_quant_params(
+        self, node: onnx_model.NodeProto, t_op, input_idx
+    ) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
         """Get input tensor and corresponding q-params from other inputs (QLinearMatMul) or
         directly from tensor's quantization property.
 
@@ -346,20 +365,21 @@ class QLinearMatMulConverter(NodeConverter):
 
         # Quantization parameters must be static
         if self._at_least_1_is_none(a_scale, a_zp, b_scale, b_zp, y_scale, y_zp):
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearMatMul with dynamic quantization "
-                                                        "parameters is not possible!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX QLinearMatMul with dynamic quantization parameters is not possible!",
+            )
 
         # ONNX only supports 8bit inputs and output
-        if (self._is_unsupported_type(a.type) or
-                self._is_unsupported_type(b.type) or
-                self._is_unsupported_type(y.type)):
+        if self._is_unsupported_type(a.type) or self._is_unsupported_type(b.type) or self._is_unsupported_type(y.type):
             logger.e(logger.Code.INVALID_TYPE, "ONNX QLinearMatMul only supports INT8 and UINT8 datatypes!")
 
         # 1D MatMul
         if a.rank == b.rank == 1:
             # TODO Surround by Reshape ops if this use case is realistic
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX QLinearMatMul with 1D inputs is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearMatMul with 1D inputs is not yet implemented."
+            )
 
         # ONNXRT: ONNX Runtime only supports per-channel quantization for b
         # (onnxruntime/core/providers/cpu/quantization/quantize_linear_matmul.cc Line ~55)

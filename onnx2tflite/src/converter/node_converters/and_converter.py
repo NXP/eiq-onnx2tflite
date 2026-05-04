@@ -26,8 +26,10 @@ class AndConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `And` operator to TFLite `LogicalAnd`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `And` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `And` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]

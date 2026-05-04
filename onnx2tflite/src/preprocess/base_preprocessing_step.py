@@ -88,9 +88,7 @@ class PreprocessingStep(ABC):
         existing_names = [
             vi.name for vi in chain(self.model.graph.value_info, self.model.graph.input, self.model.graph.output)
         ]
-        existing_names += [
-            initializer.name for initializer in self.model.graph.initializer
-        ]
+        existing_names += [initializer.name for initializer in self.model.graph.initializer]
 
         if tensor_name not in existing_names:
             return tensor_name

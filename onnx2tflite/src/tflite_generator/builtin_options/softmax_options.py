@@ -21,8 +21,7 @@ class Softmax(meta.BuiltinOptions):
     beta: float
 
     def __init__(self, beta: float) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.SoftmaxOptions,
-                         libBuiltinOperator.BuiltinOperator.SOFTMAX)
+        super().__init__(libBuiltinOptions.BuiltinOptions.SoftmaxOptions, libBuiltinOperator.BuiltinOperator.SOFTMAX)
         self.beta = beta
 
     def gen_tflite(self, builder: fb.Builder) -> int:

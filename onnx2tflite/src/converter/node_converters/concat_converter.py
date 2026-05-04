@@ -28,8 +28,9 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
 class ConcatConverter(NodeConverter):
     node = "Concat"
 
-    onnx_supported_types = FLOATS + INTS + UINTS + [TensorType.BOOL, TensorType.COMPLEX64, TensorType.COMPLEX128,
-                                                    TensorType.STRING]
+    onnx_supported_types = (
+        FLOATS + INTS + UINTS + [TensorType.BOOL, TensorType.COMPLEX64, TensorType.COMPLEX128, TensorType.STRING]
+    )
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/concatenation.cc#L140-L144
     tflite_supported_types = INTS + [TensorType.FLOAT32, TensorType.UINT8, TensorType.UINT32, TensorType.BOOL]
     verified_types = tflite_supported_types
@@ -43,8 +44,10 @@ class ConcatConverter(NodeConverter):
         rank = len(t_op.tmp_inputs[0].shape.vector)
 
         if axis < -rank or axis > rank - 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
+            )
 
         if axis < 0:  # convert negative index to positive
             axis += rank
@@ -58,8 +61,10 @@ class ConcatConverter(NodeConverter):
             # 1. First tensor is non-quantized and static + second tensor is quantized
             # 2. Range of first tensor is smaller than range of others -> which one to choose?
             if y.quantization is None:
-                logger.w(f"Propagating q-params from tensor '{t_op.tmp_inputs[0].name}' to output tensor of Concat op. "
-                         "This can decrease accuracy of the model.")
+                logger.w(
+                    f"Propagating q-params from tensor '{t_op.tmp_inputs[0].name}' to output tensor of Concat op. "
+                    "This can decrease accuracy of the model."
+                )
                 propagate_quantization(t_op.tmp_inputs[0], y)
 
             scale = y.quantization.scale.vector
@@ -73,21 +78,25 @@ class ConcatConverter(NodeConverter):
                         # Tensor wasn't quantized because it is constant (our QDQ quantizer was used) -> quantize the
                         #  data.
                         logger.w(
-                            f"Quantizing tensor '{input_tensor.name}' using q-params of Concat's op output tensor.")
+                            f"Quantizing tensor '{input_tensor.name}' using q-params of Concat's op output tensor."
+                        )
                         input_tensor = quantize_static_float_tensor(self.builder, input_tensor, y.type, scale, zp)
                         t_op.tmp_inputs[idx] = input_tensor
 
                     elif input_tensor.quantization != y.quantization and input_tensor.type == TensorType.INT8:
                         # Tensor's q-params doesn't match with output ones and type is INT8 -> re-quantize data
-                        logger.w(f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of "
-                                 "Concat op.")
+                        logger.w(
+                            f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of "
+                            "Concat op."
+                        )
                         input_tensor = re_quantize_static_tensor(self.builder, input_tensor, y.type, scale, zp)
                         t_op.tmp_inputs[idx] = input_tensor
                 # TFLite support re-quantization for UINT8, so apply only to INT8
                 elif input_tensor.quantization != y.quantization and input_tensor.type == TensorType.INT8:
                     ops.add_pre(self.builder.create_quantize_operator_before(t_op, idx, y.type, scale, zp))
-                    logger.w(f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of "
-                             "Concat op.")
+                    logger.w(
+                        f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of Concat op."
+                    )
 
         if t_op.tmp_inputs[0].tensor_format.is_channels_last():
             axis = translator.create_channels_last_to_channels_first_permutation(rank)[axis]

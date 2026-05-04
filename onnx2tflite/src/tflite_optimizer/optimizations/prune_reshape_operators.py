@@ -29,11 +29,9 @@ class FuseReshapeOperators(BaseOptimization):
             self._builder,
             [
                 Op(["Reshape"], outputs=["y"]),
-                MultipleSameOps(["Reshape"], ["y", ...])  # Nothing other than `Reshape` ops can use `y`.
+                MultipleSameOps(["Reshape"], ["y", ...]),  # Nothing other than `Reshape` ops can use `y`.
             ],
-            [
-                TensorIsNotModelOutput("y")
-            ]
+            [TensorIsNotModelOutput("y")],
         )
 
         to_remove = []
@@ -63,19 +61,18 @@ class RemoveReshapeOperatorsWithNoEffect(BaseOptimization):
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
-            [
-                Op(["Reshape"], ["x", ...], ["y"])
-            ],
+            [Op(["Reshape"], ["x", ...], ["y"])],
             [
                 TensorsHaveSameShape(["x", "y"]),
                 RuleOr(
                     TensorIsNotModelOutput("x"),
-                    TensorIsNotModelOutput("y")
+                    TensorIsNotModelOutput("y"),
                     # If both 'x' and 'y' are model outputs, the `Reshape` cannot be removed. If the op was removed, its
                     #  input and output would be combined into 1 tensor, which would have to represent 2 model outputs
                     #  with 2 different names, which is not possible.
-                )
-            ])
+                ),
+            ],
+        )
 
         to_remove = []
         for [reshape], tensor_map, input_to_ops, _ in matcher.match_patterns():

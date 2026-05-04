@@ -49,5 +49,6 @@ class LRN(meta.ONNXOperatorAttributes):
 
         # Attribute 'size' is required
         if not hasattr(self, "size"):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX 'LRN' is missing the required 'size' attribute!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'LRN' is missing the required 'size' attribute!"
+            )

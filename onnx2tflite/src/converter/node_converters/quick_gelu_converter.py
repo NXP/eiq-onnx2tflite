@@ -69,8 +69,7 @@ class QuickGeluConverter(NodeConverter):
         logistic_output = self.builder.duplicate_tensor(mul_1_output)
 
         logistic_op = tflite_model.Operator(
-            opcode_index=self.builder.op_code_index_for_op_type(BuiltinOperator.LOGISTIC),
-            builtin_options=None
+            opcode_index=self.builder.op_code_index_for_op_type(BuiltinOperator.LOGISTIC), builtin_options=None
         )
         logistic_op.tmp_inputs = [mul_1_output]
         logistic_op.tmp_outputs = [logistic_output]

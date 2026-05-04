@@ -66,8 +66,9 @@ class PadConverter(NodeConverter):
 
         return False
 
-    def _create_default_constant_tensor_for_type(self, data_type: TensorType,
-                                                 builder: model_builder.ModelBuilder) -> tflite_model.Tensor:
+    def _create_default_constant_tensor_for_type(
+        self, data_type: TensorType, builder: model_builder.ModelBuilder
+    ) -> tflite_model.Tensor:
         """Create and return a static TFLite tensor containing a single value, which is the default 'constant_value'
              for the ONNX 'Pad' operator with given 'data_type'.
 
@@ -89,8 +90,9 @@ class PadConverter(NodeConverter):
 
         return builder.create_tensor_for_data(data, "constant_value_")
 
-    def _create_tflite_paddings_from_pads_and_axes(self, pads: list[int], axes: list[int], input_rank: int
-                                                   ) -> list[list[int]]:
+    def _create_tflite_paddings_from_pads_and_axes(
+        self, pads: list[int], axes: list[int], input_rank: int
+    ) -> list[list[int]]:
         """Create the TFLite 'paddings' operand from ONNX 'pads' and 'axes' operands. All operands belong to respective
              TFLite ond ONNX 'Pad' operators.
 
@@ -118,8 +120,9 @@ class PadConverter(NodeConverter):
 
         return translator.onnx_explicit_padding_to_tflite(full_onnx_pads)
 
-    def _convert_pad_v2(self, o_pad: onnx_pad_attributes.Pad,
-                        t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def _convert_pad_v2(
+        self, o_pad: onnx_pad_attributes.Pad, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX 'Pad' operator version 2, to TFLite.
 
         :param o_pad: Attributes of the ONNX Pad v2 operator.
@@ -127,17 +130,22 @@ class PadConverter(NodeConverter):
         :return: A list of TFLite operators to add to the model.
         """
         if o_pad.pads is None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX 'Pad' v2 is missing the required 'pads' attribute!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Pad' v2 is missing the required 'pads' attribute!"
+            )
 
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"ONNX 'Pad' v2 has unexpected number of inputs. Expected '1', got '{len(t_op.tmp_inputs)}'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"ONNX 'Pad' v2 has unexpected number of inputs. Expected '1', got '{len(t_op.tmp_inputs)}'.",
+            )
 
         if t_op.tmp_inputs[0].type != TensorType.FLOAT32:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "ONNX 'Pad' v2 uses unsupported input type. Expected 'FLOAT32', "
-                     f"got '{name_for_type(t_op.tmp_inputs[0].type)}'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                "ONNX 'Pad' v2 uses unsupported input type. Expected 'FLOAT32', "
+                f"got '{name_for_type(t_op.tmp_inputs[0].type)}'.",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -165,8 +173,9 @@ class PadConverter(NodeConverter):
             # The operator is also removing data. TFLite 'Pad' doesn't support this.
             # https://github.com/tensorflow/tensorflow/blob/a8d000505e924cac9e8c6bfee544912292957d7e/tensorflow/lite/kernels/pad.cc#L136
             # Conversion may be possible via combination with the 'Slice' operator.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX 'Pad' with negative 'pads' is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' with negative 'pads' is not yet implemented."
+            )
 
         rank = t_op.tmp_inputs[0].rank
         tfl_paddings = translator.onnx_explicit_padding_to_tflite(list(o_pad.pads))
@@ -188,8 +197,9 @@ class PadConverter(NodeConverter):
                 t_op.builtin_options = pad_v2_options.PadV2()
 
                 # Create a tensor for the constant value
-                constant_value_tensor = self.builder.create_tensor_for_data(np.asarray([o_pad.value], np.float32),
-                                                                            "value")
+                constant_value_tensor = self.builder.create_tensor_for_data(
+                    np.asarray([o_pad.value], np.float32), "value"
+                )
                 t_op.tmp_inputs.append(constant_value_tensor)
 
             return ops.flatten()
@@ -201,9 +211,11 @@ class PadConverter(NodeConverter):
             #  input dimension. When this happens, accurate conversion is not possible right now.
 
             if self._reflect_mode_bugged_use_case(t_op.tmp_inputs[0].shape.vector, tfl_paddings):
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX 'Pad' version 2 in 'reflect' mode is not supported, due to inconsistent "
-                         "behavior of the ONNX 'Pad' and the TFLite 'MirrorPad' operators in 'reflect' mode.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX 'Pad' version 2 in 'reflect' mode is not supported, due to inconsistent "
+                    "behavior of the ONNX 'Pad' and the TFLite 'MirrorPad' operators in 'reflect' mode.",
+                )
 
             t_op.builtin_options = mirror_pad_options.MirrorPad()
             return ops.flatten()
@@ -211,15 +223,19 @@ class PadConverter(NodeConverter):
         if o_pad.mode == "edge":
             # Conversion may be possible via other operators. Not sure. I haven't found a reasonable way to represent it
             #  in TFLite.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX 'Pad' version 2 in 'edge' mode is not implemented and may not be possible!")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX 'Pad' version 2 in 'edge' mode is not implemented and may not be possible!",
+            )
         else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX 'Pad' version 2 has invalid mode attribute '{o_pad.mode}'!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX 'Pad' version 2 has invalid mode attribute '{o_pad.mode}'!",
+            )
 
-    def _prepare_constant_and_paddings_from_onnx_pad_v11_plus(self, t_op: tflite_model.Operator,
-                                                              builder: model_builder.ModelBuilder
-                                                              ) -> tuple[tflite_model.Tensor, tflite_model.Tensor]:
+    def _prepare_constant_and_paddings_from_onnx_pad_v11_plus(
+        self, t_op: tflite_model.Operator, builder: model_builder.ModelBuilder
+    ) -> tuple[tflite_model.Tensor, tflite_model.Tensor]:
         """Create the 'paddings' and the 'constant' input tensors of the TFLite 'Pad' operator, from the ONNX 'Pad'
              v11+ operator.
 
@@ -240,8 +256,9 @@ class PadConverter(NodeConverter):
             # ONNX and TFLite use quite different formats for the 'pads' input. Converting a dynamic 'pads' would
             #  require adding multiple extra operators. (probably 2x Gather, Concat and potentially Transpose).
             # This use-case is probably not very common.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' with dynamic 'pads' input is not yet supported."
+            )
 
         pads = list(pads_tensor.tmp_buffer.data)
 
@@ -259,8 +276,10 @@ class PadConverter(NodeConverter):
             # 'axes' is specified
             if not tensor_has_data(axes_tensor):
                 # This case would require multiple extra operators and is probably not very common.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX 'Pad' with dynamic 'axes' input is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX 'Pad' with dynamic 'axes' input is not yet supported.",
+                )
 
             axes = list(axes_tensor.tmp_buffer.data)
 
@@ -278,8 +297,9 @@ class PadConverter(NodeConverter):
 
         return tfl_paddings_tensor, constant_tensor
 
-    def _convert_pad_v11_plus(self, o_pad: onnx_pad_attributes.Pad,
-                              t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def _convert_pad_v11_plus(
+        self, o_pad: onnx_pad_attributes.Pad, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX 'Pad' operator version 11 or newer, to TFLite.
 
         :param o_pad: Attributes of the ONNX Pad v11+ operator.
@@ -287,12 +307,15 @@ class PadConverter(NodeConverter):
         :return: A list of TFLite operators to add to the model.
         """
         if not (2 <= len(t_op.tmp_inputs) <= 4):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"ONNX 'Pad' version 11+ has '{len(t_op.tmp_inputs)}' inputs! Expected 2 to 4.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"ONNX 'Pad' version 11+ has '{len(t_op.tmp_inputs)}' inputs! Expected 2 to 4.",
+            )
 
         x = t_op.tmp_inputs[0]
-        paddings_tensor, constant_tensor = self._prepare_constant_and_paddings_from_onnx_pad_v11_plus(t_op,
-                                                                                                      self.builder)
+        paddings_tensor, constant_tensor = self._prepare_constant_and_paddings_from_onnx_pad_v11_plus(
+            t_op, self.builder
+        )
         y = t_op.tmp_outputs[0]
 
         # Propagate the quantization parameters to the 'constant_value' tensor.
@@ -308,9 +331,10 @@ class PadConverter(NodeConverter):
                 # QDQ model with dynamic constant tensor and quantized with our quantizer = we're fine
                 pass
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of QDQ quantized Pad operator with dynamic 'constant' "
-                         "tensor is not implemented yet.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of QDQ quantized Pad operator with dynamic 'constant' tensor is not implemented yet.",
+                )
 
         # Propagate quantization parameters to the output
         if x.quantization is not None:
@@ -321,8 +345,11 @@ class PadConverter(NodeConverter):
                 # QDQ model quantized with our quantizer or q-params match
                 pass
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of QDQ quantized Pad operator with non-matching IO "
-                                                      "q-params. Use internal quantizer to quantize the model!")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of QDQ quantized Pad operator with non-matching IO "
+                    "q-params. Use internal quantizer to quantize the model!",
+                )
 
         if o_pad.mode == "constant":
             # Convert to 'PadV2'
@@ -338,9 +365,11 @@ class PadConverter(NodeConverter):
 
             tfl_paddings = list(paddings_tensor.tmp_buffer.data)
             if self._reflect_mode_bugged_use_case(t_op.tmp_inputs[0].shape.vector, tfl_paddings):
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX 'Pad' version 11+ in 'reflect' mode is not supported, due to inconsistent "
-                         "behavior of the ONNX 'Pad' and the TFLite 'MirrorPad' operators in 'reflect' mode.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX 'Pad' version 11+ in 'reflect' mode is not supported, due to inconsistent "
+                    "behavior of the ONNX 'Pad' and the TFLite 'MirrorPad' operators in 'reflect' mode.",
+                )
 
             t_op.builtin_options = mirror_pad_options.MirrorPad()
             t_op.tmp_inputs = [x, paddings_tensor]
@@ -349,18 +378,26 @@ class PadConverter(NodeConverter):
         if o_pad.mode == "edge":
             # Conversion may be possible via other operators. Not sure. I haven't found a reasonable way to represent it
             #  in TFLite.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' version 11 or newer in 'edge' mode is not "
-                                                  "implemented and may not be possible!")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX 'Pad' version 11 or newer in 'edge' mode is not "
+                "implemented and may not be possible!",
+            )
 
         elif o_pad.mode == "wrap":
             # The 'wrap' mode has quite complicated behavior and I have not found reasonable way to represent it in
             #  TFLite. In some cases, it could be represented by TFLite MirrorPad in REFLECT mode, when that is fixed.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' version 11 or newer in 'wrap' mode is not "
-                                                  "implemented and may not be possible!")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX 'Pad' version 11 or newer in 'wrap' mode is not "
+                "implemented and may not be possible!",
+            )
 
         else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX 'Pad' has unexpected 'mode' attribute '{o_pad.mode}'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX 'Pad' has unexpected 'mode' attribute '{o_pad.mode}'.",
+            )
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Pad' operator to TFLite 'Pad', 'PadV2' or 'MirrorPad'.

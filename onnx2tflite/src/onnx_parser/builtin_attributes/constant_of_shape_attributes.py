@@ -24,9 +24,7 @@ class ConstantOfShape(meta.ONNXOperatorAttributes):
         super().__init__(descriptor)
 
     def _default_values(self) -> None:
-        self.value = onnx_tensor.TensorProto(
-            onnx.helper.make_tensor("", TensorProto.FLOAT, [1], [0.])
-        )
+        self.value = onnx_tensor.TensorProto(onnx.helper.make_tensor("", TensorProto.FLOAT, [1], [0.0]))
 
     def _init_attributes(self) -> None:
         for attr in self._descriptor:
@@ -38,8 +36,10 @@ class ConstantOfShape(meta.ONNXOperatorAttributes):
                     self.value = onnx_tensor.TensorProto(attr.t)
 
                 else:
-                    logger.e(logger.Code.NOT_IMPLEMENTED, f"ONNX ConstantOfShape attribute 'value' has type "
-                                                          f"'{attr.type}'. This is not yet supported!")
+                    logger.e(
+                        logger.Code.NOT_IMPLEMENTED,
+                        f"ONNX ConstantOfShape attribute 'value' has type '{attr.type}'. This is not yet supported!",
+                    )
 
             else:
                 logger.w(f"ONNX ConstantOfShape attribute '{attr.name}' is not supported!")

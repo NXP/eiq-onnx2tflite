@@ -45,16 +45,21 @@ class SoftmaxConverter(NodeConverter):
 
     def _normalize_axis(self, axis: int, rank: int) -> int:
         if axis < -rank or axis > rank - 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
+            )
 
         # convert negative index to positive
         if axis < 0:
             axis += rank
         return axis
 
-    def _convert_v13(self, o_softmax: onnx_softmax_attributes.Softmax | onnx_log_softmax_attributes.LogSoftmax,
-                     t_op: tflite_model.Operator) -> OpsList:
+    def _convert_v13(
+        self,
+        o_softmax: onnx_softmax_attributes.Softmax | onnx_log_softmax_attributes.LogSoftmax,
+        t_op: tflite_model.Operator,
+    ) -> OpsList:
         x = t_op.tmp_inputs[0]
         rank = len(x.shape.vector)
 
@@ -77,8 +82,7 @@ class SoftmaxConverter(NodeConverter):
         output_perm = self._move_last_dimension_to_idx(range(rank), axis)
 
         transpose_pre = self.builder.create_transpose_operator_before(t_op, 0, input_perm)
-        transpose_post = self.builder.create_transpose_operator_after(t_op, 0, output_perm,
-                                                                      keep_output_shape=True)
+        transpose_post = self.builder.create_transpose_operator_after(t_op, 0, output_perm, keep_output_shape=True)
 
         return OpsList(pre_ops=[transpose_pre], middle_op=t_op, post_ops=[transpose_post])
 
@@ -105,17 +109,19 @@ class SoftmaxConverter(NodeConverter):
 
         # We have to transpose before reshaping because input shape doesn't match original ONNX shape
         transpose_pre = self.builder.create_transpose_operator_before(reshape_pre, 0, to_channel_first_perm)
-        transpose_post = self.builder.create_transpose_operator_after(reshape_post, 0, to_channel_last_perm,
-                                                                      keep_output_shape=True)
+        transpose_post = self.builder.create_transpose_operator_after(
+            reshape_post, 0, to_channel_last_perm, keep_output_shape=True
+        )
 
-        return OpsList(pre_ops=[transpose_pre, reshape_pre], middle_op=op_softmax,
-                       post_ops=[reshape_post, transpose_post])
+        return OpsList(
+            pre_ops=[transpose_pre, reshape_pre], middle_op=op_softmax, post_ops=[reshape_post, transpose_post]
+        )
 
-    def _wrap_in_reshape(self, op_softmax: tflite_model.Operator,
-                         reshape_inner_shape, reshape_outer_shape
-                         ) -> tuple[tflite_model.Operator, tflite_model.Operator]:
+    def _wrap_in_reshape(
+        self, op_softmax: tflite_model.Operator, reshape_inner_shape, reshape_outer_shape
+    ) -> tuple[tflite_model.Operator, tflite_model.Operator]:
         """Surround passed Softmax operator by Reshape operators.
-    
+
         (reshape_outer_shape)
                   ↓
               [Reshape] (reshape_pre)
@@ -129,7 +135,7 @@ class SoftmaxConverter(NodeConverter):
               [Reshape] (reshape_post)
                   ↓
         (reshape_outer_shape)
-    
+
         :param op_softmax: Surrounded Softmax operator.
         :param reshape_inner_shape: Inner shape of reshaped block. New input shape of Softmax operator.
         :param reshape_outer_shape: Outer shape of reshaped block. Input shape of the first reshape operator.
@@ -147,9 +153,7 @@ class SoftmaxConverter(NodeConverter):
         t2.tensor_format = TensorFormat.FORMATLESS
 
         # Create first Reshape operator
-        reshape_pre = tflite_model.Operator(
-            builtin_options=tfl_reshape_options.Reshape(reshape_inner_shape)
-        )
+        reshape_pre = tflite_model.Operator(builtin_options=tfl_reshape_options.Reshape(reshape_inner_shape))
         reshape_pre.tmp_inputs = [x]
         reshape_pre.tmp_outputs = [t1]
 
@@ -158,16 +162,17 @@ class SoftmaxConverter(NodeConverter):
         op_softmax.tmp_outputs = [t2]
 
         # Create second Reshape operator
-        reshape_post = tflite_model.Operator(
-            builtin_options=tfl_reshape_options.Reshape(reshape_outer_shape)
-        )
+        reshape_post = tflite_model.Operator(builtin_options=tfl_reshape_options.Reshape(reshape_outer_shape))
         reshape_post.tmp_inputs = [t2]
         reshape_post.tmp_outputs = [y]
 
         return reshape_pre, reshape_post
 
-    def _convert_v1(self, o_softmax: onnx_softmax_attributes.Softmax | onnx_log_softmax_attributes.LogSoftmax,
-                    t_op: tflite_model.Operator) -> OpsList:
+    def _convert_v1(
+        self,
+        o_softmax: onnx_softmax_attributes.Softmax | onnx_log_softmax_attributes.LogSoftmax,
+        t_op: tflite_model.Operator,
+    ) -> OpsList:
         x = t_op.tmp_inputs[0]
         rank = len(x.shape.vector)
 
@@ -192,15 +197,17 @@ class SoftmaxConverter(NodeConverter):
 
         if x.type in [TensorType.INT8, TensorType.UINT8] and y.quantization is not None:
             zp = [255 if (x.type == TensorType.UINT8) else 127]
-            scale = [16. / 256.]
+            scale = [16.0 / 256.0]
 
             # Check if output quantization params are defined correctly. If not => re-quantize
             output_scale = y.quantization.scale.vector[0]
             output_zp = y.quantization.zero_point.vector[0]
 
             if not math.isclose(output_scale, scale[0]) or not math.isclose(output_zp, zp[0]):
-                logger.w(f"Re-quantizing output tensor '{y.name}' of LogSoftmax op to satisfy TFLite's "
-                         "q-param requirements. This can decrease accuracy of the model.")
+                logger.w(
+                    f"Re-quantizing output tensor '{y.name}' of LogSoftmax op to satisfy TFLite's "
+                    "q-param requirements. This can decrease accuracy of the model."
+                )
                 quantize_op = self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp)
                 ops.post_ops.insert(0, quantize_op)
 
@@ -217,15 +224,18 @@ class SoftmaxConverter(NodeConverter):
             output_zp = y.quantization.zero_point.vector[0]
 
             if not math.isclose(output_scale, scale[0]) or not math.isclose(output_zp, zp[0]):
-                logger.w(f"Re-quantizing output tensor '{y.name}' of Softmax op to satisfy TFLite's "
-                         "q-param requirements. This can decrease accuracy of the model.")
+                logger.w(
+                    f"Re-quantizing output tensor '{y.name}' of Softmax op to satisfy TFLite's "
+                    "q-param requirements. This can decrease accuracy of the model."
+                )
                 quantize_op = self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp)
                 ops.post_ops.insert(0, quantize_op)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX Runtime (Log)Softmax operator to TFLite (Log)Softmax."""
-        assert (isinstance(node.attributes, onnx_softmax_attributes.Softmax) or
-                isinstance(node.attributes, onnx_log_softmax_attributes.LogSoftmax))
+        assert isinstance(node.attributes, onnx_softmax_attributes.Softmax) or isinstance(
+            node.attributes, onnx_log_softmax_attributes.LogSoftmax
+        )
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)

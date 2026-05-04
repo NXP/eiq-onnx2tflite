@@ -23,11 +23,11 @@ class Add(meta.BuiltinOptions):
 
     # TODO potScaleInt16
 
-    def __init__(self,
-                 fused_activation_function: libActivationFunctionType.ActivationFunctionType = libActivationFunctionType.ActivationFunctionType.NONE
-                 ) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.AddOptions,
-                         libBuiltinOperator.BuiltinOperator.ADD)
+    def __init__(
+        self,
+        fused_activation_function: libActivationFunctionType.ActivationFunctionType = libActivationFunctionType.ActivationFunctionType.NONE,
+    ) -> None:
+        super().__init__(libBuiltinOptions.BuiltinOptions.AddOptions, libBuiltinOperator.BuiltinOperator.ADD)
         self.fused_activation_function = fused_activation_function
 
     def gen_tflite(self, builder: fb.Builder) -> int:

@@ -40,8 +40,9 @@ class ClipConverter(NodeConverter):
     tflite_supported_types = [TensorType.FLOAT32, TensorType.UINT8] + INTS
     verified_types = [TensorType.FLOAT32, TensorType.UINT8] + INTS
 
-    def _return_as_activation_function(self, t_op: tflite_model.Operator,
-                                       builtin_operator: BuiltinOperator | int) -> tflite_model.Operator:
+    def _return_as_activation_function(
+        self, t_op: tflite_model.Operator, builtin_operator: BuiltinOperator | int
+    ) -> tflite_model.Operator:
         """Turn 't_op' into a TFLite operator identified by 'builtin_operator'.
 
         :param t_op: TFLite operator, that will be turned into 'builtin_operator'.
@@ -53,8 +54,9 @@ class ClipConverter(NodeConverter):
         t_op.tmp_inputs = [t_op.tmp_inputs[0]]  # Remove the extra inputs
         return t_op
 
-    def _try_convert_as_relu(self, min_tensor: tflite_model.Tensor, max_tensor: tflite_model.Tensor,
-                             t_op: tflite_model.Operator) -> list[tflite_model.Operator] | None:
+    def _try_convert_as_relu(
+        self, min_tensor: tflite_model.Tensor, max_tensor: tflite_model.Tensor, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator] | None:
         """Try to convert the 'Clip' into a Relu type operator. If successful, return a list of TFLite operators to add to
              the model. Otherwise, return None.
 
@@ -84,9 +86,9 @@ class ClipConverter(NodeConverter):
             # Compute the values 0, 1, -1 and 6 represented using the particular quantization parameters.
             scale = x.quantization.scale.get(0)
             zero = x.quantization.zero_point.get(0)
-            one = round((1. / scale) + zero)
-            n_one = round((-1. / scale) + zero)
-            six = round((6. / scale) + zero)
+            one = round((1.0 / scale) + zero)
+            n_one = round((-1.0 / scale) + zero)
+            six = round((6.0 / scale) + zero)
 
         else:
             # The 'Clip' is not quantized.
@@ -94,10 +96,10 @@ class ClipConverter(NodeConverter):
                 # For some reason, TFLite Relu with UINT8 outputs all 0. Convert as Maximum + Minimum.
                 return None
 
-            zero = 0.
-            one = 1.
-            n_one = -1.
-            six = 6.
+            zero = 0.0
+            one = 1.0
+            n_one = -1.0
+            six = 6.0
 
         upper_limit = get_max_value_for_type(tf_lite_type_to_numpy(x.type))
 
@@ -111,7 +113,8 @@ class ClipConverter(NodeConverter):
             if x.type == TensorType.FLOAT32:
                 logger.i(
                     "Converting 'Clip' operator into Relu. This may cause some +inf values to stay unchanged, whereas"
-                    " in ONNX, they would be clipped to 3.4028237e38.")
+                    " in ONNX, they would be clipped to 3.4028237e38."
+                )
 
             return [self._return_as_activation_function(t_op, BuiltinOperator.RELU)]
 
@@ -141,22 +144,25 @@ class ClipConverter(NodeConverter):
                     # QDQ model with static min tensor
                     min_tensor = quantize_static_float_tensor(self.builder, min_tensor, x.type, scale, zp)
                 else:
-                    logger.e(logger.Code.NOT_IMPLEMENTED,
-                             "ONNX operator Clip with dynamic 'min' tensor and quantized by non-internal "
-                             "quantizer is currently not supported. Quantize model with internal quantizer.")
+                    logger.e(
+                        logger.Code.NOT_IMPLEMENTED,
+                        "ONNX operator Clip with dynamic 'min' tensor and quantized by non-internal "
+                        "quantizer is currently not supported. Quantize model with internal quantizer.",
+                    )
 
             if max_tensor.quantization is None:
                 if max_tensor.type == x.type:
                     # QDQ model with undefined max tensor
-                    set_quantization_parameters_to_tensor(
-                        max_tensor, np.array(scale).astype(np.float32), np.array(zp))
+                    set_quantization_parameters_to_tensor(max_tensor, np.array(scale).astype(np.float32), np.array(zp))
                 elif tensor_has_data(max_tensor):
                     # QDQ model with static max tensor
                     max_tensor = quantize_static_float_tensor(self.builder, max_tensor, x.type, scale, zp)
                 else:
-                    logger.e(logger.Code.NOT_IMPLEMENTED,
-                             "ONNX operator Clip with dynamic 'max' tensor and quantized by non-internal "
-                             "quantizer is currently not supported. Quantize model with internal quantizer.")
+                    logger.e(
+                        logger.Code.NOT_IMPLEMENTED,
+                        "ONNX operator Clip with dynamic 'max' tensor and quantized by non-internal "
+                        "quantizer is currently not supported. Quantize model with internal quantizer.",
+                    )
 
         return min_tensor, max_tensor
 
@@ -200,12 +206,14 @@ class ClipConverter(NodeConverter):
                 logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Clip v11+ has invalid number of inputs.")
 
             if (min_tensor := try_get_input(t_op, 1)) is None:
-                min_tensor = self.builder.create_tensor_for_data(np.array([get_min_value_for_type(np_type)], np_type),
-                                                                 "min")
+                min_tensor = self.builder.create_tensor_for_data(
+                    np.array([get_min_value_for_type(np_type)], np_type), "min"
+                )
 
             if (max_tensor := try_get_input(t_op, 2)) is None:
-                max_tensor = self.builder.create_tensor_for_data(np.array([get_max_value_for_type(np_type)], np_type),
-                                                                 "max")
+                max_tensor = self.builder.create_tensor_for_data(
+                    np.array([get_max_value_for_type(np_type)], np_type), "max"
+                )
 
             # All tensors should have the same type if it's not QDQ model (min/max tensors can be float)
             if not is_qdq_model and not all(t.type == x.type for t in [x, min_tensor, max_tensor]):

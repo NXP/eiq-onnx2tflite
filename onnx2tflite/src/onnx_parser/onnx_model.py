@@ -314,7 +314,7 @@ class NodeProto(meta.ONNXObject):
         "Unsqueeze": builtin_attributes.Unsqueeze,
         "Upsample": builtin_attributes.Upsample,
         "Where": builtin_attributes.Where,
-        "Xor": None
+        "Xor": None,
     }
 
     def __init__(self, descriptor: onnx.NodeProto, version: int, index: int, init_node_attributes) -> None:
@@ -354,9 +354,12 @@ class NodeProto(meta.ONNXObject):
 
 
 class RepeatedNodeProto(list[NodeProto]):
-    def __init__(self, descriptor_iterable: typing.MutableSequence[onnx.NodeProto],
-                 opset_imports: RepeatedOperatorSetIdProto,
-                 init_node_attributes: bool):
+    def __init__(
+        self,
+        descriptor_iterable: typing.MutableSequence[onnx.NodeProto],
+        opset_imports: RepeatedOperatorSetIdProto,
+        init_node_attributes: bool,
+    ):
         super().__init__()
         opset_map = {opset.domain: opset.version for opset in opset_imports}
 
@@ -365,8 +368,10 @@ class RepeatedNodeProto(list[NodeProto]):
         for idx, descriptor in enumerate(descriptor_iterable):
             with logger.loggingContext(logger.NodeLoggingContext(idx)):
                 if descriptor.domain not in opset_map:
-                    logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                             f"Domain '{descriptor.domain}' not present in model's opset_imports.")
+                    logger.e(
+                        logger.Code.INVALID_ONNX_OPERATOR,
+                        f"Domain '{descriptor.domain}' not present in model's opset_imports.",
+                    )
                 try:
                     self.append(NodeProto(descriptor, opset_map[descriptor.domain], idx, init_node_attributes))
                 except logger.Error:
@@ -392,8 +397,9 @@ class GraphProto(meta.ONNXObject):
 
     # TODO quantization_annotation
 
-    def __init__(self, descriptor: onnx.GraphProto, opset_imports: RepeatedOperatorSetIdProto,
-                 init_node_attributes: bool) -> None:
+    def __init__(
+        self, descriptor: onnx.GraphProto, opset_imports: RepeatedOperatorSetIdProto, init_node_attributes: bool
+    ) -> None:
         self._opset_imports = opset_imports
         self._init_node_attributes = init_node_attributes
         super().__init__(descriptor)
@@ -446,8 +452,11 @@ class ModelProto(meta.ONNXObject):
             super().__init__(source)
 
         else:
-            logger.e(logger.Code.INVALID_INPUT, f"Cannot initialize ONNX model from object of type '{type(source)}'! "
-                                                f"Expected type 'onnx.ModelProto' or 'string'.")
+            logger.e(
+                logger.Code.INVALID_INPUT,
+                f"Cannot initialize ONNX model from object of type '{type(source)}'! "
+                f"Expected type 'onnx.ModelProto' or 'string'.",
+            )
 
     def _init_attributes(self) -> None:
         """Initialize object attributes from the '_descriptor' attribute of the parent object."""

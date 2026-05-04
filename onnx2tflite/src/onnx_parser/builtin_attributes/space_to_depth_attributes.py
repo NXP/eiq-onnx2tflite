@@ -27,5 +27,6 @@ class SpaceToDepth(meta.ONNXOperatorAttributes):
                 logger.w(f"ONNX `SpaceToDepth` attribute `{attr.name}` is not supported!")
 
         if not hasattr(self, "block_size"):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     "ONNX `SpaceToDepth` is missing the required `blocksize` attribute.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL, "ONNX `SpaceToDepth` is missing the required `blocksize` attribute."
+            )

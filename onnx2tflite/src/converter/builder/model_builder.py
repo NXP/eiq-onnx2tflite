@@ -62,8 +62,9 @@ class ModelBuilder:
 
     conversion_config: ConversionConfig
 
-    def __init__(self, model_version: int, model_description: str,
-                 conversion_config: ConversionConfig | None = None) -> None:
+    def __init__(
+        self, model_version: int, model_description: str, conversion_config: ConversionConfig | None = None
+    ) -> None:
         self._tfl_model = tflite_model.Model(model_version, model_description)
         self.conversion_config = conversion_config
 
@@ -76,8 +77,9 @@ class ModelBuilder:
         self._skipped_output_map = {}
         self._zeros_tensor_map = {}
 
-    def create_zeros_tensor(self, dims: list[int], name: str, dtype: np.dtype,
-                            can_reuse: bool = False) -> tflite_model.Tensor:
+    def create_zeros_tensor(
+        self, dims: list[int], name: str, dtype: np.dtype, can_reuse: bool = False
+    ) -> tflite_model.Tensor:
         """Create and return a Tensor with given shape, name and dtype that only contains zeros.
         If 'can_reuse' is True, created tensor can be shared with other operators.
         """
@@ -111,9 +113,13 @@ class ModelBuilder:
 
         return self.create_tensor_for_data(data, name)
 
-    def create_pad_operator_before(self, before_op: tflite_model.Operator, on_input_index: int,
-                                   explicit_padding: list[list[int]], constant_value: np.ndarray = None
-                                   ) -> tflite_model.Operator:
+    def create_pad_operator_before(
+        self,
+        before_op: tflite_model.Operator,
+        on_input_index: int,
+        explicit_padding: list[list[int]],
+        constant_value: np.ndarray = None,
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Pad' operator before the 'before_op' operator. The input of 'before_op' on index
              'on_input_index' is where the 'Pad' operator will connect.
 
@@ -126,14 +132,17 @@ class ModelBuilder:
         :return: The TFLite 'Pad' operator.
         """
         if on_input_index >= len(before_op.tmp_inputs):
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     f"ModelBuilder.create_pad_operator_before(): input index '{on_input_index}' is out of range!")
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                f"ModelBuilder.create_pad_operator_before(): input index '{on_input_index}' is out of range!",
+            )
 
         input_tensor = before_op.tmp_inputs[on_input_index]
 
         # New shape of the tensor after padding
-        padded_shape = translator.get_tflite_tensor_shape_with_explicit_padding(input_tensor.shape.vector,
-                                                                                explicit_padding)
+        padded_shape = translator.get_tflite_tensor_shape_with_explicit_padding(
+            input_tensor.shape.vector, explicit_padding
+        )
 
         # Create the output tensor of the 'Pad' operator.
         padded_tensor = self.duplicate_tensor(input_tensor, input_tensor.name + "_padded", empty_buffer=True)
@@ -225,8 +234,9 @@ class ModelBuilder:
         """Append the new TFLite operator to the model."""
         self.get_operators().append(t_op)
 
-    def create_transposed_tensor(self, tflite_tensor: tflite_model.Tensor,
-                                 axes: list[int] | None = None) -> tflite_model.Tensor:
+    def create_transposed_tensor(
+        self, tflite_tensor: tflite_model.Tensor, axes: list[int] | None = None
+    ) -> tflite_model.Tensor:
         """Create a transposed version of given static TFLite tensor using numpy.transpose().
 
         :param tflite_tensor: Static TFLite tensor to create the transposed version for.
@@ -243,8 +253,13 @@ class ModelBuilder:
 
         return new_tensor
 
-    def duplicate_tensor(self, tensor: tflite_model.Tensor, new_name: str | None = None,
-                         name_suffix: str = "", empty_buffer: bool = False) -> tflite_model.Tensor:
+    def duplicate_tensor(
+        self,
+        tensor: tflite_model.Tensor,
+        new_name: str | None = None,
+        name_suffix: str = "",
+        empty_buffer: bool = False,
+    ) -> tflite_model.Tensor:
         """Create a new TFLite tensor, which is an identical copy of 'tensor', with a new name.
              If 'new_name' is given, it will be used as the name for the new tensor.
              If instead the 'name_suffix' is given, it will be appended to the name of 'tensor'.
@@ -277,7 +292,7 @@ class ModelBuilder:
         """Correctly swap the names of the 2 provided tensors."""
         logger.internal_assert(
             self._tensor_name_map.get(t1.name, t1) == t1 and self._tensor_name_map.get(t2.name, t2) == t2,
-            "ModelBuilder.swap_tensor_names(): The name to tensor mapping is not valid."
+            "ModelBuilder.swap_tensor_names(): The name to tensor mapping is not valid.",
         )
 
         self._tensor_name_map[t1.name] = t2
@@ -289,13 +304,14 @@ class ModelBuilder:
         new_inputs = []
 
         for input_tensor in self.get_sub_graph().inputs.tmp_inputs:
-
             if input_tensor.tensor_format.is_channels_last():
                 # Create a Transpose operator and replace the graph input
 
                 if input_tensor.rank > 6:
-                    msg = (f"Couldn't preserve the shape of input tensor '{input_tensor.name}', because it has "
-                           f"'{input_tensor.rank}' dimensions. TFLite Transpose only supports up to 6 dimensions.")
+                    msg = (
+                        f"Couldn't preserve the shape of input tensor '{input_tensor.name}', because it has "
+                        f"'{input_tensor.rank}' dimensions. TFLite Transpose only supports up to 6 dimensions."
+                    )
                     logger.e(logger.Code.IO_PRESERVATION_ERROR, msg)
 
                 new_input = self.duplicate_tensor(input_tensor, input_tensor.name + "_channels_first")
@@ -326,10 +342,12 @@ class ModelBuilder:
                 # Add a Transpose operator, to make the output channels first
 
                 if output_tensor.rank > 6:
-                    logger.e(logger.Code.IO_PRESERVATION_ERROR,
-                             f"Couldn't preserve the shape of output tensor '{output_tensor.name}', because it has "
-                             f"'{output_tensor.rank}' dimensions. TFLite Transpose only supports up to 6 "
-                             "dimensions.")
+                    logger.e(
+                        logger.Code.IO_PRESERVATION_ERROR,
+                        f"Couldn't preserve the shape of output tensor '{output_tensor.name}', because it has "
+                        f"'{output_tensor.rank}' dimensions. TFLite Transpose only supports up to 6 "
+                        "dimensions.",
+                    )
 
                 new_output = self.channels_first_version_of(output_tensor)
 
@@ -356,7 +374,8 @@ class ModelBuilder:
 
         # Apply optimizations to the internal TFLite model.
         optimizer.Optimizer(self, self.conversion_config).optimize(
-            self.conversion_config.optimization_whitelist, self.conversion_config.optimization_blacklist)
+            self.conversion_config.optimization_whitelist, self.conversion_config.optimization_blacklist
+        )
 
         # Remove outputs, which are not produced by any node. Otherwise, there would be errors after inference.
         operator_outputs = []
@@ -401,21 +420,25 @@ class ModelBuilder:
             # noinspection PyBroadException
             try:
                 outputs.append(tensor.tmp_index)
-            except Exception as _: # noqa: BLE001
-                logger.e(logger.Code.GENERATED_MODEL_INVALID,
-                         f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!")
+            except Exception as _:  # noqa: BLE001
+                logger.e(
+                    logger.Code.GENERATED_MODEL_INVALID,
+                    f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!",
+                )
 
         inputs = self.get_sub_graph().inputs
         for tensor in inputs.tmp_inputs:
             # noinspection PyBroadException
             try:
                 inputs.append(tensor.tmp_index)
-            except Exception as _: # noqa: BLE001
+            except Exception as _:  # noqa: BLE001
                 if allow_inputs_stripping:
                     logger.i(f"The input tensor '{tensor.name}' will not be present in generated TFLite graph.")
                 else:
-                    logger.e(logger.Code.GENERATED_MODEL_INVALID,
-                             f"The tensor '{tensor.name}' is among the model inputs, but does NOT appear in the graph!")
+                    logger.e(
+                        logger.Code.GENERATED_MODEL_INVALID,
+                        f"The tensor '{tensor.name}' is among the model inputs, but does NOT appear in the graph!",
+                    )
 
         # Assign each operator its inputs and outputs indices
         for operator in self.get_sub_graph().operators.vector:
@@ -432,8 +455,7 @@ class ModelBuilder:
         self.get_operator_codes().append(op_code)
 
     def build_buffer(self, o_tensor: onnx_tensor.TensorProto) -> tflite_model.Buffer | None:
-        """Create a new 'Buffer' object by converting the given ONNX tensor and add the buffer to the 'model.Buffers'.
-        """
+        """Create a new 'Buffer' object by converting the given ONNX tensor and add the buffer to the 'model.Buffers'."""
         buffer = tflite_model.Buffer()
 
         if o_tensor.data is None:
@@ -516,8 +538,9 @@ class ModelBuilder:
 
         return tensor
 
-    def create_empty_tensor(self, name: str, tensor_type: TensorType | int,
-                            shape: list[int] | None = None) -> tflite_model.Tensor:
+    def create_empty_tensor(
+        self, name: str, tensor_type: TensorType | int, shape: list[int] | None = None
+    ) -> tflite_model.Tensor:
         name = self._validate_new_tensor_name(name)
 
         if shape is not None:
@@ -543,8 +566,9 @@ class ModelBuilder:
 
     """ -------------------- 'quality of life' functions. -------------------- """
 
-    def operator_can_be_skipped(self, t_op: tflite_model.Operator,
-                                onnx_inspector: ONNXModelInspector | None = None) -> bool:
+    def operator_can_be_skipped(
+        self, t_op: tflite_model.Operator, onnx_inspector: ONNXModelInspector | None = None
+    ) -> bool:
         """Determine whether operator 't_op' uses both a graph input and a graph output tensor. If it does, it cannot
              be skipped.
 
@@ -572,8 +596,8 @@ class ModelBuilder:
             input_data_is_known = all_tensors_are_static(*t_op.tmp_inputs)
         else:
             input_data_is_known = all(
-                tensor_has_data(inpt) or
-                onnx_inspector.try_get_inferred_tensor_data(inpt.name) is not None for inpt in t_op.tmp_inputs
+                tensor_has_data(inpt) or onnx_inspector.try_get_inferred_tensor_data(inpt.name) is not None
+                for inpt in t_op.tmp_inputs
             )
 
         if produces_graph_output and input_data_is_known:
@@ -601,14 +625,18 @@ class ModelBuilder:
         else:
             # 6D and bigger require the Flex delegate `Transpose`.
             if t_op.tmp_inputs[0].quantization is not None:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                         "which doesn't support quantization.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                    "which doesn't support quantization.",
+                )
 
             if not self.conversion_config.allow_select_ops:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                         "which requires the use of Flex delegate. " + logger.Message.ALLOW_SELECT_OPS)
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                    "which requires the use of Flex delegate. " + logger.Message.ALLOW_SELECT_OPS,
+                )
 
             t_op.custom_options = FlexTranspose()
 
@@ -618,8 +646,7 @@ class ModelBuilder:
         t_op.tmp_inputs.append(identity_tensor)
 
     def _validate_new_tensor_name(self, name: str) -> str:
-        """Take tensor name 'name' and make it unique in the model. Returns a unique tensor name.
-        """
+        """Take tensor name 'name' and make it unique in the model. Returns a unique tensor name."""
         # Try adding numbers to the 'name' until it is unique
         suffix = 0
         new_name = name
@@ -629,9 +656,9 @@ class ModelBuilder:
 
         return new_name
 
-    def op_code_index_for_op_type(self, op_type: BuiltinOperator | int,
-                                  version: int = 1,
-                                  custom_code: str = None) -> int:
+    def op_code_index_for_op_type(
+        self, op_type: BuiltinOperator | int, version: int = 1, custom_code: str = None
+    ) -> int:
         """Return the index to the 'operator_codes' vector in the TFLite model for the operator
         with given 'op_type' and 'version'. If corresponding OperatorCode doesn't exist, add
         it and create a new mapping.
@@ -660,8 +687,7 @@ class ModelBuilder:
 
     # noinspection PyMethodMayBeStatic
     def _remove_tensor_with_name_from_collection(self, name, collection) -> None:
-        """Find and remove a tensor with given 'name' from given 'collection'.
-        """
+        """Find and remove a tensor with given 'name' from given 'collection'."""
         to_remove = None
 
         for t in collection:
@@ -776,17 +802,22 @@ class ModelBuilder:
 
         return None
 
-    def _create_transpose_operator(self, input_tensor: tflite_model.Tensor, output_tensor: tflite_model.Tensor,
-                                   permutation: list[int] | np.ndarray) -> tflite_model.Operator:
+    def _create_transpose_operator(
+        self, input_tensor: tflite_model.Tensor, output_tensor: tflite_model.Tensor, permutation: list[int] | np.ndarray
+    ) -> tflite_model.Operator:
         """Create a `Transpose` operator with given input, output and permutation."""
         if isinstance(permutation, list):
             permutation = np.asarray(permutation, np.int32)
         elif isinstance(permutation, np.ndarray):
-            logger.internal_assert(permutation.dtype == np.int32, "model_builder._create_transpose_operator(): "
-                                                                  "permutation doesn't have type int32.")
+            logger.internal_assert(
+                permutation.dtype == np.int32,
+                "model_builder._create_transpose_operator(): permutation doesn't have type int32.",
+            )
         else:
-            logger.e(logger.Code.INTERNAL_ERROR, "model_builder._create_transpose_operator(): permutation is not "
-                                                 "a list or a numpy array.")
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                "model_builder._create_transpose_operator(): permutation is not a list or a numpy array.",
+            )
 
         permutation_tensor = self.create_tensor_for_data(permutation, "perm")
 
@@ -794,25 +825,28 @@ class ModelBuilder:
             # Create regular `Transpose`.
             transpose = tflite_model.Operator(
                 builtin_options=transpose_options.Transpose(),
-                opcode_index=self.op_code_index_for_op_type(BuiltinOperator.TRANSPOSE)
+                opcode_index=self.op_code_index_for_op_type(BuiltinOperator.TRANSPOSE),
             )
         else:
             # 7D and bigger require the Flex delegate `Transpose`.
 
             if input_tensor.quantization is not None:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                         "which doesn't support quantization.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                    "which doesn't support quantization.",
+                )
 
             if not self.conversion_config.allow_select_ops:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                         "which requires the use of Flex delegate. " + logger.Message.ALLOW_SELECT_OPS)
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                    "which requires the use of Flex delegate. " + logger.Message.ALLOW_SELECT_OPS,
+                )
 
             transpose = tflite_model.Operator(
                 custom_options=FlexTranspose(),
-                opcode_index=self.op_code_index_for_op_type(FlexTranspose.operator_type, 1,
-                                                            FlexTranspose.custom_code)
+                opcode_index=self.op_code_index_for_op_type(FlexTranspose.operator_type, 1, FlexTranspose.custom_code),
             )
 
         transpose.tmp_inputs = [input_tensor, permutation_tensor]
@@ -821,8 +855,9 @@ class ModelBuilder:
 
         return transpose
 
-    def create_transpose_operator_before(self, before_operator: tflite_model.Operator, on_input_index: int,
-                                         permutation: list[int] | np.ndarray) -> tflite_model.Operator:
+    def create_transpose_operator_before(
+        self, before_operator: tflite_model.Operator, on_input_index: int, permutation: list[int] | np.ndarray
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Transpose' operator before the 'before_operator'.
             The input of 'before_operator' at index 'on_input_index', is where the Transpose operator will connect to
             the graph.
@@ -842,9 +877,13 @@ class ModelBuilder:
 
         return transpose
 
-    def create_transpose_operator_after(self, after_operator: tflite_model.Operator, on_output_index: int,
-                                        permutation: list[int] | np.ndarray, keep_output_shape: bool = True
-                                        ) -> tflite_model.Operator:
+    def create_transpose_operator_after(
+        self,
+        after_operator: tflite_model.Operator,
+        on_output_index: int,
+        permutation: list[int] | np.ndarray,
+        keep_output_shape: bool = True,
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Transpose' operator after the 'after_operator'.
             The output of 'after_operator' at index 'on_output_index' is where the Transpose operator will be connected.
 
@@ -887,10 +926,14 @@ class ModelBuilder:
 
         return transpose
 
-    def create_quantize_operator_before(self, before_operator: tflite_model.Operator, on_input_index: int,
-                                        new_input_data_type: TensorType | int,
-                                        new_input_scale: list[float] | None = None,
-                                        new_input_zero_point: list[int] | None = None) -> tflite_model.Operator:
+    def create_quantize_operator_before(
+        self,
+        before_operator: tflite_model.Operator,
+        on_input_index: int,
+        new_input_data_type: TensorType | int,
+        new_input_scale: list[float] | None = None,
+        new_input_zero_point: list[int] | None = None,
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Quantize' operator before the 'before_operator'.
             The input of 'before_operator' at index 'on_input_index', is where the Quantize operator will connect to the
             graph.
@@ -913,12 +956,14 @@ class ModelBuilder:
             new_input_zero_point = input_tensor.quantization.zero_point.vector.copy()
 
         output_tensor.type = new_input_data_type
-        output_tensor.quantization = tflite_model.Quantization(scale=tflite_model.Scale(new_input_scale),
-                                                               zero_point=tflite_model.ZeroPoint(new_input_zero_point),
-                                                               quantized_dimension=quantized_dimension)
+        output_tensor.quantization = tflite_model.Quantization(
+            scale=tflite_model.Scale(new_input_scale),
+            zero_point=tflite_model.ZeroPoint(new_input_zero_point),
+            quantized_dimension=quantized_dimension,
+        )
         quantize = tflite_model.Operator(
             builtin_options=quantize_options.Quantize(),
-            opcode_index=self.op_code_index_for_op_type(BuiltinOperator.QUANTIZE)
+            opcode_index=self.op_code_index_for_op_type(BuiltinOperator.QUANTIZE),
         )
         quantize.tmp_inputs = [input_tensor]
         quantize.tmp_outputs = [output_tensor]
@@ -928,10 +973,14 @@ class ModelBuilder:
 
         return quantize
 
-    def create_quantize_operator_after(self, after_operator: tflite_model.Operator, on_output_index: int,
-                                       new_output_data_type: TensorType | int,
-                                       new_output_scale: list[float] | None = None,
-                                       new_output_zero_point: list[int] | None = None) -> tflite_model.Operator:
+    def create_quantize_operator_after(
+        self,
+        after_operator: tflite_model.Operator,
+        on_output_index: int,
+        new_output_data_type: TensorType | int,
+        new_output_scale: list[float] | None = None,
+        new_output_zero_point: list[int] | None = None,
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Quantize' operator after the 'after_operator'.
             The output of 'after_operator' at index 'on_output_index', is where the Quantize operator will connect to
             the graph.
@@ -954,13 +1003,15 @@ class ModelBuilder:
             new_output_zero_point = input_tensor.quantization.zero_point.vector.copy()
 
         input_tensor.type = new_output_data_type
-        input_tensor.quantization = tflite_model.Quantization(scale=tflite_model.Scale(new_output_scale),
-                                                              zero_point=tflite_model.ZeroPoint(new_output_zero_point),
-                                                              quantized_dimension=quantized_dimension)
+        input_tensor.quantization = tflite_model.Quantization(
+            scale=tflite_model.Scale(new_output_scale),
+            zero_point=tflite_model.ZeroPoint(new_output_zero_point),
+            quantized_dimension=quantized_dimension,
+        )
 
         quantize = tflite_model.Operator(
             builtin_options=quantize_options.Quantize(),
-            opcode_index=self.op_code_index_for_op_type(BuiltinOperator.QUANTIZE)
+            opcode_index=self.op_code_index_for_op_type(BuiltinOperator.QUANTIZE),
         )
         quantize.tmp_inputs = [input_tensor]
         quantize.tmp_outputs = [output_tensor]
@@ -970,11 +1021,15 @@ class ModelBuilder:
 
         return quantize
 
-    def create_dequantize_operator_after(self, after_operator: tflite_model.Operator, on_output_index: int,
-                                         new_output_data_type: TensorType,
-                                         new_output_scale: list[float],
-                                         new_output_zero_point: list[int],
-                                         quantized_dimension: int) -> tflite_model.Operator:
+    def create_dequantize_operator_after(
+        self,
+        after_operator: tflite_model.Operator,
+        on_output_index: int,
+        new_output_data_type: TensorType,
+        new_output_scale: list[float],
+        new_output_zero_point: list[int],
+        quantized_dimension: int,
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Dequantize' operator after the 'after_operator'.
             The output of 'after_operator' at index 'on_output_index', is where the Quantize operator will connect to
             the graph.
@@ -995,13 +1050,15 @@ class ModelBuilder:
         input_tensor = self.duplicate_tensor(output_tensor, output_tensor.name, empty_buffer=True)
 
         input_tensor.type = new_output_data_type
-        input_tensor.quantization = tflite_model.Quantization(scale=tflite_model.Scale(new_output_scale),
-                                                              zero_point=tflite_model.ZeroPoint(new_output_zero_point),
-                                                              quantized_dimension=quantized_dimension)
+        input_tensor.quantization = tflite_model.Quantization(
+            scale=tflite_model.Scale(new_output_scale),
+            zero_point=tflite_model.ZeroPoint(new_output_zero_point),
+            quantized_dimension=quantized_dimension,
+        )
 
         dequantize = tflite_model.Operator(
             builtin_options=dequantize_options.Dequantize(),
-            opcode_index=self.op_code_index_for_op_type(BuiltinOperator.DEQUANTIZE)
+            opcode_index=self.op_code_index_for_op_type(BuiltinOperator.DEQUANTIZE),
         )
         dequantize.tmp_inputs = [input_tensor]
         dequantize.tmp_outputs = [output_tensor]
@@ -1011,8 +1068,9 @@ class ModelBuilder:
 
         return dequantize
 
-    def create_reshape_before(self, before_op: tflite_model.Operator, on_input_index: int,
-                              new_shape: list[int]) -> tflite_model.Operator:
+    def create_reshape_before(
+        self, before_op: tflite_model.Operator, on_input_index: int, new_shape: list[int]
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Reshape' operator before the 'before_op' operator. The input of 'before_op' on index
         'on_input_index' is where the 'Reshape' operator will connect. With this function it is expected
         to change input shape of 'before_op' operator on index 'on_input_index'.
@@ -1037,8 +1095,9 @@ class ModelBuilder:
 
         return reshape_op
 
-    def create_reshape_after(self, after_op: tflite_model.Operator, on_output_index: int,
-                             new_shape: list[int]) -> tflite_model.Operator:
+    def create_reshape_after(
+        self, after_op: tflite_model.Operator, on_output_index: int, new_shape: list[int]
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Reshape' operator after the 'after_op' operator. The output of 'after_op' on index
         'on_output_index' is where the 'Reshape' operator will connect. This function will preserve output
         shape of 'after_op' operator on index 'on_output_index'.
@@ -1064,8 +1123,9 @@ class ModelBuilder:
 
         return reshape_op
 
-    def create_cast_before(self, before_op: tflite_model.Operator, on_input_index: int,
-                           new_type: TensorType | int) -> tflite_model.Operator:
+    def create_cast_before(
+        self, before_op: tflite_model.Operator, on_input_index: int, new_type: TensorType | int
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Cast' operator before the 'before_op' operator. The input of 'before_op' on index
         'on_input_index' is where the 'Cast' operator will connect.
 
@@ -1089,8 +1149,9 @@ class ModelBuilder:
 
         return cast_op
 
-    def create_cast_after(self, after_op: tflite_model.Operator, on_output_index: int,
-                          new_type: TensorType | int) -> tflite_model.Operator:
+    def create_cast_after(
+        self, after_op: tflite_model.Operator, on_output_index: int, new_type: TensorType | int
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Cast' operator after the 'after_op' operator. The output of 'after_op' on index
         'on_output_index' is where the 'Cast' operator will connect. This function will change output
         type of 'after_op' operator on index 'on_output_index' to 'new_type'.
@@ -1117,8 +1178,9 @@ class ModelBuilder:
 
         return cast_op
 
-    def create_slice_after(self, after_op: tflite_model.Operator, on_output_index: int, begin: list[int],
-                           size: list[int]) -> tflite_model.Operator:
+    def create_slice_after(
+        self, after_op: tflite_model.Operator, on_output_index: int, begin: list[int], size: list[int]
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Slice' operator after the 'after_op' operator. The output of 'after_op' on index
         'on_output_index' is where the 'Slice' operator will connect. This function will preserve output
         shape of 'after_op' operator on index 'on_output_index'.
@@ -1133,10 +1195,13 @@ class ModelBuilder:
         """
         output_tensor = after_op.tmp_outputs[on_output_index]
 
-        logger.internal_assert(len(begin) == len(size),
-                               "create_slice_after(): Rank of 'begin' tensor and 'size' tensor don't match.")
-        logger.internal_assert(len(begin) == len(output_tensor.shape.vector),
-                               "create_slice_after(): Rank of 'begin' tensor and sliced tensor don't match.")
+        logger.internal_assert(
+            len(begin) == len(size), "create_slice_after(): Rank of 'begin' tensor and 'size' tensor don't match."
+        )
+        logger.internal_assert(
+            len(begin) == len(output_tensor.shape.vector),
+            "create_slice_after(): Rank of 'begin' tensor and sliced tensor don't match.",
+        )
 
         slice_input = self.duplicate_tensor(output_tensor, output_tensor.name + "_sliced", empty_buffer=True)
         output_tensor.shape = tflite_model.Shape(size)
@@ -1153,8 +1218,14 @@ class ModelBuilder:
 
         return slice_op
 
-    def create_gather_before(self, before_op: tflite_model.Operator, on_input_index: int,
-                             indices: list[int], output_shape: list[int], axis: int = 0) -> tflite_model.Operator:
+    def create_gather_before(
+        self,
+        before_op: tflite_model.Operator,
+        on_input_index: int,
+        indices: list[int],
+        output_shape: list[int],
+        axis: int = 0,
+    ) -> tflite_model.Operator:
         """Create a TFLite 'Gather' operator before the 'before_op' operator. The input of 'before_op' on index
         'on_input_index' is where the 'Gather' operator will connect.
 
@@ -1183,8 +1254,9 @@ class ModelBuilder:
 
         return gather_op
 
-    def ensure_correct_broadcasting(self, t_op: tflite_model.Operator,
-                                    main_output: tflite_model.Tensor) -> list[tflite_model.Operator]:
+    def ensure_correct_broadcasting(
+        self, t_op: tflite_model.Operator, main_output: tflite_model.Tensor
+    ) -> list[tflite_model.Operator]:
         """Make sure that all input tensors of 't_op' can have their shape broadcasted correctly.
              Static input tensors will be altered statically and for dynamic tensors, Reshape and Transpose operators
              will be added to ensure a valid shape.
@@ -1196,15 +1268,18 @@ class ModelBuilder:
         :return: A list of TFLite operators Reshape and Transpose, that need to be added to the model before 't_op'.
         """
         if main_output not in t_op.tmp_outputs:
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     "ModelBuilder.ensure_correct_broadcasting(): 'main_output' is not among the outputs of 't_op'!")
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                "ModelBuilder.ensure_correct_broadcasting(): 'main_output' is not among the outputs of 't_op'!",
+            )
 
         if not uses_shape_broadcasting(t_op):
             # Operator doesn't use shape broadcasting
             return []
 
         if not main_output.tensor_format.is_channels_last() and not any(
-            input_tensor.tensor_format.is_channels_last() for input_tensor in t_op.tmp_inputs):
+            input_tensor.tensor_format.is_channels_last() for input_tensor in t_op.tmp_inputs
+        ):
             # Operator uses only formatless tensors
             return []
 
@@ -1219,16 +1294,18 @@ class ModelBuilder:
             if input_tensor.shape != main_output.shape:
                 if tensor_has_data(input_tensor):
                     # Replace the static input with one with a corrected shape.
-                    x = self.prepare_static_tensor_for_correct_broadcasting_with_channels_first_tensors(input_tensor,
-                                                                                                        output_rank)
+                    x = self.prepare_static_tensor_for_correct_broadcasting_with_channels_first_tensors(
+                        input_tensor, output_rank
+                    )
                     new_tmp_inputs.append(x)
                 elif len(input_tensor.shape.vector) == 0 or input_tensor.shape.vector == [1]:
                     # Dynamic unitary tensor -> we can skip Reshape + Transpose
                     new_tmp_inputs.append(input_tensor)
                 else:
                     # Prepend Reshape and Transpose
-                    ops = self.prepare_dynamic_tensor_for_correct_broadcasting_with_channels_first_tensors(input_tensor,
-                                                                                                           output_rank)
+                    ops = self.prepare_dynamic_tensor_for_correct_broadcasting_with_channels_first_tensors(
+                        input_tensor, output_rank
+                    )
 
                     if len(ops) != 0:
                         # The output of the 'Transpose' (last returned op) will be the new input of the operator
@@ -1246,9 +1323,9 @@ class ModelBuilder:
 
         return ops_to_add
 
-    def prepare_dynamic_tensor_for_correct_broadcasting_with_channels_first_tensors(self, tensor: tflite_model.Tensor,
-                                                                                    output_rank: int
-                                                                                    ) -> list[tflite_model.Operator]:
+    def prepare_dynamic_tensor_for_correct_broadcasting_with_channels_first_tensors(
+        self, tensor: tflite_model.Tensor, output_rank: int
+    ) -> list[tflite_model.Operator]:
         """Create Reshape and Transpose operators, to make sure the shape of the dynamic 'tensor' can be correctly
              broadcasted with other TFLite channels last tensors.
             The assumption is that the 'tensor' needs to be broadcasted with channels last tensors with a greater or
@@ -1310,7 +1387,8 @@ class ModelBuilder:
 
         transpose_output = self.duplicate_tensor(transpose_input)
         transpose_output.shape = tflite_model.Shape(
-            translator.apply_permutation_to(transpose_output.shape.vector, perm))
+            translator.apply_permutation_to(transpose_output.shape.vector, perm)
+        )
         transpose_output.tensor_format = TensorFormat.CHANNELS_LAST
 
         transpose = self._create_transpose_operator(transpose_input, transpose_output, perm)
@@ -1318,8 +1396,9 @@ class ModelBuilder:
 
         return ops_to_add
 
-    def prepare_static_tensor_for_correct_broadcasting_with_channels_first_tensors(self, tensor: tflite_model.Tensor,
-                                                                                   output_rank: int) -> tflite_model.Tensor:
+    def prepare_static_tensor_for_correct_broadcasting_with_channels_first_tensors(
+        self, tensor: tflite_model.Tensor, output_rank: int
+    ) -> tflite_model.Tensor:
         """Create a TFLite tensor based on the static 'tensor', so that it can be correctly broadcasted with channels
              last tensors, and return it.
             The assumption is that the 'tensor' needs to be broadcasted with channels last tensors with a greater or
@@ -1331,8 +1410,10 @@ class ModelBuilder:
         :return: A new static tensor, with a corrected shape for TFLite broadcasting.
         """
         if not tensor_has_data(tensor):
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     "ModelBuilder._reshape_static_tensor_to_be_broadcastable(): 'tensor' is not static!")
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                "ModelBuilder._reshape_static_tensor_to_be_broadcastable(): 'tensor' is not static!",
+            )
 
         tensor = self.duplicate_tensor(tensor)  # Work with a clean copy, in case the tensor is also used elsewhere.
         data = tensor.tmp_buffer.data
@@ -1359,7 +1440,7 @@ class ModelBuilder:
             data = data.reshape(extended_onnx_shape)  # Extend with leading 1s
             tensor.tmp_buffer.data = translator.convert_data_to_channels_last(data)  # Convert to TFLite format
 
-            assert (tflite_shape == list(tensor.tmp_buffer.data.shape))
+            assert tflite_shape == list(tensor.tmp_buffer.data.shape)
 
         else:
             # The tensor is the same as in the ONNX model.
@@ -1374,7 +1455,7 @@ class ModelBuilder:
             data = data.reshape(extended_onnx_shape)  # Extend with leading 1s
             tensor.tmp_buffer.data = translator.convert_data_to_channels_last(data)  # Convert to TFLite format
 
-            assert (tflite_shape == list(tensor.tmp_buffer.data.shape))
+            assert tflite_shape == list(tensor.tmp_buffer.data.shape)
 
         return tensor
 

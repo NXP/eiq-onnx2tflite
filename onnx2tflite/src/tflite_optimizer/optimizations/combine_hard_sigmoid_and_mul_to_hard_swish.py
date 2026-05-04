@@ -23,7 +23,6 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import (
 
 
 class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
-
     def __call__(self) -> bool:
         made_changes = self._combine_float_variant()
         made_changes |= self._combine_quantized_variant()
@@ -56,19 +55,15 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
             self._builder,
             [
                 Op(["Mul"], ["x", "alpha"], ["mul_o"]),
-                OneOf([
-                    Op(["Add"], ["mul_o", "beta"], ["add_o"]),
-                    Op(["Add"], ["beta", "mul_o"], ["add_o"])
-                ]),
-                OneOf([
-                    Op(["Minimum"], ["add_o", "one"], ["min_o"]),
-                    Op(["Minimum"], ["one", "add_o"], ["min_o"]),
-                ]),
+                OneOf([Op(["Add"], ["mul_o", "beta"], ["add_o"]), Op(["Add"], ["beta", "mul_o"], ["add_o"])]),
+                OneOf(
+                    [
+                        Op(["Minimum"], ["add_o", "one"], ["min_o"]),
+                        Op(["Minimum"], ["one", "add_o"], ["min_o"]),
+                    ]
+                ),
                 Op(["Relu"], ["min_o"], ["relu_o"]),
-                OneOf([
-                    Op(["Mul"], ["x", "relu_o"], ["y"]),
-                    Op(["Mul"], ["relu_o", "x"], ["y"])
-                ]),
+                OneOf([Op(["Mul"], ["x", "relu_o"], ["y"]), Op(["Mul"], ["relu_o", "x"], ["y"])]),
             ],
             [
                 TensorHasNConsumers("x", 2),
@@ -77,8 +72,8 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
                 TensorHasStaticValue("beta", 0.5),
                 TensorHasStaticValue("one", 1),
                 # `HardSwishConverter` and `HardSigmoidConverter` both only support float32.
-                TensorHasType("x", TensorType.FLOAT32)
-            ]
+                TensorHasType("x", TensorType.FLOAT32),
+            ],
         )
 
         # The mapped operator (value) will be inserted into the model later, at the position of the `key` operator.
@@ -88,7 +83,7 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
             x, y = tensor_map["x"], tensor_map["y"]
             hard_swish = tflite_model.Operator(
                 builtin_options=HardSwish(),
-                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.HARD_SWISH)
+                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.HARD_SWISH),
             )
             hard_swish.tmp_inputs = [x]
             hard_swish.tmp_outputs = [y]
@@ -156,26 +151,19 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
             self._builder,
             [
                 Op(["Dequantize"], ["x"], ["deq1_o"]),
-                OneOf([
-                    Op(["Mul"], ["deq1_o", "alpha"], ["mul1_o"]),
-                    Op(["Mul"], ["alpha", "deq1_o"], ["mul1_o"])
-                ]),
-                OneOf([
-                    Op(["Add"], ["mul1_o", "beta"], ["add_o"]),
-                    Op(["Add"], ["beta", "mul1_o"], ["add_o"])
-                ]),
-                OneOf([
-                    Op(["Minimum"], ["add_o", "one"], ["min_o"]),
-                    Op(["Minimum"], ["one", "add_o"], ["min_o"]),
-                ]),
+                OneOf([Op(["Mul"], ["deq1_o", "alpha"], ["mul1_o"]), Op(["Mul"], ["alpha", "deq1_o"], ["mul1_o"])]),
+                OneOf([Op(["Add"], ["mul1_o", "beta"], ["add_o"]), Op(["Add"], ["beta", "mul1_o"], ["add_o"])]),
+                OneOf(
+                    [
+                        Op(["Minimum"], ["add_o", "one"], ["min_o"]),
+                        Op(["Minimum"], ["one", "add_o"], ["min_o"]),
+                    ]
+                ),
                 Op(["Relu"], ["min_o"], ["relu_o"]),
                 Op(["Quantize"], ["relu_o"], ["quant1_o"]),
                 Op(["Dequantize"], ["quant1_o"], ["deq2_o"]),
-                OneOf([
-                    Op(["Mul"], ["deq1_o", "deq2_o"], ["mul2_o"]),
-                    Op(["Mul"], ["deq2_o", "deq1_o"], ["mul2_o"])
-                ]),
-                Op(["Quantize"], ["mul2_o"], ["y"])
+                OneOf([Op(["Mul"], ["deq1_o", "deq2_o"], ["mul2_o"]), Op(["Mul"], ["deq2_o", "deq1_o"], ["mul2_o"])]),
+                Op(["Quantize"], ["mul2_o"], ["y"]),
             ],
             [
                 TensorHasNConsumers("deq1_o", 2),
@@ -188,8 +176,8 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
                 RuleOr(
                     TensorsHaveType(["x", "y"], TensorType.INT8),
                     TensorsHaveType(["x", "y"], TensorType.UINT8),
-                )
-            ]
+                ),
+            ],
         )
 
         # The mapped operator (value) will be inserted into the model later, at the position of the `key` operator.
@@ -199,7 +187,7 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
             x, y = tensor_map["x"], tensor_map["y"]
             hard_swish = tflite_model.Operator(
                 builtin_options=HardSwish(),
-                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.HARD_SWISH)
+                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.HARD_SWISH),
             )
             hard_swish.tmp_inputs = [x]
             hard_swish.tmp_outputs = [y]

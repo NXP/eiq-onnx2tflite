@@ -26,8 +26,10 @@ class OrConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Or` operator to TFLite `LogicalOr`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Or` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Or` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]

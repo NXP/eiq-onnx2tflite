@@ -25,9 +25,15 @@ class BidirectionalSequenceLSTM(meta.BuiltinOptions):
     # V3+
     asymmetric_quantize_inputs: bool
 
-    def __init__(self, cell_clip: float, proj_clip: float, time_major: bool = True, merge_outputs: bool = True,
-                 asymmetric_quantize_inputs: bool = False,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        cell_clip: float,
+        proj_clip: float,
+        time_major: bool = True,
+        merge_outputs: bool = True,
+        asymmetric_quantize_inputs: bool = False,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.BidirectionalSequenceLSTMOptions, BuiltinOperator.BIDIRECTIONAL_SEQUENCE_LSTM)
 
         self.fused_activation_function = fused_activation_function

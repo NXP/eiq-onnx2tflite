@@ -46,23 +46,31 @@ class DropoutConverter(NodeConverter):
                 # Cannot determine if training mode is set or not.
                 # If needed, add a flag to guarantee `training_mode` 0.
                 # This is tested by `node:test_training_dropout*`.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.",
+                )
 
         if training_mode != 0:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Dropout` with `training_mode` != 0 is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `Dropout` with `training_mode` != 0 is not possible.",
+            )
 
         # Remove the extra inputs of the operator.
         t_op.tmp_inputs[1:] = []
 
         # Check for extra outputs.
-        if any(self.inspector.get_number_of_onnx_consumers_safe(output_tensor.name) != 0 for output_tensor in
-               t_op.tmp_outputs[1:]):
+        if any(
+            self.inspector.get_number_of_onnx_consumers_safe(output_tensor.name) != 0
+            for output_tensor in t_op.tmp_outputs[1:]
+        ):
             # The `Dropout` uses extra outputs, which are used later in the model. Conversion is not possible.
             # This is tested by `node:test_dropout_default_mask*`.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Dropout` with more than 1 output is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `Dropout` with more than 1 output is not possible.",
+            )
 
         if self.builder.operator_can_be_skipped(t_op, self.inspector):
             self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])

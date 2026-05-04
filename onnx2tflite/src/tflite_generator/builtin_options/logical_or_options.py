@@ -14,7 +14,6 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class LogicalOr(meta.BuiltinOptions):
-
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.LogicalOrOptions, BuiltinOperator.LOGICAL_OR)
 

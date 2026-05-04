@@ -32,9 +32,19 @@ class FuseQuantizeIntoPrecedingOps(BaseOptimization):
     ops_that_can_have_any_output_quantization = [
         # List of operators which don't have restrictions placed on their output quantization and are currently
         #  supported by `onnx2quant`.
-
-        "Add", "BatchMatMul", "Conv2D", "FullyConnected", "HardSwish", "LeakyRelu", "Mean", "Mul", "PRelu",
-        "ReduceProd", "Relu", "Sub", "Sum"
+        "Add",
+        "BatchMatMul",
+        "Conv2D",
+        "FullyConnected",
+        "HardSwish",
+        "LeakyRelu",
+        "Mean",
+        "Mul",
+        "PRelu",
+        "ReduceProd",
+        "Relu",
+        "Sub",
+        "Sum",
     ]
 
     def __call__(self) -> bool:
@@ -42,21 +52,25 @@ class FuseQuantizeIntoPrecedingOps(BaseOptimization):
             self._builder,
             [
                 Op(self.ops_that_can_have_any_output_quantization, outputs=[..., "x", ...]),
-                Op(["Quantize"], ["x"], ["y"], [
-                    # Restrict this optimization to extra `Quantize` operators which were added during conversion.
-                    #  Sometimes the `Quantize` operators which are present in the ONNX model can be essential and
-                    #  shouldn't be removed. They can for example perform clipping.
-                    WasNotInTheOriginalONNXModel()
-                ]),
-
+                Op(
+                    ["Quantize"],
+                    ["x"],
+                    ["y"],
+                    [
+                        # Restrict this optimization to extra `Quantize` operators which were added during conversion.
+                        #  Sometimes the `Quantize` operators which are present in the ONNX model can be essential and
+                        #  shouldn't be removed. They can for example perform clipping.
+                        WasNotInTheOriginalONNXModel()
+                    ],
+                ),
             ],
             [
                 TensorHasOneConsumer("x"),
-
                 # Make sure the `Quantize` is just changing quantization parameters. Otherwise, it couldn't be fused.
                 TensorsHaveSameType(["x", "y"]),
-                TensorsArePerTensorQuantized(["x", "y"])
-            ])
+                TensorsArePerTensorQuantized(["x", "y"]),
+            ],
+        )
 
         to_remove = []
         for [leading_op, quantize], tensor_map, _, _ in matcher.match_patterns():

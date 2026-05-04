@@ -64,13 +64,20 @@ class NodeConverter(ABC):
         at the top of the class. Child classes must define these lists in order to use this method.
         """
         if _type not in (self.onnx_supported_types or ALL_TYPES):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX operator `{self.node}` has type `{name_for_type(_type)}`, "
-                                                     "which is not supported by the ONNX documentation.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX operator `{self.node}` has type `{name_for_type(_type)}`, "
+                "which is not supported by the ONNX documentation.",
+            )
 
         if _type not in (self.tflite_supported_types or ALL_TYPES):
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of the ONNX operator `{self.node}` with type "
-                                                        f"`{name_for_type(_type)}`, is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of the ONNX operator `{self.node}` with type `{name_for_type(_type)}`, is not possible.",
+            )
 
         if _type not in (self.verified_types or ALL_TYPES):
-            logger.e(logger.Code.NOT_IMPLEMENTED, f"Conversion of the ONNX operator `{self.node}` with type "
-                                                  f"`{name_for_type(_type)}`, is not supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of the ONNX operator `{self.node}` with type `{name_for_type(_type)}`, is not supported.",
+            )

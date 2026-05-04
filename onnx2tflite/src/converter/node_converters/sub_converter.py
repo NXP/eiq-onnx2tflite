@@ -36,8 +36,10 @@ class SubConverter(NodeConverter):
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'Sub' has unexpected number of inputs. "
-                                                     f"Got '{len(t_op.tmp_inputs)}', expected '2'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Sub' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
@@ -49,8 +51,9 @@ class SubConverter(NodeConverter):
         if t_op.is_quantized_without_qdq():
             # ONNX Runtime currently doesn't support `(u)int8` inputs, so this case cannot be tested.
             # If support is added in the future, propagate the quantization parameters.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `Sub` with quantized inputs is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Sub` with quantized inputs is not yet supported."
+            )
 
         elif not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)

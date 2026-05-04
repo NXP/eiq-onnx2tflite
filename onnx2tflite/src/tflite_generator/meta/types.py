@@ -9,6 +9,7 @@
 
 Module contains helper functions that work with TFLite data types.
 """
+
 from collections.abc import Callable
 from enum import Enum
 from typing import Any
@@ -88,21 +89,35 @@ class TensorFlowDataType(Enum):
 
 
 def is_unsigned(data_type: TensorType) -> bool:
-    return data_type in {
-        TensorType.UINT8, TensorType.UINT16, TensorType.UINT32, TensorType.UINT64
-    }
+    return data_type in {TensorType.UINT8, TensorType.UINT16, TensorType.UINT32, TensorType.UINT64}
 
 
 def is_signed(data_type: TensorType) -> bool:
-    return data_type in {
-        TensorType.INT8, TensorType.INT16, TensorType.INT32, TensorType.INT64
-    }
+    return data_type in {TensorType.INT8, TensorType.INT16, TensorType.INT32, TensorType.INT64}
 
 
 def name_for_type(data_type: TensorType) -> str:
     """Return the name of given TFLite data type."""
-    names = ["FLOAT32", "FLOAT16", "INT32", "UINT8", "INT64", "STRING", "BOOL", "INT16", "COMPLEX64", "INT8", "FLOAT64",
-             "COMPLEX128", "UINT64", "RESOURCE", "VARIANT", "UINT32", "UINT16", "INT4" ]
+    names = [
+        "FLOAT32",
+        "FLOAT16",
+        "INT32",
+        "UINT8",
+        "INT64",
+        "STRING",
+        "BOOL",
+        "INT16",
+        "COMPLEX64",
+        "INT8",
+        "FLOAT64",
+        "COMPLEX128",
+        "UINT64",
+        "RESOURCE",
+        "VARIANT",
+        "UINT32",
+        "UINT16",
+        "INT4",
+    ]
 
     return names[data_type]
 

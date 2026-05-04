@@ -43,10 +43,11 @@ class SigmoidConverter(NodeConverter):
         if t_op.is_qdq_quantized():
             if not math.isclose(y.quantization.scale.vector[0], 1 / 256.0):
                 logger.w(
-                    f"Re-quantizing output tensor '{y.name}' of Sigmoid op to satisfy TFLite's q-param requirements.")
+                    f"Re-quantizing output tensor '{y.name}' of Sigmoid op to satisfy TFLite's q-param requirements."
+                )
                 # Quantization not done with internal quantizer => re-quantize output
                 zp = [0 if (x.type == TensorType.UINT8) else -128]
-                scale = [1. / 256.]
+                scale = [1.0 / 256.0]
                 ops.post_ops.append(self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp))
 
         else:

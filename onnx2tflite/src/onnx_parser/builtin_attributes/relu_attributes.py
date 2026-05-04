@@ -6,7 +6,7 @@
 #
 """Relu
 
-Representation of an ONNX 'Relu' operator. 
+Representation of an ONNX 'Relu' operator.
 Initialized from a protobuf descriptor object.
 """
 

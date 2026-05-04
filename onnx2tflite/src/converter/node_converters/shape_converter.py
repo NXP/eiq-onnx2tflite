@@ -26,8 +26,9 @@ class ShapeConverter(NodeConverter):
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
-    verified_types = FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.BOOL,
-                                      TensorType.STRING]
+    verified_types = (
+        FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.BOOL, TensorType.STRING]
+    )
 
     def _append_gather_operator(self, shape_op: tflite_model.Operator, ops_to_add: list[tflite_model.Operator]) -> None:
         """Append a 'Gather' operator after the 'shape_op' and add it to the 'ops_to_add'. The 'Gather' op will permute
@@ -49,8 +50,12 @@ class ShapeConverter(NodeConverter):
         gather_op.tmp_outputs = [shape_op.tmp_outputs[0]]
         shape_op.tmp_outputs[0] = gather_input
 
-    def _append_slice_operator(self, ops_to_add: list[tflite_model.Operator], begin_tensor: tflite_model.Tensor,
-                               size_tensor: tflite_model.Tensor) -> None:
+    def _append_slice_operator(
+        self,
+        ops_to_add: list[tflite_model.Operator],
+        begin_tensor: tflite_model.Tensor,
+        size_tensor: tflite_model.Tensor,
+    ) -> None:
         """Create a 'Slice' operator after the last operator in 'ops_to_add' and add it to the list.
 
         :param ops_to_add: A list of operators that will be added to the model later.
@@ -81,8 +86,10 @@ class ShapeConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Shape' operator to TFLite."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX 'Shape' operator has unexpected number of inputs! Got'{len(t_op.tmp_inputs)}', expected '1'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Shape' operator has unexpected number of inputs! Got'{len(t_op.tmp_inputs)}', expected '1'.",
+            )
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
@@ -112,17 +119,21 @@ class ShapeConverter(NodeConverter):
         start = self._validate_index(start, 0, input_rank)
         end = self._validate_index(end, input_rank, input_rank)
         if end < start:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX 'Shape' operator has 'end' < 'start' ('{end}' < '{start}')!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX 'Shape' operator has 'end' < 'start' ('{end}' < '{start}')!",
+            )
 
         # Create the TFLite 'begin' tensor
-        begin_tensor = self.builder.create_tensor_for_data(np.asarray([start], tf_lite_type_to_numpy(output_type)),
-                                                           "begin")
+        begin_tensor = self.builder.create_tensor_for_data(
+            np.asarray([start], tf_lite_type_to_numpy(output_type)), "begin"
+        )
 
         # Create the TFLite 'size' tensor
         size = end - start
-        size_tensor = self.builder.create_tensor_for_data(np.asarray([size], tf_lite_type_to_numpy(output_type)),
-                                                          "size")
+        size_tensor = self.builder.create_tensor_for_data(
+            np.asarray([size], tf_lite_type_to_numpy(output_type)), "size"
+        )
 
         # Create the 'Slice' operator
         self._append_slice_operator(ops_to_add, begin_tensor, size_tensor)

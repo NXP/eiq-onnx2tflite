@@ -33,8 +33,10 @@ class TanhConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Tanh` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Tanh` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -47,10 +49,9 @@ class TanhConverter(NodeConverter):
         if t_op.is_qdq_quantized():
             # In case ONNX adds support for Tanh quantization in future and doesn't match TFLite's requirements
             if not math.isclose(y.quantization.scale.vector[0], 1 / 128.0):
-                logger.w(
-                    f"Re-quantizing output tensor '{y.name}' of Tanh op to satisfy TFLite's q-param requirements.")
+                logger.w(f"Re-quantizing output tensor '{y.name}' of Tanh op to satisfy TFLite's q-param requirements.")
                 # Quantization not done with internal quantizer => re-quantize output
-                quantize_op = self.builder.create_quantize_operator_after(t_op, 0, x.type, [1. / 128.], [0])
+                quantize_op = self.builder.create_quantize_operator_after(t_op, 0, x.type, [1.0 / 128.0], [0])
                 ops.add_post(quantize_op)
 
         else:

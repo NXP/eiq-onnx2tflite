@@ -14,7 +14,6 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class BitwiseXor(meta.BuiltinOptions):
-
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.BitwiseXorOptions, BuiltinOperator.BITWISE_XOR)
 

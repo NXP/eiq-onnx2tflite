@@ -44,8 +44,10 @@ class GemmConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if not (2 <= len(t_op.tmp_inputs) <= 3):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"ONNX Gemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 2 - 3.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"ONNX Gemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 2 - 3.",
+            )
 
         ops = OpsList(middle_op=t_op)
 
@@ -96,7 +98,7 @@ class GemmConverter(NodeConverter):
 
         :param t_op: TFLite operator representing the corresponding FullyConnected operator.
         """
-        if alpha == 1.:
+        if alpha == 1.0:
             return
 
         a = t_op.tmp_inputs[0]
@@ -125,7 +127,8 @@ class GemmConverter(NodeConverter):
                 # Mul output tensor is quantized as 'alpha * scale' because we are effectively changing the range
                 # (stretching or extending) we are quantizing.
                 mul_output.quantization.scale = tflite_model.Scale(
-                    [alpha * val for val in mul_output.quantization.scale.vector])
+                    [alpha * val for val in mul_output.quantization.scale.vector]
+                )
 
                 mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
                 mul_op.tmp_inputs = [a, alpha_tensor]
@@ -180,8 +183,9 @@ class GemmConverter(NodeConverter):
 
             else:
                 # Prepend a Mul operator.
-                beta_tensor = self.context.tflite_builder.create_tensor_for_data(np.array([o_gemm.beta], np.float32),
-                                                                                 "beta")
+                beta_tensor = self.context.tflite_builder.create_tensor_for_data(
+                    np.array([o_gemm.beta], np.float32), "beta"
+                )
                 mul_output = self.context.tflite_builder.duplicate_tensor(c, name_suffix="_scaled")
 
                 mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
@@ -197,8 +201,10 @@ class GemmConverter(NodeConverter):
         if c.quantization is not None:
             # If bias is quantized it must be static
             if not tensor_has_data(c):
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Bias tensor of quantized Gemm operator is not static. Behavior of QDQ Quantizer has changed.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Bias tensor of quantized Gemm operator is not static. Behavior of QDQ Quantizer has changed.",
+                )
 
             # TFLite expects scale of bias to be scale = a_scale * b_scale. ONNX quantizer computes it
             # as scale=a_scale * b_scale * beta. Re-quantize bias tensor if alpha wasn't 1.0 and thus
@@ -211,8 +217,10 @@ class GemmConverter(NodeConverter):
             bias_scale_list, bias_zp_list = quantization_params_to_lists(bias_scale, bias_zp)
 
             if not np.allclose(bias_scale.astype(np.float32), np.array(c.quantization.scale.vector, dtype=np.float32)):
-                logger.w("Re-quantizing bias tensor of Gemm operator to match TFLite's scale requirements. "
-                         "This can introduce small inaccuracies.")
+                logger.w(
+                    "Re-quantizing bias tensor of Gemm operator to match TFLite's scale requirements. "
+                    "This can introduce small inaccuracies."
+                )
                 c = re_quantize_static_tensor(self.builder, c, TensorType.INT32, bias_scale_list, bias_zp_list)
                 t_op.tmp_inputs[2] = c
 
@@ -242,9 +250,11 @@ class GemmConverter(NodeConverter):
             #     another error.
             # Combination of errors mentioned above leads to large degradation in accuracy.
             # Bias in shape different from [N] or [1, N] is also rare, so we let user improve the model.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "ONNX operator Gemm (QDQ quantized) has bias input ('C') with shape that is not "
-                     "supported by TFLite. Make sure bias tensor has shape [N] or [1, N].")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "ONNX operator Gemm (QDQ quantized) has bias input ('C') with shape that is not "
+                "supported by TFLite. Make sure bias tensor has shape [N] or [1, N].",
+            )
 
         ops.add_post(add_op)
 
@@ -252,8 +262,9 @@ class GemmConverter(NodeConverter):
         t = t_op.tmp_inputs[input_idx]
 
         if t.rank != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"ONNX Gemm has a main intput with {t.rank} dimensions instead of 2.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR, f"ONNX Gemm has a main intput with {t.rank} dimensions instead of 2."
+            )
 
         if tensor_has_data(t):
             # Transpose statically.

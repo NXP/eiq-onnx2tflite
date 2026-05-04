@@ -31,8 +31,10 @@ class HardSwishConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `HardSwish` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `HardSwish` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.",
+            )
 
         x = t_op.tmp_inputs[0]
         if not t_op.is_qdq_quantized():

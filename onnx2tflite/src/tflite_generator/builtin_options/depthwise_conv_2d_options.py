@@ -28,13 +28,17 @@ class DepthwiseConv2D(meta.BuiltinOptions):
     dilation_h_factor: int = 1
     depth_multiplier: int = 1  # Redundant according to schema.fbs (line 597)
 
-    def __init__(self, padding: Padding = Padding.SAME,
-                 stride_w: int = 1, stride_h: int = 1,
-                 dilation_w_factor: int = 1, dilation_h_factor: int = 1,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
-                 depth_multiplier: int = 1) -> None:
-        super().__init__(BuiltinOptions.DepthwiseConv2DOptions,
-                         BuiltinOperator.DEPTHWISE_CONV_2D)
+    def __init__(
+        self,
+        padding: Padding = Padding.SAME,
+        stride_w: int = 1,
+        stride_h: int = 1,
+        dilation_w_factor: int = 1,
+        dilation_h_factor: int = 1,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+        depth_multiplier: int = 1,
+    ) -> None:
+        super().__init__(BuiltinOptions.DepthwiseConv2DOptions, BuiltinOperator.DEPTHWISE_CONV_2D)
         self.padding = padding
         self.stride_w = stride_w
         self.stride_h = stride_h

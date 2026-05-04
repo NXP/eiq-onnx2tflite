@@ -9,6 +9,7 @@
 
 Implementations of classes that all classes in /src/tflite_generator/ inherit from.
 """
+
 from collections.abc import Callable, Iterator
 
 import flatbuffers as fb
@@ -49,11 +50,15 @@ class TFLiteVector(TFLiteObject):
     as argument """
     prepend_function: Callable[[fb.Builder], Callable[[int], None]]
 
-    def __init__(self, vector: list[TFLiteObject | int | float | bool],
-                 start_function: Callable[[fb.Builder, int], None],
-                 prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda
-                         builder: builder.PrependUOffsetTRelative,
-                 gen_empty: bool = True) -> None:
+    def __init__(
+        self,
+        vector: list[TFLiteObject | int | float | bool],
+        start_function: Callable[[fb.Builder, int], None],
+        prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: (
+            builder.PrependUOffsetTRelative
+        ),
+        gen_empty: bool = True,
+    ) -> None:
         if vector is None:
             vector = []
         self.vector = vector
@@ -112,10 +117,13 @@ class TFLiteVector(TFLiteObject):
 
 
 class TFLiteAtomicVector(TFLiteVector):
-    def __init__(self, vector: list[int | float | bool],
-                 start_function: Callable[[fb.Builder, int], None],
-                 prepend_function: Callable[[fb.Builder], Callable[[int], None]],
-                 gen_empty: bool = True) -> None:
+    def __init__(
+        self,
+        vector: list[int | float | bool],
+        start_function: Callable[[fb.Builder, int], None],
+        prepend_function: Callable[[fb.Builder], Callable[[int], None]],
+        gen_empty: bool = True,
+    ) -> None:
         super().__init__(vector, start_function, prepend_function, gen_empty)
 
     def __eq__(self, other):
@@ -142,11 +150,13 @@ class FloatVector(TFLiteAtomicVector):
     and generating output TFLite code.
     """
 
-    def __init__(self, float_list: list[float],
-                 start_function: Callable[[fb.Builder, int], None],
-                 prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda
-                         builder: builder.PrependFloat32,
-                 gen_empty: bool = True) -> None:
+    def __init__(
+        self,
+        float_list: list[float],
+        start_function: Callable[[fb.Builder, int], None],
+        prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependFloat32,
+        gen_empty: bool = True,
+    ) -> None:
         super().__init__(float_list, start_function, prepend_function, gen_empty)
 
 
@@ -157,10 +167,13 @@ class IntVector(TFLiteAtomicVector):
 
     vector: list[int]
 
-    def __init__(self, int_list: list[int],
-                 start_function: Callable[[fb.Builder, int], None],
-                 prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependInt32,
-                 gen_empty: bool = True) -> None:
+    def __init__(
+        self,
+        int_list: list[int],
+        start_function: Callable[[fb.Builder, int], None],
+        prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependInt32,
+        gen_empty: bool = True,
+    ) -> None:
         super().__init__(int_list, start_function, prepend_function, gen_empty)
 
 
@@ -171,20 +184,23 @@ class BoolVector(TFLiteAtomicVector):
 
     vector: list[bool]
 
-    def __init__(self, bool_list: list[bool],
-                 start_function: Callable[[fb.Builder, int], None],
-                 prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependBool,
-                 gen_empty: bool = True) -> None:
+    def __init__(
+        self,
+        bool_list: list[bool],
+        start_function: Callable[[fb.Builder, int], None],
+        prepend_function: Callable[[fb.Builder], Callable[[int], None]] = lambda builder: builder.PrependBool,
+        gen_empty: bool = True,
+    ) -> None:
         super().__init__(bool_list, start_function, prepend_function, gen_empty)
 
 
 class BuiltinOptions(TFLiteObject):
     """Class represents 'BuiltinOptions' for an Operator. Used in 'model/Operators.py'.
-    Provides interface for work with any BuiltinOptions table. 
+    Provides interface for work with any BuiltinOptions table.
     This class alone does NOT generate any TFLite.
     Subclasses do NOT generate TFLite for the 'builtinOptionsType', only for the exact options.
     'builtinOptionsType' is merely stored here for convenience and an 'Operator' object
-    generates its TFLite representation (as it is the child of the 'operator' table in 'operators'). 
+    generates its TFLite representation (as it is the child of the 'operator' table in 'operators').
     """
 
     """ The type of parameters of this operator. """
@@ -193,8 +209,9 @@ class BuiltinOptions(TFLiteObject):
     """ The type of this operator. """
     operator_type: bOp.BuiltinOperator
 
-    def __init__(self, builtin_options_type: bOpt.BuiltinOptions | int,
-                 operator_type: bOp.BuiltinOperator | int) -> None:
+    def __init__(
+        self, builtin_options_type: bOpt.BuiltinOptions | int, operator_type: bOp.BuiltinOperator | int
+    ) -> None:
         if builtin_options_type is None:
             logger.d("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'builtinOptionsType'!")
         if operator_type is None:

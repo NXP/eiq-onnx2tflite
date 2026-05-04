@@ -25,8 +25,9 @@ class SqueezeConverter(NodeConverter):
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
-    verified_types = FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.STRING,
-                                      TensorType.BOOL]
+    verified_types = (
+        FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.STRING, TensorType.BOOL]
+    )
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         x = t_op.tmp_inputs[0]
@@ -54,14 +55,18 @@ class SqueezeConverter(NodeConverter):
         axes_tensor = try_get_input(t_op, 1)
 
         if o_attrs.axes is not None and axes_tensor is not None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "Input 'axes' provided both as input tensor and attribute for 'Squeeze' operator.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                "Input 'axes' provided both as input tensor and attribute for 'Squeeze' operator.",
+            )
 
         new_shape = ensure_reshape_transposition(self.builder, ops)
 
         if len(new_shape) > 8:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!",
+            )
 
         # The new shape can be represented using operators parameters. No need for the 'axes' input tensor -> remove it
         t_op.tmp_inputs[1:] = []

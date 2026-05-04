@@ -19,8 +19,13 @@ from onnx2tflite.src.tflite_generator.builtin_options import range_options
 class RangeConverter(NodeConverter):
     node = "Range"
 
-    onnx_supported_types = [TensorType.FLOAT32, TensorType.FLOAT64, TensorType.INT16, TensorType.INT32,
-                            TensorType.INT64]
+    onnx_supported_types = [
+        TensorType.FLOAT32,
+        TensorType.FLOAT64,
+        TensorType.INT16,
+        TensorType.INT32,
+        TensorType.INT64,
+    ]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/range.cc#L151-L156
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.INT64]
     verified_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.INT64]
@@ -47,8 +52,7 @@ class RangeConverter(NodeConverter):
         #  had some issues using dynamic scalars (shape []) while writing the tests.
         # Right now, the shape inference would have already failed anyway.
 
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                 "Conversion of ONNX `Range` with dynamic inputs is not supported.")
+        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Range` with dynamic inputs is not supported.")
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Range` to TFLite `Range`."""

@@ -18,10 +18,14 @@ class Concatenation(meta.BuiltinOptions):
     axis: int
     fused_activation_function: libActivationFunctionType.ActivationFunctionType
 
-    def __init__(self, axis: int,
-                 fused_activation_function: libActivationFunctionType.ActivationFunctionType = libActivationFunctionType.ActivationFunctionType.NONE) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.ConcatenationOptions,
-                         libBuiltinOperator.BuiltinOperator.CONCATENATION)
+    def __init__(
+        self,
+        axis: int,
+        fused_activation_function: libActivationFunctionType.ActivationFunctionType = libActivationFunctionType.ActivationFunctionType.NONE,
+    ) -> None:
+        super().__init__(
+            libBuiltinOptions.BuiltinOptions.ConcatenationOptions, libBuiltinOperator.BuiltinOperator.CONCATENATION
+        )
         self.axis = axis
         self.fused_activation_function = fused_activation_function
 

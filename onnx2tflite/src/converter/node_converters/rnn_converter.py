@@ -38,8 +38,9 @@ class RNNConverter(NodeConverter):
     tflite_supported_types = [TensorType.FLOAT32]
     verified_types = [TensorType.FLOAT32]
 
-    def _convert_forward_rnn(self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator,
-                             ops: OpsList) -> list[tflite_model.Operator]:
+    def _convert_forward_rnn(
+        self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator, ops: OpsList
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX RNN with 'forward' direction attribute to TFLite UnidirectionalSequenceRNN.
 
         :param o_rnn: Attributes of the ONNX RNN operator.
@@ -49,15 +50,17 @@ class RNNConverter(NodeConverter):
         """
         # Convert to TFLite 'UnidirectionalSequenceRNN'.
         t_op.builtin_options = unidirectional_sequence_rnn_options.UnidirectionalSequenceRNN(
-            time_major=(o_rnn.layout == 0))
+            time_major=(o_rnn.layout == 0)
+        )
 
         # Use the 'fused_activation_function' attribute to represent the output and cell update activation functions.
         if o_rnn.activations is None:
             t_op.builtin_options.fused_activation_function = ActivationFunctionType.TANH
         else:
             if len(o_rnn.activations) != 1:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                         "ONNX forward RNN has invalid 'activations' attribute.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX forward RNN has invalid 'activations' attribute."
+                )
             t_op.builtin_options.fused_activation_function = get_activation_function_for_name(o_rnn.activations[0])
 
         x = t_op.tmp_inputs[0]
@@ -125,8 +128,9 @@ class RNNConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _convert_reverse_rnn(self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator,
-                             ops: OpsList) -> list[tflite_model.Operator]:
+    def _convert_reverse_rnn(
+        self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator, ops: OpsList
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX RNN with 'reverse' direction attribute to TFLite BidirectionalSequenceRNN.
 
         :param o_rnn: Attributes of the ONNX RNN operator.
@@ -138,16 +142,17 @@ class RNNConverter(NodeConverter):
         # TODO Be careful when adding support for the second ONNX RNN output!
         logger.internal_assert(len(t_op.tmp_outputs) == 1, "Reverse RNN with multiple outputs is not properly handled!")
         t_op.builtin_options = bidirectional_sequence_rnn_options.BidirectionalSequenceRNN(
-            time_major=(o_rnn.layout == 0),
-            merge_outputs=False)
+            time_major=(o_rnn.layout == 0), merge_outputs=False
+        )
 
         # Use the 'fused_activation_function' attribute to represent the output and cell update activation functions.
         if o_rnn.activations is None:
             t_op.builtin_options.fused_activation_function = ActivationFunctionType.TANH
         else:
             if len(o_rnn.activations) != 1:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                         "ONNX reverse RNN has invalid 'activations' attribute.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX reverse RNN has invalid 'activations' attribute."
+                )
             t_op.builtin_options.fused_activation_function = get_activation_function_for_name(o_rnn.activations[0])
 
         x = t_op.tmp_inputs[0]
@@ -210,18 +215,20 @@ class RNNConverter(NodeConverter):
         # https://github.com/tensorflow/tensorflow/blob/1af2ea61f9b9c887409945849988685559970330/tensorflow/lite/kernels/bidirectional_sequence_rnn.cc#L43-L62
         t_op.tmp_inputs = [
             x,
-
             # Forward weights -> set all to 0
             self.builder.create_zeros_tensor(w.shape.vector.copy(), "fw_w", np.dtype("float32"), True),
             self.builder.create_zeros_tensor(r.shape.vector.copy(), "fw_r", np.dtype("float32"), True),
             self.builder.create_zeros_tensor([hidden_size], "fw_b", np.dtype("float32"), True),
             fw_dummy_state,
-
             # Reverse weights
-            w, r, b, hidden_state,
-
+            w,
+            r,
+            b,
+            hidden_state,
             # Auxiliary inputs (not important)
-            null_tensor, null_tensor, null_tensor
+            null_tensor,
+            null_tensor,
+            null_tensor,
         ]
 
         # We only want the second output of the TFLite BidirectionalSequenceRNN -> create a dummy tensor for the first.
@@ -240,8 +247,9 @@ class RNNConverter(NodeConverter):
 
         return ops.flatten()
 
-    def _convert_bidirectional_rnn(self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator,
-                                   ops: OpsList) -> list[tflite_model.Operator]:
+    def _convert_bidirectional_rnn(
+        self, o_rnn: rnn_attributes.RNN, t_op: tflite_model.Operator, ops: OpsList
+    ) -> list[tflite_model.Operator]:
         """Convert ONNX RNN with 'bidirectional' direction attribute to TFLite BidirectionalSequenceRNN.
 
         :param o_rnn: Attributes of the ONNX RNN operator.
@@ -251,20 +259,24 @@ class RNNConverter(NodeConverter):
         """
         # Convert to TFLite 'BidirectionalSequenceRNN'.
         t_op.builtin_options = bidirectional_sequence_rnn_options.BidirectionalSequenceRNN(
-            time_major=(o_rnn.layout == 0),
-            merge_outputs=True)
+            time_major=(o_rnn.layout == 0), merge_outputs=True
+        )
 
         # Use the 'fused_activation_function' attribute to represent the output and cell update activation functions.
         if o_rnn.activations is None:
             t_op.builtin_options.fused_activation_function = ActivationFunctionType.TANH
         else:
             if len(o_rnn.activations) != 2:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                         "ONNX bidirectional RNN has invalid 'activations' attribute.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                    "ONNX bidirectional RNN has invalid 'activations' attribute.",
+                )
 
             if o_rnn.activations[0] != o_rnn.activations[1]:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"Conversion ONNX bidirectional RNN with 'activations' = {o_rnn.activations} is not possible.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    f"Conversion ONNX bidirectional RNN with 'activations' = {o_rnn.activations} is not possible.",
+                )
 
             t_op.builtin_options.fused_activation_function = get_activation_function_for_name(o_rnn.activations[0])
 
@@ -326,17 +338,14 @@ class RNNConverter(NodeConverter):
                 logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
-            fw_b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"),
-                                                    can_reuse=True)
+            fw_b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"), can_reuse=True)
             bw_b = fw_b
 
         # Hidden state variable tensors.
-        fw_state = self.builder.create_empty_tensor("fw_hidden_state", TensorType.FLOAT32,
-                                                    [batch_size, hidden_size])
+        fw_state = self.builder.create_empty_tensor("fw_hidden_state", TensorType.FLOAT32, [batch_size, hidden_size])
         fw_state.is_variable = True
 
-        bw_state = self.builder.create_empty_tensor("bw_hidden_state", TensorType.FLOAT32,
-                                                    [batch_size, hidden_size])
+        bw_state = self.builder.create_empty_tensor("bw_hidden_state", TensorType.FLOAT32, [batch_size, hidden_size])
         bw_state.is_variable = True
 
         null_tensor = self.builder.create_null_tensor()
@@ -346,15 +355,20 @@ class RNNConverter(NodeConverter):
         # noinspection PyUnboundLocalVariable
         t_op.tmp_inputs = [
             x,
-
             # Forward weights
-            fw_w, fw_r, fw_b, fw_state,
-
+            fw_w,
+            fw_r,
+            fw_b,
+            fw_state,
             # Reverse weights
-            bw_w, bw_r, bw_b, bw_state,
-
+            bw_w,
+            bw_r,
+            bw_b,
+            bw_state,
             # Auxiliary inputs (not important)
-            null_tensor, null_tensor, null_tensor
+            null_tensor,
+            null_tensor,
+            null_tensor,
         ]
 
         # TFLite BidirectionalSequenceRNN has output shape [seq_len, batch_size, 2 * hidden_size]
@@ -367,8 +381,9 @@ class RNNConverter(NodeConverter):
         # Since there are some optimizations for Transpose operators already implemented, I decided to go with the first
         #  option. If you believe some different solution is better, please let me know.
         reshape_op = self.builder.create_reshape_after(t_op, 0, [seq_length, batch_size, 2, hidden_size])
-        transpose_op = self.builder.create_transpose_operator_after(reshape_op, 0, [0, 2, 1, 3],
-                                                                    keep_output_shape=False)
+        transpose_op = self.builder.create_transpose_operator_after(
+            reshape_op, 0, [0, 2, 1, 3], keep_output_shape=False
+        )
 
         # The Reshape and Transpose must come before any other operators added after the RNN.
         ops.post_ops = [reshape_op, transpose_op] + ops.post_ops
@@ -389,17 +404,20 @@ class RNNConverter(NodeConverter):
             else:
                 initial_h_data = self.context.onnx_inspector.try_get_inferred_tensor_data(initial_h.name)
                 if initial_h_data is not None:
-                    logger.i(f"Using inferred tensor data to assume that the RNN 'initial_h' input tensor named "
-                             f"'{initial_h.name}' will always contain only '0' values during runtime. If this is not "
-                             f"the case, converted TFLite model may produce incorrect results.")
+                    logger.i(
+                        f"Using inferred tensor data to assume that the RNN 'initial_h' input tensor named "
+                        f"'{initial_h.name}' will always contain only '0' values during runtime. If this is not "
+                        f"the case, converted TFLite model may produce incorrect results."
+                    )
 
             if initial_h_data is None or any(val != 0.0 for val in np.asarray(initial_h_data).flatten()):
                 # The initial values for the 'hidden' are specified and are not zero. TFLite RNN has the
                 #  'hidden_state' input tensor, which could be initially set to 'initial_h', but it is a
                 #  'variable' tensor and TFLite doesn't support variable tensors with initial static data right now.
                 # Therefore, I believe conversion is not possible.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX RNN with 'initial_h' input is not possible.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX RNN with 'initial_h' input is not possible."
+                )
 
         if len(t_op.tmp_outputs) != 1:
             # TODO 'Y_h' output might be possible to compute by appending a 'Gather' operator.
@@ -407,8 +425,10 @@ class RNNConverter(NodeConverter):
             # If the extra outputs are not used, conversion can proceed.
             for output_tensor in t_op.tmp_outputs[1:]:
                 if self.inspector.get_number_of_onnx_consumers_safe(output_tensor.name) != 0:
-                    logger.e(logger.Code.NOT_IMPLEMENTED,
-                             "Conversion of ONNX RNN with more than 1 output is not yet supported.")
+                    logger.e(
+                        logger.Code.NOT_IMPLEMENTED,
+                        "Conversion of ONNX RNN with more than 1 output is not yet supported.",
+                    )
 
             # Remove the unused outputs.
             t_op.tmp_outputs[1:] = []
@@ -416,12 +436,15 @@ class RNNConverter(NodeConverter):
         if o_rnn.layout != 0:
             # ORT doesn't support this.
             # https://github.com/microsoft/onnxruntime/blob/435e19953ea54115124fd637a67a87681a7fc8eb/onnxruntime/core/providers/cpu/rnn/rnn.h#L45
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"Conversion of ONNX RNN with layout = '{o_rnn.layout}' is not supported.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                f"Conversion of ONNX RNN with layout = '{o_rnn.layout}' is not supported.",
+            )
 
         if o_rnn.clip is not None:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX RNN with a 'clip' attribute is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX RNN with a 'clip' attribute is not possible."
+            )
 
         ensure_correct_tensor_formatting(t_op, self.builder, ops)
 
@@ -434,5 +457,7 @@ class RNNConverter(NodeConverter):
         if o_rnn.direction == "reverse":
             return self._convert_reverse_rnn(o_rnn, t_op, ops)
 
-        logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                 f"ONNX RNN has unexpected value of the direction attribute ('{o_rnn.direction}').")
+        logger.e(
+            logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+            f"ONNX RNN has unexpected value of the direction attribute ('{o_rnn.direction}').",
+        )

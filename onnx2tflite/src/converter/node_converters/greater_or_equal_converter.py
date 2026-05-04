@@ -34,8 +34,9 @@ class GreaterOrEqualConverter(NodeConverter):
         y = t_op.tmp_inputs[1]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "ONNX `GreaterOrEqual` has input tensors with different data types.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR, "ONNX `GreaterOrEqual` has input tensors with different data types."
+            )
 
         if exactly_one_is_none(x.quantization, y.quantization):
             logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `GreaterOrEqual` has only 1 input quantized.")

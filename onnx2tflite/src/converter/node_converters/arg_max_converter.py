@@ -35,22 +35,28 @@ class ArgMaxConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `ArgMax` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `ArgMax` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
         self.assert_type_allowed(x.type)
         if y.type != TensorType.INT64:
             # ONNX only allows `int64` output.
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `ArgMax` has output type `{name_for_type(y.type)}` instead of `INT64`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `ArgMax` has output type `{name_for_type(y.type)}` instead of `INT64`.",
+            )
 
         attrs = cast(arg_max_attributes.ArgMax, node.attributes)
 
         if attrs.select_last_index != 0:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `ArgMax` with `select_last_index={attrs.select_last_index}` is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `ArgMax` with `select_last_index={attrs.select_last_index}` is not possible.",
+            )
 
         if attrs.keepdims == 1:
             # TFLite always removes the reduced dimension. When `keepdims == 1`, ONNX leaves the dimension with size 1.

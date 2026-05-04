@@ -23,8 +23,9 @@ class ReshapeConverter(NodeConverter):
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
-    verified_types = FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.STRING,
-                                      TensorType.BOOL]
+    verified_types = (
+        FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.STRING, TensorType.BOOL]
+    )
 
     # noinspection PyMethodMayBeStatic
     def _safe_compute_flat_size(self, shape: list[int | str]) -> int:
@@ -43,8 +44,10 @@ class ReshapeConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX 'Reshape' to TFLite 'Reshape'."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX: Reshape operator has unexpected number of inputs! "
-                                                     f"Got '{len(t_op.tmp_inputs)}', expected '2'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX: Reshape operator has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.",
+            )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -69,8 +72,10 @@ class ReshapeConverter(NodeConverter):
         new_shape = ensure_reshape_transposition(self.builder, ops)
 
         if len(new_shape) > 8:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!",
+            )
 
         # The new shape can be represented using operators parameters. No need for the input tensor -> remove it
         t_op.tmp_inputs.pop()
@@ -84,7 +89,9 @@ class ReshapeConverter(NodeConverter):
         if flat_input_size != flat_output_size:
             # Doesn't necessarily indicate an error in conversion. For example [-1, 3, 12, 12] can be reshaped to
             #  [-1, 12].
-            logger.w(f"convert_reshape: Flat size of the input tensor '{x.name}' is not the same as "
-                     f"the flat size of the output tensor '{y.name}'.")
+            logger.w(
+                f"convert_reshape: Flat size of the input tensor '{x.name}' is not the same as "
+                f"the flat size of the output tensor '{y.name}'."
+            )
 
         return ops.flatten()

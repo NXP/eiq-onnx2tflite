@@ -45,11 +45,15 @@ class OpLikeBlock(OperatorBlock):
         """
         # `...` can only be used at the start or end of the inputs/outputs.
         if len(self.inputs_as_list()) > 2:
-            logger.internal_assert(... not in self.inputs_as_list()[1:-1], "PatternMatcher: The `...` can only be used "
-                                                                           "at the start and/or end of the inputs.")
+            logger.internal_assert(
+                ... not in self.inputs_as_list()[1:-1],
+                "PatternMatcher: The `...` can only be used at the start and/or end of the inputs.",
+            )
         if len(self.outputs_as_list()) > 2:
-            logger.internal_assert(... not in self.outputs_as_list()[1:-1], "PatternMatcher: The `...` can only be used"
-                                                                            " at the start and/or end of the outputs.")
+            logger.internal_assert(
+                ... not in self.outputs_as_list()[1:-1],
+                "PatternMatcher: The `...` can only be used at the start and/or end of the outputs.",
+            )
 
     def inputs_as_list(self) -> list[str | None]:
         """Return the `inputs` attribute. If it's `None`, return `[]`."""
@@ -72,9 +76,14 @@ class OpLikeBlock(OperatorBlock):
 class Op(OpLikeBlock):
     """Class represents 1 operator."""
 
-    def match(self, real_op: tflite_model.Operator, tensor_map: NameToTensorMap,
-              input_to_ops_map: InputTensorToOpsMap, output_to_op_map: OutputTensorToOpMap,
-              builder: "model_builder.ModelBuilder") -> bool:
+    def match(
+        self,
+        real_op: tflite_model.Operator,
+        tensor_map: NameToTensorMap,
+        input_to_ops_map: InputTensorToOpsMap,
+        output_to_op_map: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         """Try to match the `Op` with a real TFLite Operator. If the match is successful, add new mappings for matched
          tensors into the tensor_map`.
         :return: True, if the `Op` was successfully matched. Otherwise, return False.
@@ -99,7 +108,7 @@ class Op(OpLikeBlock):
             tensor_map.update(tensor_map_copy)
             return True
 
-        except BaseException: # noqa: BLE001
+        except BaseException:  # noqa: BLE001
             # Unexpected failure.
             return False
 
@@ -110,9 +119,14 @@ class Op(OpLikeBlock):
 
         return any(operator_is_type(real_op, op_type, builder) for op_type in self.ops)
 
-    def _op_rules_satisfied(self, real_op: tflite_model.Operator, tensor_map: NameToTensorMap,
-                            input_to_ops_map: InputTensorToOpsMap, output_to_op_map: OutputTensorToOpMap,
-                            builder: "model_builder.ModelBuilder") -> bool:
+    def _op_rules_satisfied(
+        self,
+        real_op: tflite_model.Operator,
+        tensor_map: NameToTensorMap,
+        input_to_ops_map: InputTensorToOpsMap,
+        output_to_op_map: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         """Check if all operator rules defined for this `Op` are satisfied."""
         if self.op_rules is None:
             return True
@@ -162,8 +176,10 @@ class Op(OpLikeBlock):
                 real_in = real_op.tmp_inputs[real_input_index]
                 if inpt in tensor_map:
                     # Tensor has already been mapped.
-                    logger.internal_assert(type(tensor_map[inpt]) is tflite_model.Tensor,
-                                           f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.")
+                    logger.internal_assert(
+                        type(tensor_map[inpt]) is tflite_model.Tensor,
+                        f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.",
+                    )
                     if tensor_map[inpt] != real_in:
                         # The tensor doesn't match the mapped one.
                         if can_skip:
@@ -248,9 +264,14 @@ class Op(OpLikeBlock):
 class MultipleSameOps(OpLikeBlock):
     """Class represents multiple occurrences of similar operators with the same op type, inputs and outputs."""
 
-    def match(self, real_ops: list[tflite_model.Operator], tensor_map: NameToTensorMap,
-              input_to_ops_map: InputTensorToOpsMap, output_to_op_map: OutputTensorToOpMap,
-              builder: "model_builder.ModelBuilder") -> bool:
+    def match(
+        self,
+        real_ops: list[tflite_model.Operator],
+        tensor_map: NameToTensorMap,
+        input_to_ops_map: InputTensorToOpsMap,
+        output_to_op_map: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         """Try to match the `MultipleSameOps` with real TFLite operators. If the match is successful, add new mappings
          for matched tensors into the tensor_map`.
         :return: True, if the `MultipleSameOps` was successfully matched. Otherwise, return False.
@@ -278,34 +299,40 @@ class MultipleSameOps(OpLikeBlock):
             tensor_map.update(tensor_map_copy)
             return True
 
-        except BaseException: # noqa: BLE001
+        except BaseException:  # noqa: BLE001
             # Unexpected failure.
             return False
 
     def validate(self) -> None:
         super().validate()
-        logger.internal_assert(self.ops is not None,
-                               "PatternMatcher: `MultipleSameOps` doesn't support `ops=None` yet.")
+        logger.internal_assert(
+            self.ops is not None, "PatternMatcher: `MultipleSameOps` doesn't support `ops=None` yet."
+        )
 
     def _op_types_match(self, real_ops: list[tflite_model.Operator], builder: "model_builder.ModelBuilder") -> bool:
-        """Check if the types of the TFLite operators `real_ops` match the types defined in this `MultipleSameOps`.
-        """
+        """Check if the types of the TFLite operators `real_ops` match the types defined in this `MultipleSameOps`."""
         for real_op in real_ops:
             if not any(operator_is_type(real_op, op_type, builder) for op_type in self.ops):
                 return False
 
         return True
 
-    def _op_rules_satisfied(self, real_ops: list[tflite_model.Operator], tensor_map: NameToTensorMap,
-                            input_to_ops_map: InputTensorToOpsMap, output_to_op_map: OutputTensorToOpMap,
-                            builder: "model_builder.ModelBuilder") -> bool:
+    def _op_rules_satisfied(
+        self,
+        real_ops: list[tflite_model.Operator],
+        tensor_map: NameToTensorMap,
+        input_to_ops_map: InputTensorToOpsMap,
+        output_to_op_map: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         """Check if all operator rules defined for this `MultipleSameOps` are satisfied for all operators."""
         if self.op_rules is None:
             return True
 
         for real_op in real_ops:
             if not all(
-                    rule(real_op, tensor_map, input_to_ops_map, output_to_op_map, builder) for rule in self.op_rules):
+                rule(real_op, tensor_map, input_to_ops_map, output_to_op_map, builder) for rule in self.op_rules
+            ):
                 return False
 
         return True
@@ -356,8 +383,10 @@ class MultipleSameOps(OpLikeBlock):
                     real_in = real_op.tmp_inputs[real_input_index]
                     if inpt in tensor_map:
                         # Tensor has already been mapped.
-                        logger.internal_assert(type(tensor_map[inpt]) is tflite_model.Tensor,
-                                               f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.")
+                        logger.internal_assert(
+                            type(tensor_map[inpt]) is tflite_model.Tensor,
+                            f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.",
+                        )
                         if tensor_map[inpt] != real_in:
                             # The tensor doesn't match the mapped one.
                             if can_skip:
@@ -425,8 +454,11 @@ class MultipleSameOps(OpLikeBlock):
                     real_out = real_op.tmp_outputs[real_output_index]
                     if output in tensor_map:
                         # Tensor has already been mapped. This isn't supported right now.
-                        logger.e(logger.Code.INTERNAL_ERROR, "PatternMatcher: MultipleSameOps is producing an already "
-                                                             f"defined tensor `{output}`, which is not yet supported.")
+                        logger.e(
+                            logger.Code.INTERNAL_ERROR,
+                            "PatternMatcher: MultipleSameOps is producing an already "
+                            f"defined tensor `{output}`, which is not yet supported.",
+                        )
 
                     # Map the matched tensor.
                     set_of_tensors_map[output].append(real_out)
@@ -457,23 +489,29 @@ class PatternMatcher:
     pattern: list[OperatorBlock]
     tensor_rules: list[TensorRule] | None
 
-    def __init__(self, builder: "model_builder.ModelBuilder", pattern: list[OperatorBlock],
-                 tensor_rules: list[TensorRule] | None = None):
+    def __init__(
+        self,
+        builder: "model_builder.ModelBuilder",
+        pattern: list[OperatorBlock],
+        tensor_rules: list[TensorRule] | None = None,
+    ):
         self.builder = builder
         self.pattern = pattern
         self.tensor_rules = tensor_rules
 
         self._validate_pattern()
 
-    def _tensor_rules_satisfied(self, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                                output_to_op_map: OutputTensorToOpMap) -> bool:
+    def _tensor_rules_satisfied(
+        self, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap, output_to_op_map: OutputTensorToOpMap
+    ) -> bool:
         """Check if all currently applicable tensor rules are satisfied."""
         if self.tensor_rules is None:
             return True
 
         for rule in self.tensor_rules:
-            if rule.is_applicable(tensor_map) and not rule(tensor_map, input_to_ops_map, output_to_op_map,
-                                                           self.builder):
+            if rule.is_applicable(tensor_map) and not rule(
+                tensor_map, input_to_ops_map, output_to_op_map, self.builder
+            ):
                 return False  # Rule is not satisfied.
 
         return True
@@ -524,16 +562,25 @@ class PatternMatcher:
 
         return True
 
-    def _extend_pattern_with_op(self, op: Op, real_pattern: list, tensor_map: NameToTensorMap,
-                                input_to_ops: InputTensorToOpsMap, output_to_op: OutputTensorToOpMap) -> bool:
+    def _extend_pattern_with_op(
+        self,
+        op: Op,
+        real_pattern: list,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+    ) -> bool:
         """Extend the currently matched pattern in `real_pattern` with an operator represented by `op`.
         This function finds a suitable TFLite operator in the model, and adds it to `real_pattern`.
         :return: True, if a matching operator was found. Otherwise, False.
         """
         if all(tensor not in tensor_map for tensor in op.io_as_list()):
             # The operator is not connected to the already matched part of the pattern. This is not supported.
-            logger.e(logger.Code.INTERNAL_ERROR, f"PatternMatcher: Op on index {len(real_pattern)} is not connected "
-                                                 "to the preceding operators in the pattern.")
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                f"PatternMatcher: Op on index {len(real_pattern)} is not connected "
+                "to the preceding operators in the pattern.",
+            )
 
         # The Op is somehow connected to the matched part.
 
@@ -546,16 +593,19 @@ class PatternMatcher:
 
             # Found connecting input.
             connecting_input = tensor_map_copy[inpt]
-            logger.internal_assert(type(connecting_input) is tflite_model.Tensor,
-                                   f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.")
+            logger.internal_assert(
+                type(connecting_input) is tflite_model.Tensor,
+                f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.",
+            )
 
             following_ops = input_to_ops.get(connecting_input.name, [])
             for following_op in following_ops:
                 if following_op in real_pattern:
                     continue  # This operator has already been matched.
 
-                if op.match(following_op, tensor_map_copy, input_to_ops, output_to_op, self.builder) and \
-                        self._tensor_rules_satisfied(tensor_map_copy, input_to_ops, output_to_op):
+                if op.match(
+                    following_op, tensor_map_copy, input_to_ops, output_to_op, self.builder
+                ) and self._tensor_rules_satisfied(tensor_map_copy, input_to_ops, output_to_op):
                     # Successful match.
                     real_pattern.append(following_op)
                     tensor_map.update(tensor_map_copy)
@@ -575,8 +625,9 @@ class PatternMatcher:
                 continue
             if preceding_op in real_pattern:
                 continue  # This operator has already been matched.
-            if op.match(preceding_op, tensor_map_copy, input_to_ops, output_to_op, self.builder) and \
-                    self._tensor_rules_satisfied(tensor_map_copy, input_to_ops, output_to_op):
+            if op.match(
+                preceding_op, tensor_map_copy, input_to_ops, output_to_op, self.builder
+            ) and self._tensor_rules_satisfied(tensor_map_copy, input_to_ops, output_to_op):
                 # Successful match.
                 real_pattern.append(preceding_op)
                 tensor_map.update(tensor_map_copy)
@@ -586,9 +637,14 @@ class PatternMatcher:
 
         return False
 
-    def _extend_pattern_with_multiple_same_ops(self, multiple_same_ops: MultipleSameOps, real_pattern: list,
-                                               tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                                               output_to_op: OutputTensorToOpMap) -> bool:
+    def _extend_pattern_with_multiple_same_ops(
+        self,
+        multiple_same_ops: MultipleSameOps,
+        real_pattern: list,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+    ) -> bool:
         """Extend the currently matched pattern in `real_pattern` with multiple operators represented by
          `multiple_same_ops`.
         This function finds suitable TFLite operators in the model, and adds them to `real_pattern`.
@@ -596,8 +652,11 @@ class PatternMatcher:
         """
         if all(tensor not in tensor_map for tensor in multiple_same_ops.io_as_list()):
             # The `MultipleSameOps` is not connected to the already matched part of the pattern. This is not supported.
-            logger.e(logger.Code.INTERNAL_ERROR, f"PatternMatcher: MultipleSameOps on index {len(real_pattern)} is not "
-                                                 "connected to any preceding Ops in the pattern.")
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                f"PatternMatcher: MultipleSameOps on index {len(real_pattern)} is not "
+                "connected to any preceding Ops in the pattern.",
+            )
 
         # ---- The MultipleSameOps is somehow connected to the matched part. ----
 
@@ -611,15 +670,18 @@ class PatternMatcher:
             # Found connecting input.
             connecting_input = tensor_map_copy[inpt]
             following_ops = input_to_ops.get(connecting_input.name, [])
-            logger.internal_assert(type(connecting_input) is tflite_model.Tensor,
-                                   f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.")
+            logger.internal_assert(
+                type(connecting_input) is tflite_model.Tensor,
+                f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.",
+            )
 
             # All following ops have to match.
             if any(following_op in real_pattern for following_op in following_ops):
                 continue  # This operator has already been matched.
 
-            if multiple_same_ops.match(following_ops, tensor_map_copy, input_to_ops, output_to_op, self.builder) and \
-                    self._tensor_rules_satisfied(tensor_map_copy, input_to_ops, output_to_op):
+            if multiple_same_ops.match(
+                following_ops, tensor_map_copy, input_to_ops, output_to_op, self.builder
+            ) and self._tensor_rules_satisfied(tensor_map_copy, input_to_ops, output_to_op):
                 # Successful match.
                 real_pattern.append(following_ops)
                 tensor_map.update(tensor_map_copy)
@@ -630,8 +692,14 @@ class PatternMatcher:
         # `MultipleSameOps` cannot be connected via the outputs.
         return False
 
-    def _extend_pattern_with_one_of(self, one_of: OneOf, real_pattern: list, tensor_map: NameToTensorMap,
-                                    input_to_ops: InputTensorToOpsMap, output_to_op: OutputTensorToOpMap) -> bool:
+    def _extend_pattern_with_one_of(
+        self,
+        one_of: OneOf,
+        real_pattern: list,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+    ) -> bool:
         """Extend the currently matched pattern in `real_pattern` with an operator represented by `one_of`.
         This function finds a suitable TFLite operator in the model, and adds it to `real_pattern`.
         :return: True, if a matching operator was found. Otherwise, False.
@@ -645,8 +713,14 @@ class PatternMatcher:
 
         return False
 
-    def _match_rest_of_pattern(self, real_pattern: list, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                               output_to_op: OutputTensorToOpMap, pattern_idx: int) -> bool:
+    def _match_rest_of_pattern(
+        self,
+        real_pattern: list,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        pattern_idx: int,
+    ) -> bool:
         """Provided that a part of the pattern has been matched with operators in the TFLite model, extend this matched
          `real_pattern` with new TFLite operators that match the rest of the pattern.
         :param pattern_idx: Index into the `self.patter`, with the first block that has not yet been matched.
@@ -671,8 +745,9 @@ class PatternMatcher:
 
             case MultipleSameOps():
                 multiple_same_ops = cast(MultipleSameOps, self.pattern[pattern_idx])
-                if self._extend_pattern_with_multiple_same_ops(multiple_same_ops, real_pattern, tensor_map_copy,
-                                                               input_to_ops, output_to_op):
+                if self._extend_pattern_with_multiple_same_ops(
+                    multiple_same_ops, real_pattern, tensor_map_copy, input_to_ops, output_to_op
+                ):
                     # Successful match.
                     pattern_idx += 1
                     tensor_map.update(tensor_map_copy)
@@ -693,19 +768,24 @@ class PatternMatcher:
                     return False
 
             case _:
-                logger.e(logger.Code.INTERNAL_ERROR,
-                         f"PatternMatcher: pattern contains unexpected block `{self.pattern[pattern_idx]}`.")
+                logger.e(
+                    logger.Code.INTERNAL_ERROR,
+                    f"PatternMatcher: pattern contains unexpected block `{self.pattern[pattern_idx]}`.",
+                )
 
         # Matched a block. Recursively match the rest of the pattern.
         return self._match_rest_of_pattern(real_pattern, tensor_map, input_to_ops, output_to_op, pattern_idx)
 
-    def match_patterns(self) -> \
-            Iterator[tuple[
-                list[tflite_model.Operator | list[tflite_model.Operator]],
-                NameToTensorMap,
-                InputTensorToOpsMap,
-                OutputTensorToOpMap
-            ]]:
+    def match_patterns(
+        self,
+    ) -> Iterator[
+        tuple[
+            list[tflite_model.Operator | list[tflite_model.Operator]],
+            NameToTensorMap,
+            InputTensorToOpsMap,
+            OutputTensorToOpMap,
+        ]
+    ]:
         """Iterate over the model and yield matched patterns of operators."""
         if not self._all_ops_are_in_the_model():
             # The model doesn't contain sufficient operators to satisfy the pattern.
@@ -720,8 +800,9 @@ class PatternMatcher:
         first_pattern_op = cast(Op, self.pattern[0])
 
         for first_real_op in self.builder.get_operators():
-            if first_pattern_op.match(first_real_op, tensor_map, input_to_ops, output_to_op, self.builder) and \
-                    self._tensor_rules_satisfied(tensor_map, input_to_ops, output_to_op):
+            if first_pattern_op.match(
+                first_real_op, tensor_map, input_to_ops, output_to_op, self.builder
+            ) and self._tensor_rules_satisfied(tensor_map, input_to_ops, output_to_op):
                 # Successful first match.
                 real_pattern.append(first_real_op)
 
@@ -732,8 +813,9 @@ class PatternMatcher:
                 continue
 
             # Matched the first `Op`. Now try to match the rest of the pattern.
-            if self._match_rest_of_pattern(real_pattern, tensor_map, input_to_ops, output_to_op,
-                                           1):  # Start from index 1 in the pattern.
+            if self._match_rest_of_pattern(
+                real_pattern, tensor_map, input_to_ops, output_to_op, 1
+            ):  # Start from index 1 in the pattern.
                 # Successfully matched full pattern.
                 yield real_pattern, tensor_map, input_to_ops, output_to_op
 

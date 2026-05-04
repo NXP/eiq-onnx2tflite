@@ -44,9 +44,7 @@ class ReplaceInputInvariantTransposeWithReshape(BaseOptimization):
 
     def __call__(self) -> bool:
         matcher = PatternMatcher(
-            self._builder,
-            pattern=[Op(["Transpose"], ["x", "perm"], ["y"])],
-            tensor_rules=[TensorHasData("perm")]
+            self._builder, pattern=[Op(["Transpose"], ["x", "perm"], ["y"])], tensor_rules=[TensorHasData("perm")]
         )
 
         transpose_replaced = False

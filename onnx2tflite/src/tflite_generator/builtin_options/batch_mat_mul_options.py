@@ -8,6 +8,7 @@
 
 Representation of the TFLite operator 'BatchMatMul'.
 """
+
 import flatbuffers as fb
 
 from onnx2tflite.lib.tflite import BatchMatMulOptions, BuiltinOperator, BuiltinOptions
@@ -20,8 +21,7 @@ class BatchMatMul(meta.BuiltinOptions):
     asymmetric_quantize_inputs: bool
 
     def __init__(self, adj_x: bool, adj_y: bool, asymmetric_quantize_inputs: bool) -> None:
-        super().__init__(BuiltinOptions.BuiltinOptions.BatchMatMulOptions,
-                         BuiltinOperator.BuiltinOperator.BATCH_MATMUL)
+        super().__init__(BuiltinOptions.BuiltinOptions.BatchMatMulOptions, BuiltinOperator.BuiltinOperator.BATCH_MATMUL)
         self.adj_x = adj_x
         self.adj_y = adj_y
         self.asymmetric_quantize_inputs = asymmetric_quantize_inputs

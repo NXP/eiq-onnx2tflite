@@ -27,8 +27,10 @@ class SpaceToDepthConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `SpaceToDepth` operator to TFLite `SpaceToDepth`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `SpaceToDepth` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `SpaceToDepth` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
+            )
 
         x = t_op.tmp_inputs[0]
         if not t_op.is_qdq_quantized():

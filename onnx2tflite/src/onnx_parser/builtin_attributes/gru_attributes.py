@@ -57,8 +57,9 @@ class GRU(meta.ONNXOperatorAttributes):
 
         # Attribute 'hidden_size' is required
         if not hasattr(self, "hidden_size"):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     "ONNX 'GRU' is missing required 'hidden_size' attribute!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'GRU' is missing required 'hidden_size' attribute!"
+            )
 
         if self.activations is None:
             if self.direction == "forward":

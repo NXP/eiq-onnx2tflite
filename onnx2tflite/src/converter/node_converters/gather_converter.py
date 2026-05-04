@@ -47,8 +47,10 @@ class GatherConverter(NodeConverter):
         :return: The indices for the TFLite Gather operator.
         """
         if not self._is_an_array_of_ints(indices):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX 'Gather' has invalid indices tensor ('{indices}'). Only arrays of integers are supported.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Gather' has invalid indices tensor ('{indices}'). Only arrays of integers are supported.",
+            )
 
         original_shape = indices.shape
 
@@ -79,8 +81,10 @@ class GatherConverter(NodeConverter):
 
         if not (0 <= axis < input_rank):
             # This code is currently unreachable, as the shape inference detects this before conversion.
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX 'Gather' has invalid 'axis' attribute! ('{o_gather_attributes.axis}')")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX 'Gather' has invalid 'axis' attribute! ('{o_gather_attributes.axis}')",
+            )
 
         return axis
 
@@ -92,8 +96,10 @@ class GatherConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX 'Gather' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Gather' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.",
+            )
 
         o_gather_attributes = cast(gather_attributes.Gather, node.attributes)
 
@@ -164,10 +170,12 @@ class GatherConverter(NodeConverter):
 
             else:
                 # Conversion may be possible via `Less`, `Where`, `Add` and `Gather` operators.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX 'Gather' operator with dynamic 'indices' tensor is not yet implemented, "
-                         "because ONNX may use negative indices, which TFLite doesn't support. " +
-                         logger.Message.GUARANTEE_NON_NEGATIVE_INDICES)
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX 'Gather' operator with dynamic 'indices' tensor is not yet implemented, "
+                    "because ONNX may use negative indices, which TFLite doesn't support. "
+                    + logger.Message.GUARANTEE_NON_NEGATIVE_INDICES,
+                )
 
         else:
             # Static indices. Make sure they are valid.

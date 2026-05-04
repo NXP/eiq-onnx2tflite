@@ -19,8 +19,9 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 class LogSoftmax(meta.BuiltinOptions):
     def __init__(self) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.LogSoftmaxOptions,
-                         libBuiltinOperator.BuiltinOperator.LOG_SOFTMAX)
+        super().__init__(
+            libBuiltinOptions.BuiltinOptions.LogSoftmaxOptions, libBuiltinOperator.BuiltinOperator.LOG_SOFTMAX
+        )
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         libLogSoftmaxOptions.Start(builder)

@@ -35,17 +35,20 @@ class PowConverter(NodeConverter):
         # TFLite requires power and base to have the same type.
         if base.type != power.type:
             # If this is required, prepend a `Cast` operator. Not sure if it is a common use case.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `Pow` with non-matching input types is not supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Pow` with non-matching input types is not supported."
+            )
 
         self.assert_type_allowed(base.type)
 
         if power.type == TensorType.INT32 and not tensor_has_data(power):
             # TFLite only supports positive powers when the `power` tensor is `int32`.
             # If needed, introduce a flag to guarantee positive power values.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because "
-                     "the power values at runtime could be negative, which is not supported by TFLite.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because "
+                "the power values at runtime could be negative, which is not supported by TFLite.",
+            )
 
         ops = OpsList(middle_op=t_op)
 

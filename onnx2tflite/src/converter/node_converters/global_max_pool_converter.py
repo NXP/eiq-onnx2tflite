@@ -35,8 +35,10 @@ class GlobalMaxPoolConverter(NodeConverter):
 
         # Input and output types must be the same.
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "ONNX `GlobalMaxPool` has input and output tensors with different types.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                "ONNX `GlobalMaxPool` has input and output tensors with different types.",
+            )
 
         if t_op.is_qdq_quantized():
             if x.quantization != y.quantization:
@@ -118,5 +120,6 @@ class GlobalMaxPoolConverter(NodeConverter):
             # kernel with at least 3 dimensions
             return self._convert_more_than_2d_global_max_pool(t_op)
 
-        logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                 f"ONNX `GlobalMaxPool` has unexpected number of dimensions (`{rank}`).")
+        logger.e(
+            logger.Code.INVALID_ONNX_OPERATOR, f"ONNX `GlobalMaxPool` has unexpected number of dimensions (`{rank}`)."
+        )

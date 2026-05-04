@@ -47,20 +47,26 @@ class CumSumConverter(NodeConverter):
 
             else:
                 # Prepend a `Cast` operator.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of ONNX `CumSum` with a dynamic INT64 `axis` is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX `CumSum` with a dynamic INT64 `axis` is not yet supported.",
+                )
 
         else:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `CumSum` has unexpected `axis` type ({name_for_type(axis.type)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `CumSum` has unexpected `axis` type ({name_for_type(axis.type)}).",
+            )
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `CumSum`` operator into TFLite `CumSum`."""
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `CumSum` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `CumSum` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
+            )
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)
@@ -80,8 +86,10 @@ class CumSumConverter(NodeConverter):
                 t_op.tmp_inputs[1] = new_axis
 
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `CumSum` with a channels first input and a "
-                                                      "dynamic `axis` is not supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX `CumSum` with a channels first input and a dynamic `axis` is not supported.",
+                )
 
         attrs = cast(cum_sum_attributes.CumSum, node.attributes)
         t_op.builtin_options = cum_sum_options.CumSum(bool(attrs.exclusive), bool(attrs.reverse))

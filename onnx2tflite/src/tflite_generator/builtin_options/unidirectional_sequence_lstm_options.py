@@ -25,9 +25,15 @@ class UnidirectionalSequenceLSTM(meta.BuiltinOptions):
     # Unidirectional Sequence LSTM v4+
     diagonal_recurrent_tensors: bool
 
-    def __init__(self, cell_clip: float, proj_clip: float, time_major: bool = True,
-                 asymmetric_quantize_inputs: bool = False, diagonal_recurrent_tensors: bool = False,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        cell_clip: float,
+        proj_clip: float,
+        time_major: bool = True,
+        asymmetric_quantize_inputs: bool = False,
+        diagonal_recurrent_tensors: bool = False,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.UnidirectionalSequenceLSTMOptions, BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_LSTM)
 
         self.fused_activation_function = fused_activation_function

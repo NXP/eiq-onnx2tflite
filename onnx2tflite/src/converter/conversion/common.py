@@ -7,7 +7,7 @@
 #
 """common
 
-This file contains functions shared by the various files in the 
+This file contains functions shared by the various files in the
 'conversion/builtin/' directory.
 """
 
@@ -76,15 +76,13 @@ def extend_1d_pads_to_2d(onnx_1d_pads: MutableSequence) -> None:
 
 
 def extend_1d_strides_to_2d(onnx_1d_strides: MutableSequence) -> None:
-    """Extend the onnx 'strides' operator attribute that represents strides for a 1D kernel to 2D, by adding '1'.
-    """
+    """Extend the onnx 'strides' operator attribute that represents strides for a 1D kernel to 2D, by adding '1'."""
     if onnx_1d_strides is not None:
         onnx_1d_strides.append(1)
 
 
 def extend_1d_dilations_to_2d(onnx_1d_dilations: MutableSequence) -> None:
-    """Extend the onnx 'dilations' operator attribute that represents dilations for a 1D kernel to 2D, by adding '1'.
-    """
+    """Extend the onnx 'dilations' operator attribute that represents dilations for a 1D kernel to 2D, by adding '1'."""
     if onnx_1d_dilations is not None:
         onnx_1d_dilations.append(1)
 
@@ -95,8 +93,12 @@ def extend_1d_kernel_shape_to_2d(onnx_1d_kernel_shape: MutableSequence) -> None:
         onnx_1d_kernel_shape.append(1)
 
 
-StridedOptions = (average_pool_2d_options.AveragePool2D | conv_2d_options.Conv2D |
-                  max_pool_2d_options.MaxPool2D | transpose_conv_options.TransposeConv)
+StridedOptions = (
+    average_pool_2d_options.AveragePool2D
+    | conv_2d_options.Conv2D
+    | max_pool_2d_options.MaxPool2D
+    | transpose_conv_options.TransposeConv
+)
 
 
 def assign_2d_strides(options: StridedOptions, strides: list[int] | None) -> None:
@@ -116,8 +118,9 @@ def assign_2d_strides(options: StridedOptions, strides: list[int] | None) -> Non
         options.stride_w = strides[1]
 
     else:
-        logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                 f"ONNX operator has invalid 'strides' attribute! ('{strides}')")
+        logger.e(
+            logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX operator has invalid 'strides' attribute! ('{strides}')"
+        )
 
 
 def assign_2d_dilations(conv_2d: conv_2d_options, dilations: list[int] | None) -> None:
@@ -176,10 +179,12 @@ class OpsList:
     middle_op: tflite_model.Operator
     post_ops: list[tflite_model.Operator]
 
-    def __init__(self,
-                 pre_ops: list[tflite_model.Operator] | None = None,
-                 middle_op=None,
-                 post_ops: list[tflite_model.Operator] | None = None):
+    def __init__(
+        self,
+        pre_ops: list[tflite_model.Operator] | None = None,
+        middle_op=None,
+        post_ops: list[tflite_model.Operator] | None = None,
+    ):
         self.pre_ops = pre_ops or []
         self.middle_op = middle_op
         self.post_ops = post_ops or []

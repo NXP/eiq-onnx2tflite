@@ -41,8 +41,10 @@ class TopKConverter(NodeConverter):
     # noinspection PyMethodMayBeStatic
     def _normalize_axis(self, axis: int, rank: int) -> int:
         if axis < -rank or axis > rank - 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
+            )
 
         # convert negative index to positive
         if axis < 0:
@@ -52,8 +54,10 @@ class TopKConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'TopK' operator to TFLite 'TopK_V2'."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX 'TopK' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'TopK' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
+            )
 
         x = t_op.tmp_inputs[0]
         k = t_op.tmp_inputs[1]
@@ -68,13 +72,14 @@ class TopKConverter(NodeConverter):
         attrs = cast(topk_attributes.TopK, node.attributes)
 
         if attrs.sorted == 0:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of 'TopK' with 'sorted=0' is not possible.")
+            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of 'TopK' with 'sorted=0' is not possible.")
 
         if attrs.largest == 0:
             # Case with 'sorted=1' and 'largest=0' can be implemented with additional Gather.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of 'TopK' with 'largest=0' and 'sorted=1' is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of 'TopK' with 'largest=0' and 'sorted=1' is not yet implemented.",
+            )
 
         k.tmp_buffer.data = k.tmp_buffer.data.astype(np.int32)
         k.type = TensorType.INT32

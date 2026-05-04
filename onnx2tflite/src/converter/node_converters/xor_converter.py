@@ -20,15 +20,24 @@ class XorConverter(NodeConverter):
 
     onnx_supported_types = [TensorType.BOOL]
     # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/comparisons.cc#L227-L262
-    tflite_supported_types = [TensorType.BOOL, TensorType.FLOAT32, TensorType.INT8, TensorType.INT32, TensorType.INT64,
-                              TensorType.UINT8, TensorType.STRING]
+    tflite_supported_types = [
+        TensorType.BOOL,
+        TensorType.FLOAT32,
+        TensorType.INT8,
+        TensorType.INT32,
+        TensorType.INT64,
+        TensorType.UINT8,
+        TensorType.STRING,
+    ]
     verified_types = [TensorType.BOOL]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Xor` operator to TFLite `NotEqual`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Xor` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Xor` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
+            )
 
         x1 = t_op.tmp_inputs[0]
         x2 = t_op.tmp_inputs[1]

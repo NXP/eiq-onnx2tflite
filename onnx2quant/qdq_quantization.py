@@ -161,20 +161,24 @@ class QDQClustersRecognizer:
 
     def _validate_clip(self, node: onnx_model.NodeProto) -> bool:
         input_quantized = self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0])
-        return (input_quantized and
-                self._is_node_output_quantized(node) and
-                self._surrounding_q_ops_have_same_quant_type(node))
+        return (
+            input_quantized
+            and self._is_node_output_quantized(node)
+            and self._surrounding_q_ops_have_same_quant_type(node)
+        )
 
     def _validate_concat(self, node: onnx_model.NodeProto) -> bool:
         inputs_quantized = [
-            self.model_inspector.tensor_not_float(tensor_name) or
-            self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(tensor_name) or
-            self.model_inspector.tensor_is_static(tensor_name)
+            self.model_inspector.tensor_not_float(tensor_name)
+            or self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(tensor_name)
+            or self.model_inspector.tensor_is_static(tensor_name)
             for tensor_name in node.inputs
         ]
-        return (all(inputs_quantized) and
-                self._surrounding_q_ops_have_same_quant_type(node) and
-                self._is_node_output_quantized(node))
+        return (
+            all(inputs_quantized)
+            and self._surrounding_q_ops_have_same_quant_type(node)
+            and self._is_node_output_quantized(node)
+        )
 
     def _validate_conv(self, node: onnx_model.NodeProto) -> bool:
         # 3D conv doesn't have a quantized TFLite variant. Don't quantize in that case.
@@ -184,30 +188,35 @@ class QDQClustersRecognizer:
         # We can deal with Conv that has different quantization types, for example
         # UINT8 weights and INT8 activations, so skip this check.
 
-        return (self._is_node_input_quantized(node) and
-                self._is_node_output_quantized(node) and
-                self._at_least_one_io_tensor_float(node) and
-                self._inputs_are_not_outputs_of_model(node))
+        return (
+            self._is_node_input_quantized(node)
+            and self._is_node_output_quantized(node)
+            and self._at_least_one_io_tensor_float(node)
+            and self._inputs_are_not_outputs_of_model(node)
+        )
 
     def _validate_gru(self, node: onnx_model.NodeProto) -> bool:
         # 'x', 'w', 'r' are quantized
         inputs_quantized = [
             self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(tensor_name)
-            for tensor_name in node.inputs[:3]]
+            for tensor_name in node.inputs[:3]
+        ]
 
         # 'y' is quantized
-        first_output_quantized = (self.model_inspector.tensor_leads_to_quantize_op(node.outputs[0]) and
-                not self.model_inspector.is_output_of_model(node.outputs[0]))
+        first_output_quantized = self.model_inspector.tensor_leads_to_quantize_op(
+            node.outputs[0]
+        ) and not self.model_inspector.is_output_of_model(node.outputs[0])
 
         return all(inputs_quantized) and first_output_quantized
 
-
     def _validate_conv_transpose(self, node: onnx_model.NodeProto) -> bool:
         if not self._surrounding_q_ops_have_same_quant_type(node):
-            logger.w(f"QDQ quantized ONNX operator '{node.op_type}' has it's inputs quantized with different "
-                     f"types, for example UINT8 activations and INT8 weights. Such operator will not be "
-                     f"converted into quantized TFLite variant. Make sure that model uses same quantization "
-                     f"types or use internal quantizer to overcome this.")
+            logger.w(
+                f"QDQ quantized ONNX operator '{node.op_type}' has it's inputs quantized with different "
+                f"types, for example UINT8 activations and INT8 weights. Such operator will not be "
+                f"converted into quantized TFLite variant. Make sure that model uses same quantization "
+                f"types or use internal quantizer to overcome this."
+            )
 
         return self._node_io_tensors_quantized(node)
 
@@ -215,10 +224,12 @@ class QDQClustersRecognizer:
         # We can deal with MatMul that has different quantization types, for example
         # UINT8 weights and INT8 activations, so skip this check.
 
-        return (self._is_node_input_quantized(node) and
-                self._is_node_output_quantized(node) and
-                self._at_least_one_io_tensor_float(node) and
-                self._inputs_are_not_outputs_of_model(node))
+        return (
+            self._is_node_input_quantized(node)
+            and self._is_node_output_quantized(node)
+            and self._at_least_one_io_tensor_float(node)
+            and self._inputs_are_not_outputs_of_model(node)
+        )
 
     def _validate_sum(self, node: onnx_model.NodeProto) -> bool:
         # Sum with more than 2 inputs is converted into AddN that
@@ -228,16 +239,20 @@ class QDQClustersRecognizer:
     def _validate_pad(self, node: onnx_model.NodeProto) -> bool:
         # First input and output quantized
         # There might be float "constant" tensor (idx=2) that is not quantized
-        return (self._is_node_output_quantized(node) and
-                self._surrounding_q_ops_have_same_quant_type(node) and
-                self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0]))
+        return (
+            self._is_node_output_quantized(node)
+            and self._surrounding_q_ops_have_same_quant_type(node)
+            and self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0])
+        )
 
     def _validate_resize(self, node: onnx_model.NodeProto) -> bool:
         # First input and output quantized
         # There might be float input tensors ('roi', 'scales') that are not quantized
-        return (self._is_node_output_quantized(node) and
-                self._surrounding_q_ops_have_same_quant_type(node) and
-                self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0]))
+        return (
+            self._is_node_output_quantized(node)
+            and self._surrounding_q_ops_have_same_quant_type(node)
+            and self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(node.inputs[0])
+        )
 
     def _partition_quantization_ops(self) -> tuple[dict[str, onnx_model.NodeProto], dict[str, onnx_model.NodeProto]]:
         """Split model ops into q-ops ('QuantizeLinear' & 'DequantizeLinear') and others. Ops are
@@ -262,11 +277,13 @@ class QDQClustersRecognizer:
         :param node: Analyzed node.
         :return: True if all input and outputs are considered as quantized.
         """
-        return (self._is_node_input_quantized(node) and
-                self._is_node_output_quantized(node) and
-                self._at_least_one_io_tensor_float(node) and
-                self._inputs_are_not_outputs_of_model(node) and
-                self._surrounding_q_ops_have_same_quant_type(node))
+        return (
+            self._is_node_input_quantized(node)
+            and self._is_node_output_quantized(node)
+            and self._at_least_one_io_tensor_float(node)
+            and self._inputs_are_not_outputs_of_model(node)
+            and self._surrounding_q_ops_have_same_quant_type(node)
+        )
 
     def _is_qdq_quantized_node(self, node: onnx_model.NodeProto) -> bool:
         """Check if operator can be considered as QDQ quantized. This usually means that all IO tensors are
@@ -279,20 +296,24 @@ class QDQClustersRecognizer:
 
     def _is_node_input_quantized(self, node: onnx_model.NodeProto) -> bool:
         inputs_quantized = [
-            tensor_name == "" or  # Optional input tensor
-            self.model_inspector.tensor_not_float(tensor_name) or
-            self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(tensor_name) or
-            self.model_inspector.tensor_is_shared_dequantized_bias(tensor_name)
-            for tensor_name in node.inputs]
+            tensor_name == ""  # Optional input tensor
+            or self.model_inspector.tensor_not_float(tensor_name)
+            or self.model_inspector.tensor_originates_in_single_consumer_dequantize_op(tensor_name)
+            or self.model_inspector.tensor_is_shared_dequantized_bias(tensor_name)
+            for tensor_name in node.inputs
+        ]
 
         return all(inputs_quantized)
 
     def _is_node_output_quantized(self, node: onnx_model.NodeProto) -> bool:
         outputs_quantized = [
-            self.model_inspector.tensor_not_float(tensor_name) or (
-                self.model_inspector.tensor_leads_to_quantize_op(tensor_name) and
-                not self.model_inspector.is_output_of_model(tensor_name))
-            for tensor_name in node.outputs]
+            self.model_inspector.tensor_not_float(tensor_name)
+            or (
+                self.model_inspector.tensor_leads_to_quantize_op(tensor_name)
+                and not self.model_inspector.is_output_of_model(tensor_name)
+            )
+            for tensor_name in node.outputs
+        ]
 
         return all(outputs_quantized)
 
@@ -342,8 +363,9 @@ class QDQClustersRecognizer:
         for o in node.outputs:
             following_nodes.extend(self.model_inspector.get_ops_with_input_tensor(o))
 
-        return ([node.unique_name for node in preceding_nodes if node.op_type == "DequantizeLinear"] +
-                [node.unique_name for node in following_nodes if node.op_type == "QuantizeLinear"])
+        return [node.unique_name for node in preceding_nodes if node.op_type == "DequantizeLinear"] + [
+            node.unique_name for node in following_nodes if node.op_type == "QuantizeLinear"
+        ]
 
     def recognize_ops(self) -> RecognizedQDQOps | None:
         """Detect all QDQ clusters and categorize model's ops based on relationship to any
@@ -355,10 +377,12 @@ class QDQClustersRecognizer:
             return None
 
         if self.model_inspector.has_int8_and_uint8_q_ops():
-            logger.w("Model contains (De)QuantizeLinear nodes with both UINT8 and INT8 types. Model was probably "
-                     "quantized twice or different types were used for quantization of different ops. Conversion "
-                     "of such models can produce non-optimal results (unnecessary 'Quantize' ops in the model). "
-                     "Quantize activations and weights with INT8 to get better results.")
+            logger.w(
+                "Model contains (De)QuantizeLinear nodes with both UINT8 and INT8 types. Model was probably "
+                "quantized twice or different types were used for quantization of different ops. Conversion "
+                "of such models can produce non-optimal results (unnecessary 'Quantize' ops in the model). "
+                "Quantize activations and weights with INT8 to get better results."
+            )
 
         recognized_ops = RecognizedQDQOps()
 
@@ -377,8 +401,10 @@ class QDQClustersRecognizer:
 
         qdq_clusters_count = len(recognized_ops.qdq_cluster_quantization_ops)
         if qdq_clusters_count > 0:
-            logger.w(f"Some ops in model will be converted to tensor-based quantization representation. "
-                     f"Number of ops: {qdq_clusters_count}.")
+            logger.w(
+                f"Some ops in model will be converted to tensor-based quantization representation. "
+                f"Number of ops: {qdq_clusters_count}."
+            )
 
         return recognized_ops
 
@@ -393,7 +419,6 @@ class InputSpec:
 
 
 class RandomDataCalibrationDataReader(CalibrationDataReader):
-
     # noinspection PyMethodMayBeStatic
     def _generate_random_data(self, rng: np.random.Generator, shape: list[int], min_: float, max_: float) -> np.ndarray:
         range_ = max_ - min_
@@ -418,18 +443,12 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
 
                     if input_type == np.float32:
                         sample[input_name] = self._generate_random_data(
-                            rng,
-                            input_shape,
-                            input_metadata.min or 0.0,
-                            input_metadata.max or 1.0
+                            rng, input_shape, input_metadata.min or 0.0, input_metadata.max or 1.0
                         ).astype("float32")
 
                     elif input_type == np.int64:
                         sample[input_name] = self._generate_random_data(
-                            rng,
-                            input_shape,
-                            input_metadata.min or 0.0,
-                            input_metadata.max or 1000.0
+                            rng, input_shape, input_metadata.min or 0.0, input_metadata.max or 1000.0
                         ).astype("int64")
 
                     elif input_type == np.bool_:
@@ -611,8 +630,10 @@ class QDQMatMul(QDQOperator):
 
             else:
                 # Cannot quantize per-channel due to too low opset version.
-                logger.w("Couldn't quantize `MatMul` per channel because the model has opset "
-                         f"{self.get_model_opset()}, and 13 is the minimum required.")
+                logger.w(
+                    "Couldn't quantize `MatMul` per channel because the model has opset "
+                    f"{self.get_model_opset()}, and 13 is the minimum required."
+                )
                 allow_per_channel = False
 
         # Use existing code to quantize the `MatMul`.
@@ -627,8 +648,10 @@ class QDQNormalization(QDQOperator):
 
         per_channel = self.quantizer.per_channel
         if per_channel:
-            logger.w(f"`{self.node.op_type}` will not be per-channel quantized, because it then couldn't be converted "
-                     "to TFLite.")
+            logger.w(
+                f"`{self.node.op_type}` will not be per-channel quantized, because it then couldn't be converted "
+                "to TFLite."
+            )
 
         # Temporarily disable per-channel quantization, because TFLite doesn't support it for these operators.
         self.quantizer.per_channel = False
@@ -954,21 +977,26 @@ class QDQQuantizer:
 
     # noinspection PyPep8Naming,PyMethodMayBeStatic
     def _model_has_QDQ_nodes(self, model) -> bool:  # noqa: N802
-        """Detect if model already has QuantizeLinear or DequantizeLinear ops.
-        """
-        return any(
-            node.op_type == "QuantizeLinear" or node.op_type == "DequantizeLinear" for node in model.graph.node
-        )
+        """Detect if model already has QuantizeLinear or DequantizeLinear ops."""
+        return any(node.op_type == "QuantizeLinear" or node.op_type == "DequantizeLinear" for node in model.graph.node)
 
-    def quantize_model(self, model_proto: onnx_model.ModelProto, quantization_config: QuantizationConfig,
-                       save_model=False, saved_model_name="quantized_model.onnx") -> onnx.ModelProto:
+    def quantize_model(
+        self,
+        model_proto: onnx_model.ModelProto,
+        quantization_config: QuantizationConfig,
+        save_model=False,
+        saved_model_name="quantized_model.onnx",
+    ) -> onnx.ModelProto:
         if self._model_has_QDQ_nodes(model_proto):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     "Model is already quantized. Quantization of such model can lead to infinite loop. "
-                     "Skipping.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                "Model is already quantized. Quantization of such model can lead to infinite loop. Skipping.",
+            )
 
-        with (tempfile.TemporaryDirectory(prefix="onnx2tflite_") as tmp_dir,
-              loggingContext(logger.BasicLoggingContext.QDQ_QUANTIZER)):
+        with (
+            tempfile.TemporaryDirectory(prefix="onnx2tflite_") as tmp_dir,
+            loggingContext(logger.BasicLoggingContext.QDQ_QUANTIZER),
+        ):
             input_model_path = os.path.join(tmp_dir, "input_model.onnx")
             if save_model:
                 output_model_path = saved_model_name
@@ -979,17 +1007,19 @@ class QDQQuantizer:
                 model_proto,
                 symbolic_dimensions_mapping=quantization_config.symbolic_dimensions_mapping,
                 input_shapes_mapping=quantization_config.input_shapes_mapping,
-                generate_artifacts_after_failed_shape_inference=quantization_config.generate_artifacts_after_failed_shape_inference
+                generate_artifacts_after_failed_shape_inference=quantization_config.generate_artifacts_after_failed_shape_inference,
             )
 
             Preprocessor(inferred_model_proto, quantization_config).preprocess()
 
             if self._get_model_opset(inferred_model_proto) < 11 and not quantization_config.allow_opset_10_and_lower:
-                logger.e(logger.Code.INVALID_ONNX_MODEL,
-                         "Quantization of models with opset version smaller than 11 can produce "
-                         "invalid models. This applies especially to models with operators: Clip, "
-                         "Dropout, BatchNormalization and Split. Use parameter 'allow_opset_10_and_lower' "
-                         "to disable this check.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_MODEL,
+                    "Quantization of models with opset version smaller than 11 can produce "
+                    "invalid models. This applies especially to models with operators: Clip, "
+                    "Dropout, BatchNormalization and Split. Use parameter 'allow_opset_10_and_lower' "
+                    "to disable this check.",
+                )
 
             # Get rid of preprocessing warning
             add_pre_process_metadata(inferred_model_proto)
@@ -1003,9 +1033,12 @@ class QDQQuantizer:
                 sess_option.graph_optimization_level = onnxruntime.GraphOptimizationLevel.ORT_ENABLE_BASIC
                 # noinspection PyUnusedLocal
                 # Disable ConstantSharing optimization because it sometimes produces invalid models (resnet50-caffe2)
-                sess = onnxruntime.InferenceSession(input_model_path, sess_option,
-                                                    providers=["CPUExecutionProvider"],
-                                                    disabled_optimizers=["ConstantSharing"])
+                sess = onnxruntime.InferenceSession(
+                    input_model_path,
+                    sess_option,
+                    providers=["CPUExecutionProvider"],
+                    disabled_optimizers=["ConstantSharing"],
+                )
                 # ONNXRT: Close the session to avoid the cleanup error on Windows for temp folders
                 # https://github.com/microsoft/onnxruntime/issues/17627
                 del sess
@@ -1038,8 +1071,7 @@ class QDQQuantizer:
 
             if quantization_config.use_random_calibration_dataset:
                 calibration_data_reader = RandomDataCalibrationDataReader.from_onnx_model(
-                    onnx_model=inferred_model_proto,
-                    num_samples=10
+                    onnx_model=inferred_model_proto, num_samples=10
                 )
             else:
                 calibration_data_reader = quantization_config.calibration_data_reader
@@ -1050,7 +1082,8 @@ class QDQQuantizer:
                 per_channel=quantization_config.per_channel,
                 calibration_data_reader=calibration_data_reader,
                 op_types_to_quantize=self.op_types_to_quantize,
-                extra_options=extra_options)
+                extra_options=extra_options,
+            )
 
             model = onnx.load_model(output_model_path)
 

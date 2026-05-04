@@ -19,8 +19,7 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 class AddN(meta.BuiltinOptions):
     def __init__(self) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.AddNOptions,
-                         libBuiltinOperator.BuiltinOperator.ADD_N)
+        super().__init__(libBuiltinOptions.BuiltinOptions.AddNOptions, libBuiltinOperator.BuiltinOperator.ADD_N)
 
     def gen_tflite(self, builder: fb.Builder) -> int:
         libAddNOptions.Start(builder)

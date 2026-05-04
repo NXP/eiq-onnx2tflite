@@ -6,7 +6,7 @@
 #
 """MatMul
 
-Representation of an ONNX 'MatMul' operator. 
+Representation of an ONNX 'MatMul' operator.
 Initialized from a protobuf descriptor object.
 """
 

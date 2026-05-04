@@ -22,8 +22,8 @@ class Clip(meta.ONNXOperatorAttributes):
 
     def _default_values(self) -> None:
         # All parsed Clip versions will have these default attributes. Use node.version to distinguish between versions.
-        self.max = 3.402823e+38
-        self.min = -3.402823e+38
+        self.max = 3.402823e38
+        self.min = -3.402823e38
 
     def _init_attributes(self) -> None:
         for attr in self._descriptor:

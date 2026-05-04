@@ -27,12 +27,16 @@ class MaxPool2D(meta.BuiltinOptions):
     filter_h: int
     fused_activation_function: libActivationFunctionType.ActivationFunctionType
 
-    def __init__(self, padding: libPadding.Padding = libPadding.Padding.SAME,
-                 stride_w: int = 1, stride_h: int = 1,
-                 filter_w: int = 1, filter_h: int = 1,
-                 fused_activation_function: libActivationFunctionType.ActivationFunctionType = libActivationFunctionType.ActivationFunctionType.NONE) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.Pool2DOptions,
-                         libBuiltinOperator.BuiltinOperator.MAX_POOL_2D)
+    def __init__(
+        self,
+        padding: libPadding.Padding = libPadding.Padding.SAME,
+        stride_w: int = 1,
+        stride_h: int = 1,
+        filter_w: int = 1,
+        filter_h: int = 1,
+        fused_activation_function: libActivationFunctionType.ActivationFunctionType = libActivationFunctionType.ActivationFunctionType.NONE,
+    ) -> None:
+        super().__init__(libBuiltinOptions.BuiltinOptions.Pool2DOptions, libBuiltinOperator.BuiltinOperator.MAX_POOL_2D)
         self.padding = padding
         self.stride_w = stride_w
         self.stride_h = stride_h

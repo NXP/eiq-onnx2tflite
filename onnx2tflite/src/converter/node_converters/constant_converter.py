@@ -43,13 +43,16 @@ class ConstantConverter(NodeConverter):
         if hasattr(attrs, "value"):
             if attrs.value.data_type in [TensorProto.COMPLEX64, TensorProto.COMPLEX128]:
                 # ONNXRT: Limitation
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         "ONNX 'Constant' produces output with a complex type which is "
-                         "not supported by the ONNX Runtime.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR,
+                    "ONNX 'Constant' produces output with a complex type which is not supported by the ONNX Runtime.",
+                )
 
             if attrs.value.data_type == TensorProto.STRING:
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "ONNX 'Constant' produces output of string type, which is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "ONNX 'Constant' produces output of string type, which is not yet supported.",
+                )
 
             # Other types work just fine
             output.tmp_buffer.data = np.asarray(attrs.value.data)
@@ -59,21 +62,27 @@ class ConstantConverter(NodeConverter):
         elif hasattr(attrs, "value_float"):
             output.tmp_buffer.data = np.float32([attrs.value_float])
         elif hasattr(attrs, "value_str"):
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Constant' which produces a string tensor is not "
-                                                  "yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX 'Constant' which produces a string tensor is not yet supported.",
+            )
 
         elif hasattr(attrs, "value_ints"):
             output.tmp_buffer.data = np.asarray(attrs.value_ints, np.int64)
         elif hasattr(attrs, "value_floats"):
             output.tmp_buffer.data = np.asarray(attrs.value_floats, np.float32)
         elif hasattr(attrs, "value_strings"):
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Constant' which produces a string tensor is not "
-                                                  "yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX 'Constant' which produces a string tensor is not yet supported.",
+            )
 
         elif hasattr(attrs, "sparse_value"):
             # TODO Implementing support for TFLite sparse tensors is not a priority right now.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Constant' which produces a sparse tensor is not "
-                                                  "yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX 'Constant' which produces a sparse tensor is not yet supported.",
+            )
 
         if self.builder.operator_produces_graph_output(t_op):
             # The operator cannot just be skipped. Return a Transpose operator, which does nothing. (rare use-case)

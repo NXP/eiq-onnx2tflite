@@ -29,13 +29,14 @@ class TensorConverter:
     def convert_internal_tensors(self, o_tensors: onnx_model.RepeatedValueInfoProto) -> None:
         """Create 'tensor' tables in the 'tensors' vector of the subGraph for oTensors.
         The 'o_tensors' do NOT contain data. They should be the inputs and outputs of
-        operators in the graph. 
+        operators in the graph.
         Designed for the 'value_info' field in ONNX 'Graph'.
         """
         for o_tensor in o_tensors:
             if o_tensor.type.tensor_type is None:
-                logger.e(logger.Code.UNSUPPORTED_ONNX_TYPE,
-                         "ONNX: Only type 'tensor_type' is supported for ValueInfo yet!")
+                logger.e(
+                    logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for ValueInfo yet!"
+                )
 
             if self._builder.tensor_exists(o_tensor.name):
                 # Tensor was already created using a different function
@@ -46,7 +47,7 @@ class TensorConverter:
 
     def convert_constant_tensors(self, o_tensors: onnx_tensor.RepeatedTensorProto) -> None:
         """Create 'tensor' and 'buffer' tables for the ONNX 'oTensors'.
-        The 'oTensors' should have data in them. 
+        The 'oTensors' should have data in them.
         Designed for the 'initializer' field of the ONNX 'Graph'.
         """
         for o_tensor in o_tensors:
@@ -55,7 +56,7 @@ class TensorConverter:
 
     def convert_output_tensors(self, o_outputs: onnx_model.RepeatedValueInfoProto) -> None:
         """Create 'tensor' tables in the 'tensors' vector of the subGraph for the 'oOutputs'.
-        Also create empty buffers in the 'buffers' vector of the model. 
+        Also create empty buffers in the 'buffers' vector of the model.
         SHOULD be called before any other tensor building function!
         Designed for the 'output' field of the ONNX 'Graph'.
         """
@@ -67,8 +68,9 @@ class TensorConverter:
 
         for o_output in o_outputs:
             if o_output.type.tensor_type is None:
-                logger.e(logger.Code.UNSUPPORTED_ONNX_TYPE,
-                         "ONNX: Only type 'tensor_type' is supported for Outputs yet!")
+                logger.e(
+                    logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for Outputs yet!"
+                )
 
             if o_output.name in output_map:
                 tensor = output_map[o_output.name]
@@ -91,8 +93,9 @@ class TensorConverter:
 
         for o_input in o_inputs:
             if o_input.type.tensor_type is None:
-                logger.e(logger.Code.UNSUPPORTED_ONNX_TYPE,
-                         "ONNX: Only type 'tensor_type' is supported for Inputs yet!")
+                logger.e(
+                    logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for Inputs yet!"
+                )
 
             if o_input.name in input_map:
                 tensor = input_map[o_input.name]

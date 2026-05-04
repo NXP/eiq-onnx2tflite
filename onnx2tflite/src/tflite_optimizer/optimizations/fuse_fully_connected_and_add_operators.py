@@ -23,7 +23,6 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import (
 
 
 class FuseFullyConnectedAndAddOperators(BaseOptimization):
-
     def __call__(self) -> bool:
         """FullyConnected -> Add sequence can handle more complicated shapes than just FullyConnected with bias
          (due to shape broadcasting).
@@ -39,21 +38,16 @@ class FuseFullyConnectedAndAddOperators(BaseOptimization):
             [
                 # Require exactly 2 inputs.
                 Op(["FullyConnected"], ["x", "w"], ["y"], [NoFusedActivationFunction()]),
-                OneOf([
-                    Op(["Add"], ["y", "b"]),
-                    Op(["Add"], ["b", "y"])
-                ])
+                OneOf([Op(["Add"], ["y", "b"]), Op(["Add"], ["b", "y"])]),
             ],
             [
                 TensorHasOneConsumer("y"),
                 TensorHasRank("w", 2),
-                RuleOr(
-                    TensorHasRank("b", 1),
-                    RuleAnd(TensorHasRank("b", 2), TensorHasDimensionOfSize("b", 0, 1))
-                ),
+                RuleOr(TensorHasRank("b", 1), RuleAnd(TensorHasRank("b", 2), TensorHasDimensionOfSize("b", 0, 1))),
                 TensorDimensionsMatch("w", 0, "b", -1),
-                RuleIf(TensorIsQuantized("x"), TensorHasType("b", TensorType.INT32))
-            ])
+                RuleIf(TensorIsQuantized("x"), TensorHasType("b", TensorType.INT32)),
+            ],
+        )
 
         to_remove = []
         for (fc, add), tensor_map, _, _ in matcher.match_patterns():

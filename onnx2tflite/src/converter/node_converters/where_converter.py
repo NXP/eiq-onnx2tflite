@@ -29,8 +29,10 @@ class WhereConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX 'Where' operator into TFLite 'SelectV2'."""
         if len(t_op.tmp_inputs) != 3:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'Where' has unexpected number of inputs. "
-                                                     f"Got '{len(t_op.tmp_inputs)}', expected '3'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Where' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '3'.",
+            )
 
         condition = t_op.tmp_inputs[0]
         x = t_op.tmp_inputs[1]
@@ -43,7 +45,8 @@ class WhereConverter(NodeConverter):
         if t_op.is_quantized_without_qdq():
             logger.w(
                 f"Propagating quantization params from first input tensor ('{x.name}') to output tensor ('{out.name}')"
-                " in 'Where' operator. This can negatively affect accuracy of the output.")
+                " in 'Where' operator. This can negatively affect accuracy of the output."
+            )
             propagate_quantization(x, out)
 
         ops = OpsList(middle_op=t_op)
@@ -69,12 +72,15 @@ class WhereConverter(NodeConverter):
                     # Tensor's q-params doesn't match with output ones
                     if tensor_has_data(input_tensor):
                         logger.w(
-                            f"Requantizing tensor '{input_tensor.name}' to match q-params of 'Where' output tensor.")
+                            f"Requantizing tensor '{input_tensor.name}' to match q-params of 'Where' output tensor."
+                        )
                         input_tensor = re_quantize_static_tensor(self.builder, input_tensor, y.type, scale, zp)
                         t_op.tmp_inputs[idx] = input_tensor
                     else:
-                        logger.w(f"Re-quantizing input tensor '{input_tensor.name}' of 'Where' op to satisfy TFLite's "
-                                 "q-param requirements. This can decrease accuracy of the model.")
+                        logger.w(
+                            f"Re-quantizing input tensor '{input_tensor.name}' of 'Where' op to satisfy TFLite's "
+                            "q-param requirements. This can decrease accuracy of the model."
+                        )
                         ops.pre_ops.append(self.builder.create_quantize_operator_before(t_op, idx, x.type, scale, zp))
 
         t_op.builtin_options = select_v2_options.SelectV2()

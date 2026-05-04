@@ -107,21 +107,28 @@ class QLinearConvConverter(NodeConverter):
         if (bias_tensor := try_get_input(t_op, self._get_bias_tensor_idx(q_linear_conv))) is None:
             # Operator has no bias. ONNX model can omit it, TFLite can't.
             # The bias cannot be reused, because quantization parameters may be set to it.
-            bias_tensor = self.builder.create_zeros_tensor([weight_tensor.shape.get(0)], "quantized_conv2d_bias_",
-                                                           translator.tf_lite_type_to_numpy(TensorType.INT32),
-                                                           can_reuse=False)
+            bias_tensor = self.builder.create_zeros_tensor(
+                [weight_tensor.shape.get(0)],
+                "quantized_conv2d_bias_",
+                translator.tf_lite_type_to_numpy(TensorType.INT32),
+                can_reuse=False,
+            )
 
-        if (bias_tensor.tmp_buffer.data is not None and  # Bias tensor has static data...
-                not bias_tensor.tmp_buffer.data.any() and  # ... which are all zero ...
-                self.context.onnx_inspector.get_number_of_onnx_consumers_safe(bias_tensor.name) > 1
-                # is shared btw. multiple nodes
+        if (
+            bias_tensor.tmp_buffer.data is not None  # Bias tensor has static data...
+            and not bias_tensor.tmp_buffer.data.any()  # ... which are all zero ...
+            and self.context.onnx_inspector.get_number_of_onnx_consumers_safe(bias_tensor.name) > 1
+            # is shared btw. multiple nodes
         ):
             # In ONNX the bias tensor quantization parameters are derived implicitly, in tflite has to be set
             # explicitly.This make problems when ONNX decides to share the bias tensor (only possible if bias = 0)
             # instead of omitting it. Therefore, here we create another tensor instead of using the original one.
-            bias_tensor = self.builder.create_zeros_tensor([weight_tensor.shape.get(0)], bias_tensor.name,
-                                                           translator.tf_lite_type_to_numpy(TensorType.INT32),
-                                                           can_reuse=False)
+            bias_tensor = self.builder.create_zeros_tensor(
+                [weight_tensor.shape.get(0)],
+                bias_tensor.name,
+                translator.tf_lite_type_to_numpy(TensorType.INT32),
+                can_reuse=False,
+            )
 
         # Assign the operator its TFLite inputs and outputs
         t_op.tmp_inputs = [input_tensor, weight_tensor, bias_tensor]
@@ -143,18 +150,25 @@ class QLinearConvConverter(NodeConverter):
             set_quantization_parameters_to_tensor(output_tensor, output_scale, output_zero_point)
 
         if np.all(weight_zero_point != get_symmetric_zero_point_for_type(weight_tensor.type)):
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "TFLite Conv2D (DepthwiseConv2D) op doesn't support 'zero_point' "
-                     "of weight tensor to be non-zero.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "TFLite Conv2D (DepthwiseConv2D) op doesn't support 'zero_point' of weight tensor to be non-zero.",
+            )
 
         # ONNX only supports INT8 and UINT8 input/output/weight types
-        if input_tensor.type not in {TensorType.UINT8, TensorType.INT8} or output_tensor.type not in \
-                {TensorType.UINT8, TensorType.INT8} or weight_tensor.type not in {TensorType.UINT8, TensorType.INT8}:
-            logger.e(logger.Code.INVALID_TYPE, "ONNX QLinearConv with an unexpected input/output/weight data type. "
-                                               "Only INT8 and UINT8 are supported!")
+        if (
+            input_tensor.type not in {TensorType.UINT8, TensorType.INT8}
+            or output_tensor.type not in {TensorType.UINT8, TensorType.INT8}
+            or weight_tensor.type not in {TensorType.UINT8, TensorType.INT8}
+        ):
+            logger.e(
+                logger.Code.INVALID_TYPE,
+                "ONNX QLinearConv with an unexpected input/output/weight data type. Only INT8 and UINT8 are supported!",
+            )
         if bias_tensor.type != TensorType.INT32:
-            logger.e(logger.Code.INVALID_TYPE,
-                     "ONNX QLinearConv with an unexpected bias data type. Only INT32 is supported!")
+            logger.e(
+                logger.Code.INVALID_TYPE, "ONNX QLinearConv with an unexpected bias data type. Only INT32 is supported!"
+            )
 
         # Ensure equal input and output type
         if input_tensor.type != output_tensor.type:
@@ -173,8 +187,9 @@ class QLinearConvConverter(NodeConverter):
                     t_op.tmp_inputs[0] = input_tensor
                 else:
                     new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, input_zero_point)
-                    quantize_op = self.builder.create_quantize_operator_before(t_op, 0, TensorType.INT8, None,
-                                                                               [new_zero_point.item()])
+                    quantize_op = self.builder.create_quantize_operator_before(
+                        t_op, 0, TensorType.INT8, None, [new_zero_point.item()]
+                    )
                     conversion_result.ops_list.add_pre(quantize_op)
                     conversion_result.conv_input_tensor = quantize_op.tmp_outputs[0]
 
@@ -182,23 +197,28 @@ class QLinearConvConverter(NodeConverter):
                 if weight_tensor.type == TensorType.UINT8:
                     new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, weight_zero_point)
                     if not all([zp == 0 for zp in new_zero_point]):
-                        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                                 "ONNX QLinearConv uses UINT8 weights, which cannot be"
-                                 " re-quantized to INT8, because their zero point != 128.")
+                        logger.e(
+                            logger.Code.CONVERSION_IMPOSSIBLE,
+                            "ONNX QLinearConv uses UINT8 weights, which cannot be"
+                            " re-quantized to INT8, because their zero point != 128.",
+                        )
 
                     if tensor_has_data(weight_tensor):
                         weight_tensor = re_quantize_static_tensor(self.builder, weight_tensor, TensorType.INT8)
                         conversion_result.conv_weight_tensor = weight_tensor
                         t_op.tmp_inputs[1] = weight_tensor
                     else:
-                        logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                                 "ONNX QLinearConv uses dynamic UINT8 weights with per"
-                                 " channel quantization what is not supported in TFLite.")
+                        logger.e(
+                            logger.Code.CONVERSION_IMPOSSIBLE,
+                            "ONNX QLinearConv uses dynamic UINT8 weights with per"
+                            " channel quantization what is not supported in TFLite.",
+                        )
 
                 # OUTPUT
                 new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, output_zero_point)
-                quantize_op = self.builder.create_quantize_operator_after(t_op, 0, TensorType.INT8, None,
-                                                                          [new_zero_point.item()])
+                quantize_op = self.builder.create_quantize_operator_after(
+                    t_op, 0, TensorType.INT8, None, [new_zero_point.item()]
+                )
                 conversion_result.ops_list.add_post(quantize_op)
                 conversion_result.conv_output_tensor = quantize_op.tmp_inputs[0]
 
@@ -214,15 +234,17 @@ class QLinearConvConverter(NodeConverter):
 
                 else:
                     new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, input_zero_point)
-                    quantize_op = self.builder.create_quantize_operator_before(t_op, 0, TensorType.INT8, None,
-                                                                               [new_zero_point.item()])
+                    quantize_op = self.builder.create_quantize_operator_before(
+                        t_op, 0, TensorType.INT8, None, [new_zero_point.item()]
+                    )
                     conversion_result.ops_list.add_pre(quantize_op)
                     conversion_result.conv_input_tensor = quantize_op.tmp_outputs[0]
 
                 # OUTPUT
                 new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, output_zero_point)
-                quantize_op = self.builder.create_quantize_operator_after(t_op, 0, TensorType.INT8, None,
-                                                                          [new_zero_point.item()])
+                quantize_op = self.builder.create_quantize_operator_after(
+                    t_op, 0, TensorType.INT8, None, [new_zero_point.item()]
+                )
                 conversion_result.ops_list.add_post(quantize_op)
                 conversion_result.conv_output_tensor = quantize_op.tmp_inputs[0]
 
@@ -233,7 +255,7 @@ class QLinearConvConverter(NodeConverter):
         return conversion_result
 
     def _convert_1d_q_linear_conv(
-            self, o_conv_attributes: conv_attributes.Conv, t_op: tflite_model.Operator
+        self, o_conv_attributes: conv_attributes.Conv, t_op: tflite_model.Operator
     ) -> list[tflite_model.Operator]:
         weight_tensor_index = self.get_weight_tensor_index(o_conv_attributes)
 
@@ -306,7 +328,9 @@ class QLinearConvConverter(NodeConverter):
 
         return pre_reshapes + converted_conv_ops + [output_reshape]
 
-    def _convert_2d_q_linear_conv(self, attrs: ConvAttributes, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def _convert_2d_q_linear_conv(
+        self, attrs: ConvAttributes, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         if conv_utils.group_conv_convertible_as_depthwise(attrs, t_op, self.get_weight_tensor_index(attrs)):
             t_op.builtin_options = depthwise_conv_2d_options.DepthwiseConv2D()
 
@@ -349,8 +373,9 @@ class QLinearConvConverter(NodeConverter):
 
         return conversion_result.ops_list.flatten()
 
-    def convert(self, q_linear_conv_node: onnx_model.NodeProto,
-                t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
+    def convert(
+        self, q_linear_conv_node: onnx_model.NodeProto, t_op: tflite_model.Operator
+    ) -> list[tflite_model.Operator]:
         """Convert the ONNX QLinearConv or quantized Conv operator to TFLite."""
         attrs = cast(ConvAttributes, q_linear_conv_node.attributes)
         weight_tensor, _, _ = self._get_input_with_quant_params(attrs, t_op, 1)
@@ -366,5 +391,7 @@ class QLinearConvConverter(NodeConverter):
         elif kernel_rank == 2:
             return self._convert_2d_q_linear_conv(attrs, t_op)
         else:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX QLinearConv with '{kernel_rank}' dimensions is not possible!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX QLinearConv with '{kernel_rank}' dimensions is not possible!",
+            )

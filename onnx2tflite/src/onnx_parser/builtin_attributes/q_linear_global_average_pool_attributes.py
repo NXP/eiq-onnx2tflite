@@ -35,5 +35,8 @@ class QLinearGlobalAveragePool(meta.ONNXOperatorAttributes):
 
         if self.channels_last != 0:
             # The converter doesn't really consider this option right now.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearGlobalAveragePool with channels_last = "
-                                                  f"'{self.channels_last}' is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX QLinearGlobalAveragePool with channels_last = "
+                f"'{self.channels_last}' is not yet implemented.",
+            )

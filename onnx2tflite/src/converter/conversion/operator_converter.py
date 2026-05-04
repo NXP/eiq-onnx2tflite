@@ -143,11 +143,12 @@ class OperatorConverter:
         "Unsqueeze": node_converters.UnsqueezeConverter,
         "Upsample": node_converters.UpsampleConverter,
         "Where": node_converters.WhereConverter,
-        "Xor": node_converters.XorConverter
+        "Xor": node_converters.XorConverter,
     }
 
-    def __init__(self, context: conversion_context.ConversionContext,
-                 recognized_qdq_ops: RecognizedQDQOps | None = None):
+    def __init__(
+        self, context: conversion_context.ConversionContext, recognized_qdq_ops: RecognizedQDQOps | None = None
+    ):
         self._context = context
         self._recognized_qdq_ops = recognized_qdq_ops
 
@@ -187,8 +188,10 @@ class OperatorConverter:
 
         else:
             if node.op_type not in self._op_type_to_node_converter_constructor_map:
-                logger.e(logger.Code.UNSUPPORTED_OPERATOR,
-                         f"Conversion of ONNX operator '{node.op_type}' is not yet supported!")
+                logger.e(
+                    logger.Code.UNSUPPORTED_OPERATOR,
+                    f"Conversion of ONNX operator '{node.op_type}' is not yet supported!",
+                )
 
             node_converter_constructor = self._op_type_to_node_converter_constructor_map[node.op_type]
             ops_to_add = node_converter_constructor(self._context).convert(node, t_op)
@@ -197,15 +200,12 @@ class OperatorConverter:
         for op in ops_to_add:
             if op.builtin_options is not None:
                 op.opcode_index = self._context.tflite_builder.op_code_index_for_op_type(
-                    op.builtin_options.operator_type,
-                    op.tmp_version
+                    op.builtin_options.operator_type, op.tmp_version
                 )
 
             elif op.custom_options is not None:
                 op.opcode_index = self._context.tflite_builder.op_code_index_for_op_type(
-                    op.custom_options.operator_type,
-                    op.tmp_version,
-                    op.custom_options.custom_code
+                    op.custom_options.operator_type, op.tmp_version, op.custom_options.custom_code
                 )
 
             self._context.tflite_builder.check_and_append_operator(op)
@@ -227,9 +227,11 @@ class OperatorConverter:
                         has_inconvertible_node = True
 
             if has_inconvertible_node:
-                raise logger.Error(logger.Code.CONVERSION_IMPOSSIBLE,
-                                   "Some nodes in the model are not supported or cannot be converted. Please "
-                                   "review the console output above for more information and possible solutions.")
+                raise logger.Error(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Some nodes in the model are not supported or cannot be converted. Please "
+                    "review the console output above for more information and possible solutions.",
+                )
 
         def convert_all_ops(node: onnx_model.NodeProto) -> None:
             def _tensors_are_formatless(onnx_tensors: list[str]) -> bool:
@@ -238,15 +240,14 @@ class OperatorConverter:
                 return all(t.tensor_format is TensorFormat.FORMATLESS for t in tflite_tensors)
 
             # noinspection PyShadowingNames
-            def _inferred_data_is_sufficient(inferred_output_data: dict[str: np.ndarray] | None) -> bool:
+            def _inferred_data_is_sufficient(inferred_output_data: dict[str : np.ndarray] | None) -> bool:
                 if inferred_output_data is None:
                     return False
 
                 if any(t is None for t in inferred_output_data.values()):
                     return False
 
-                if any(self._context.onnx_inspector.is_output_of_model(t)
-                       for t in inferred_output_data):
+                if any(self._context.onnx_inspector.is_output_of_model(t) for t in inferred_output_data):
                     return False
 
                 return True
@@ -290,7 +291,11 @@ class OperatorConverter:
 
         if len(skipped_ops) != 0:
             ops_as_str = "\n".join(f"\t{op_type}({name})" for op_type, name in skipped_ops)
-            logger.i("The output data of the following nodes has been statically inferred, so they will not be present "
-                     "in the output model.\n" + ops_as_str + "\n" +
-                     "If you wish to prohibit this and convert all operators, run the conversion again with the flag "
-                     f"{logger.Style.bold + logger.Style.cyan}--dont-skip-nodes-with-known-outputs{logger.Style.end}.")
+            logger.i(
+                "The output data of the following nodes has been statically inferred, so they will not be present "
+                "in the output model.\n"
+                + ops_as_str
+                + "\n"
+                + "If you wish to prohibit this and convert all operators, run the conversion again with the flag "
+                f"{logger.Style.bold + logger.Style.cyan}--dont-skip-nodes-with-known-outputs{logger.Style.end}."
+            )

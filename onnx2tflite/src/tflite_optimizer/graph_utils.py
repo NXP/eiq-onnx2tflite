@@ -15,8 +15,9 @@ OutputTensorToOpMap = dict[str, tflite_model.Operator]
 NameToTensorMap = dict[str, tflite_model.Tensor | list[tflite_model.Tensor]]
 
 
-def create_tensor_to_operator_dictionaries(builder: "model_builder.ModelBuilder"
-                                           ) -> tuple[InputTensorToOpsMap, OutputTensorToOpMap]:
+def create_tensor_to_operator_dictionaries(
+    builder: "model_builder.ModelBuilder",
+) -> tuple[InputTensorToOpsMap, OutputTensorToOpMap]:
     """Create and return 2 dictionaries, which map a tensor name, to a TFLite operator, which has the tensor as
     input, and output respectively.
 

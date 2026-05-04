@@ -28,8 +28,10 @@ class AbsConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Abs` operator to TFLite `Abs`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Abs` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX `Abs` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `1`.",
+            )
 
         if t_op.is_quantized_without_qdq():
             # ONNX `Abs` computes on the INT data as if it wasn't quantized. TFLite cannot do that, it always takes the
@@ -43,9 +45,11 @@ class AbsConverter(NodeConverter):
         if x.type == TensorType.INT64:
             # Required by real model. Cast to int32.
             if not self.context.conversion_config.cast_int64_to_int32:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Direct conversion of ONNX `Abs` with type INT64 is not possible due to a TFLite "
-                         "limitation." + logger.Message.CAST_INT64_TO_INT32)
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Direct conversion of ONNX `Abs` with type INT64 is not possible due to a TFLite "
+                    "limitation." + logger.Message.CAST_INT64_TO_INT32,
+                )
 
             # Recast the input.
             if tensor_has_data(x):
@@ -64,8 +68,10 @@ class AbsConverter(NodeConverter):
         if x.type == TensorType.INT8 and x.quantization is None:
             # Int8 is only allowed for quantized data.
             # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/elementwise.cc#L142-L144
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Abs` with input type `INT8` without quantization is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `Abs` with input type `INT8` without quantization is not possible.",
+            )
 
         t_op.builtin_options = Abs()
 

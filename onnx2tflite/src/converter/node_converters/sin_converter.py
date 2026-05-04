@@ -27,8 +27,9 @@ class SinConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Sin`` operator into TFLite `Sin`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX `Sin` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL, f"ONNX `Sin` has unexpected number of inputs ({len(t_op.tmp_inputs)})."
+            )
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 

@@ -39,17 +39,14 @@ class MoveActivationBeforeConcatenation(BaseOptimization):
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
-            [
-                Op(["Concatenation"], None, ["x"], [AllInputsComeFrom("Conv2D")]),
-                Op(self.activations, ["x"], ["y"])
-            ],
+            [Op(["Concatenation"], None, ["x"], [AllInputsComeFrom("Conv2D")]), Op(self.activations, ["x"], ["y"])],
             [
                 TensorHasOneConsumer("x"),
-
                 # If the activation function is not changing the quantization parameters, it can be moved without
                 #  messing with the quantization elsewhere.
-                TensorsHaveSameQuantization(["x", "y"])
-            ])
+                TensorsHaveSameQuantization(["x", "y"]),
+            ],
+        )
 
         to_remove = []
 

@@ -75,7 +75,7 @@ class HardSigmoidConverter(NodeConverter):
             mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
             mul_op.tmp_inputs = [
                 x,
-                self.builder.create_tensor_for_data(np.array([hs_attributes.alpha], np.float32), "alpha")
+                self.builder.create_tensor_for_data(np.array([hs_attributes.alpha], np.float32), "alpha"),
             ]
             mul_op.tmp_outputs = [mul_output]
 
@@ -92,7 +92,7 @@ class HardSigmoidConverter(NodeConverter):
             add_op = tflite_model.Operator(builtin_options=add_options.Add())
             add_op.tmp_inputs = [
                 mul_output,
-                self.builder.create_tensor_for_data(np.array([hs_attributes.beta], np.float32), "beta")
+                self.builder.create_tensor_for_data(np.array([hs_attributes.beta], np.float32), "beta"),
             ]
             add_op.tmp_outputs = [add_output]
 
@@ -103,10 +103,7 @@ class HardSigmoidConverter(NodeConverter):
         min_output = self.builder.duplicate_tensor(x)
 
         min_op = tflite_model.Operator(builtin_options=minimum_options.Minimum())
-        min_op.tmp_inputs = [
-            add_output,
-            self.builder.create_tensor_for_data(np.array([1.0], np.float32), "one")
-        ]
+        min_op.tmp_inputs = [add_output, self.builder.create_tensor_for_data(np.array([1.0], np.float32), "one")]
         min_op.tmp_outputs = [min_output]
 
         ops.append(min_op)

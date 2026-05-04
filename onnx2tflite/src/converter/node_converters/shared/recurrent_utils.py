@@ -14,8 +14,9 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 
 
-def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model_builder.ModelBuilder,
-                                     ops: OpsList) -> None:
+def ensure_correct_tensor_formatting(
+    t_op: tflite_model.Operator, builder: model_builder.ModelBuilder, ops: OpsList
+) -> None:
     """Make sure that all input and output tensors of 't_op' have the correct format. 't_op' is assumed to be an LSTM
          or RNN operator.
 
@@ -36,8 +37,7 @@ def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model
     # Permute the inputs.
     for idx, tensor in enumerate(t_op.tmp_inputs.copy()):
         if tensor.tensor_format.is_channels_last():
-            revert_perm = translator.create_channels_last_to_channels_first_permutation(tensor.rank,
-                                                                                        return_list=True)
+            revert_perm = translator.create_channels_last_to_channels_first_permutation(tensor.rank, return_list=True)
             if tensor_has_data(tensor):
                 translator.permute_static_tensor(tensor, revert_perm)
 
@@ -53,8 +53,7 @@ def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model
     for idx, tensor in enumerate(t_op.tmp_outputs.copy()):
         if tensor.tensor_format.is_channels_last():
             # Append a Transpose operator.
-            revert_perm = translator.create_channels_first_to_channels_last_permutation(tensor.rank,
-                                                                                        return_list=True)
+            revert_perm = translator.create_channels_first_to_channels_last_permutation(tensor.rank, return_list=True)
             transpose = builder.create_transpose_operator_after(t_op, idx, revert_perm)
             ops.post_ops.append(transpose)
 
@@ -62,17 +61,16 @@ def ensure_correct_tensor_formatting(t_op: tflite_model.Operator, builder: model
 
 
 def get_activation_function_for_name(name: str, op_type: str = "LSTM") -> ActivationFunctionType:
-    get_activation_function_for_name.map = {
-        "Tanh": ActivationFunctionType.TANH,
-        "Relu": ActivationFunctionType.RELU
-    }
+    get_activation_function_for_name.map = {"Tanh": ActivationFunctionType.TANH, "Relu": ActivationFunctionType.RELU}
 
     if act_fun := get_activation_function_for_name.map.get(name, None):
         return act_fun
 
     # Couldn't find a corresponding activation function
-    logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-             f"Conversion of ONNX {op_type} with activation function '{name}' is not possible.")
+    logger.e(
+        logger.Code.CONVERSION_IMPOSSIBLE,
+        f"Conversion of ONNX {op_type} with activation function '{name}' is not possible.",
+    )
 
 
 def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: str = "LSTM") -> None:
@@ -85,9 +83,10 @@ def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: s
     if sequence_lens := try_get_input(t_op, 4):
         # 'sequence_lens' allows each sequence to have a different length. As far as I can tell, TFLite doesn't support
         #  this.
-        if (not tensor_has_data(sequence_lens)) or any(
-                elt != seq_length for elt in sequence_lens.tmp_buffer.data):
+        if (not tensor_has_data(sequence_lens)) or any(elt != seq_length for elt in sequence_lens.tmp_buffer.data):
             # The 'sequence_lens' is either dynamic, or static with at least one value different from 'seq_length'.
             # Conversion most likely impossible.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX {op_type} with 'sequence_lens' input is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX {op_type} with 'sequence_lens' input is not possible.",
+            )

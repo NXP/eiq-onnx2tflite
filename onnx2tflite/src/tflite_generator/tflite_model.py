@@ -46,8 +46,9 @@ class Buffer(meta.TFLiteObject):
         Tensor, this buffer belongs to."""
     tmp_index: int
 
-    def __init__(self, data: np.ndarray = None,
-                 data_type: libTensorType.TensorType = libTensorType.TensorType.INT32) -> None:
+    def __init__(
+        self, data: np.ndarray = None, data_type: libTensorType.TensorType = libTensorType.TensorType.INT32
+    ) -> None:
         self.data = data
         self.type = data_type
 
@@ -80,13 +81,14 @@ class Buffer(meta.TFLiteObject):
         elif self.data.dtype.kind == "S":
             # String tensor. Not sure how to handle this case. I've played around with 'builder.CreateString()' but I
             #  couldn't quite make it work. As it is not a priority right now, just exit with error.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Generating a TFLite static string tensor is not yet supported.")
+            logger.e(logger.Code.NOT_IMPLEMENTED, "Generating a TFLite static string tensor is not yet supported.")
 
         else:
             # Cannot use the 'CreateNumpyVector' method -> use specific prepend functions.
-            logger.w(f"Creating a static TFLite tensor buffer for type '{name_for_type(self.type)}'. "
-                     "This is not a common case and it has not been tested!")
+            logger.w(
+                f"Creating a static TFLite tensor buffer for type '{name_for_type(self.type)}'. "
+                "This is not a common case and it has not been tested!"
+            )
 
             prepend = self.get_prepend_function(builder)
 
@@ -114,16 +116,13 @@ class Buffers(meta.TFLiteVector):
 
 
 class OperatorCode(meta.TFLiteObject):
-    """Represents an OperatorCode object, used in the vector 'operator_codes' in the model.
-    """
+    """Represents an OperatorCode object, used in the vector 'operator_codes' in the model."""
 
     builtin_code: libBuiltinOperator.BuiltinOperator
     version: int
     custom_code: str
 
-    def __init__(self, builtin_code: libBuiltinOperator.BuiltinOperator,
-                 version: int = 1,
-                 custom_code: str = None):
+    def __init__(self, builtin_code: libBuiltinOperator.BuiltinOperator, version: int = 1, custom_code: str = None):
         """:param builtin_code: Operator code from the 'BuiltinOperator' enum.
         :param version: Operator version. Defaults to 1.
         :param custom_code: Custom code name. Parameter 'builtin_code' must be set to
@@ -134,8 +133,9 @@ class OperatorCode(meta.TFLiteObject):
         self.custom_code = custom_code
 
         if self.custom_code is not None and builtin_code != libBuiltinOperator.BuiltinOperator.CUSTOM:
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     f"Attempt to use custom code with non-CUSTOM builtin code ({builtin_code}).")
+            logger.e(
+                logger.Code.INTERNAL_ERROR, f"Attempt to use custom code with non-CUSTOM builtin code ({builtin_code})."
+            )
 
     def gen_tflite(self, builder: fb.builder) -> int:
         """Generate TFLite representation for this OperatorCode"""
@@ -182,8 +182,7 @@ class Scale(meta.FloatVector):
 
 class ZeroPoint(meta.IntVector):
     def __init__(self, zero_point: list[int] = None) -> None:
-        super().__init__(zero_point, libQuantizedParameters.StartZeroPointVector,
-                         lambda builder: builder.PrependInt64)
+        super().__init__(zero_point, libQuantizedParameters.StartZeroPointVector, lambda builder: builder.PrependInt64)
 
 
 class Quantization(meta.TFLiteObject):
@@ -196,11 +195,15 @@ class Quantization(meta.TFLiteObject):
 
     # TODO details
 
-    def __init__(self, min: Min | None = None, max: Max | None = None,
-                 scale: Scale = None,
-                 zero_point: ZeroPoint | None = None,
-                 quantized_dimension: int = 0,
-                 details_type: libQuantizedDetails.QuantizationDetails = libQuantizedDetails.QuantizationDetails.NONE) -> None:
+    def __init__(
+        self,
+        min: Min | None = None,
+        max: Max | None = None,
+        scale: Scale = None,
+        zero_point: ZeroPoint | None = None,
+        quantized_dimension: int = 0,
+        details_type: libQuantizedDetails.QuantizationDetails = libQuantizedDetails.QuantizationDetails.NONE,
+    ) -> None:
         self.min = min
         if self.min is None:
             self.min = Min()
@@ -387,13 +390,16 @@ class Tensor(meta.TFLiteObject):
         """Get the number of dimensions of this `Tensor`."""
         return self.shape.len()
 
-    def __init__(self, shape: Shape = None,
-                 name: str = None,
-                 buffer: int = None,
-                 data_type: libTensorType.TensorType = libTensorType.TensorType.FLOAT32,
-                 quantization: Quantization = None,
-                 is_variable: bool = False,
-                 has_rank: bool = False) -> None:
+    def __init__(
+        self,
+        shape: Shape = None,
+        name: str = None,
+        buffer: int = None,
+        data_type: libTensorType.TensorType = libTensorType.TensorType.FLOAT32,
+        quantization: Quantization = None,
+        is_variable: bool = False,
+        has_rank: bool = False,
+    ) -> None:
         self.is_variable = is_variable
         self.has_rank = has_rank
         self.type = data_type
@@ -489,13 +495,16 @@ class Operator(meta.TFLiteObject):
     # If `True`, this is an extra operator added during conversion. It was not present in the original ONNX model.
     tmp_added_extra: bool
 
-    def __init__(self, inputs: OperatorInputs = None,
-                 outputs: OperatorOutputs = None,
-                 builtin_options: meta.BuiltinOptions = None,
-                 opcode_index: int = 0,
-                 mutating_variable_inputs: MutatingVariableInputs | None = None,
-                 custom_options_format: libCustomOptionsFormat.CustomOptionsFormat = libCustomOptionsFormat.CustomOptionsFormat.FLEXBUFFERS,
-                 custom_options: meta.CustomOptions = None) -> None:
+    def __init__(
+        self,
+        inputs: OperatorInputs = None,
+        outputs: OperatorOutputs = None,
+        builtin_options: meta.BuiltinOptions = None,
+        opcode_index: int = 0,
+        mutating_variable_inputs: MutatingVariableInputs | None = None,
+        custom_options_format: libCustomOptionsFormat.CustomOptionsFormat = libCustomOptionsFormat.CustomOptionsFormat.FLEXBUFFERS,
+        custom_options: meta.CustomOptions = None,
+    ) -> None:
         self.opcode_index = opcode_index
         self.custom_options_format = custom_options_format
         self.mutating_variable_inputs = mutating_variable_inputs
@@ -650,9 +659,13 @@ class SubGraph(meta.TFLiteObject):
 
     # TODO name
 
-    def __init__(self, inputs: SubGraphInputs = None, outputs: SubGraphOutputs = None,
-                 tensors: Tensors = None,
-                 operators: Operators = None):
+    def __init__(
+        self,
+        inputs: SubGraphInputs = None,
+        outputs: SubGraphOutputs = None,
+        tensors: Tensors = None,
+        operators: Operators = None,
+    ):
         self.inputs = inputs
         self.outputs = outputs
         self.tensors = tensors
@@ -724,11 +737,14 @@ class Model(meta.TFLiteObject):
         """Generate byte-like object representing the TFLite format"""
         return cls.__fileIdentifier.encode("ascii")
 
-    def __init__(self, version: int = 1,
-                 description: str = None,
-                 buffers: Buffers = None,
-                 operator_codes: OperatorCodes = None,
-                 sub_graphs: SubGraphs = None) -> None:
+    def __init__(
+        self,
+        version: int = 1,
+        description: str = None,
+        buffers: Buffers = None,
+        operator_codes: OperatorCodes = None,
+        sub_graphs: SubGraphs = None,
+    ) -> None:
         self.version = version
         self.description = description
         self.operator_codes = operator_codes

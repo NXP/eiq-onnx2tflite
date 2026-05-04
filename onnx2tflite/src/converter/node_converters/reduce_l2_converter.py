@@ -94,11 +94,12 @@ class ReduceL2Converter(NodeConverter):
         axes_cast_ops = []
 
         if axes_tensor := try_get_input(t_op, 1):
-
             # ONNX uses int64, while TFLite requires int32 for the `axes` tensor.
             if axes_tensor.type != TensorType.INT64:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         f"ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR,
+                    f"ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.",
+                )
 
             # Try to get the inferred data for the `axes` input.
             if (axes_data := self.inspector.try_get_inferred_tensor_data(axes_tensor.name)) is not None:
@@ -122,11 +123,11 @@ class ReduceL2Converter(NodeConverter):
                 #  an edge case, which is hopefully not very common. Just print a warning message for now.
                 logger.w(
                     "Conversion of ONNX `ReduceL2` with a dynamic `axes` input will not be correct, if the `axes`"
-                    "are empty at runtime!")
+                    "are empty at runtime!"
+                )
 
                 # Create a `Cast` op, to make the `axes` int32.
-                cast_op = tflite_model.Operator(
-                    builtin_options=cast_options.Cast(TensorType.INT64, TensorType.INT32))
+                cast_op = tflite_model.Operator(builtin_options=cast_options.Cast(TensorType.INT64, TensorType.INT32))
                 new_axes = self.builder.duplicate_tensor(axes_tensor)
                 new_axes.type = TensorType.INT32
                 cast_op.tmp_inputs = [axes_tensor]
@@ -155,10 +156,12 @@ class ReduceL2Converter(NodeConverter):
             #     self.builder.turn_operator_to_identity(t_op)
             #     return [t_op]
 
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
-                     " indicates that the operator should do nothing. This is however not supported by ONNX"
-                     " Runtime, and therefore the conversion is also not supported.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR,
+                "ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
+                " indicates that the operator should do nothing. This is however not supported by ONNX"
+                " Runtime, and therefore the conversion is also not supported.",
+            )
 
         else:
             # Default is to reduce all axes.

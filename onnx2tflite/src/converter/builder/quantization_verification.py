@@ -43,7 +43,6 @@ class Output(IOTensor):
 
 
 class QuantizationRule(abc.ABC):
-
     @abc.abstractmethod
     def valid(self, op: tflite_model.Operator) -> bool:
         pass
@@ -54,7 +53,6 @@ class QuantizationRule(abc.ABC):
 
 
 class SharedParamsForType(QuantizationRule):
-
     def __init__(self, tensor_type: TensorType | int, *tensors: IOTensor):
         self.tensor_type = tensor_type
         self.tensors = tensors
@@ -92,7 +90,6 @@ class SharedParamsForType(QuantizationRule):
 
 
 class ExactValueForType(QuantizationRule):
-
     def __init__(self, tensor_type: TensorType | int, tensor: IOTensor, scale: list[float], zero_point: list):
         self.tensor = tensor
         self.tensor_type = tensor_type
@@ -158,7 +155,6 @@ class FullyConnectedWeightZeroPoint(QuantizationRule):
 
 
 class ValidBiasValues(QuantizationRule):
-
     def valid(self, op: tflite_model.Operator) -> bool:
         if len(op.tmp_inputs) < 3:
             # Bias tensor not present -> ignore
@@ -181,8 +177,10 @@ class ValidBiasValues(QuantizationRule):
         expected_bias_scale = np.array(input_1_quant.scale.vector) * np.array(input_2_quant.scale.vector)
 
         if not np.allclose(expected_bias_scale.astype(np.float32), np.array(bias_quant.scale.vector, dtype=np.float32)):
-            logger.w(f"Scale of quantized bias tensor '{op.tmp_inputs[2].name}' is not equal to 'input0_scale * "
-                     "input1_scale[...]'. This is not supported in TFLite.")
+            logger.w(
+                f"Scale of quantized bias tensor '{op.tmp_inputs[2].name}' is not equal to 'input0_scale * "
+                "input1_scale[...]'. This is not supported in TFLite."
+            )
             return False
 
         if bias_quant.zero_point.vector[0] != 0:
@@ -212,16 +210,9 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
             SharedParamsForType(TensorType.INT8, Input(0), OptionalInput(3)),
             SharedParamsForType(TensorType.INT8, Input(0), OptionalInput(4)),
         ],
-        BuiltinOperator.CONV_2D: [
-            ValidBiasValues()
-        ],
-        BuiltinOperator.DEPTHWISE_CONV_2D: [
-            ValidBiasValues()
-        ],
-        BuiltinOperator.FULLY_CONNECTED: [
-            ValidBiasValues(),
-            FullyConnectedWeightZeroPoint()
-        ],
+        BuiltinOperator.CONV_2D: [ValidBiasValues()],
+        BuiltinOperator.DEPTHWISE_CONV_2D: [ValidBiasValues()],
+        BuiltinOperator.FULLY_CONNECTED: [ValidBiasValues(), FullyConnectedWeightZeroPoint()],
         BuiltinOperator.GATHER: [
             SharedParamsForType(TensorType.INT8, Input(0), Output(0)),
             SharedParamsForType(TensorType.UINT8, Input(0), Output(0)),
@@ -231,7 +222,7 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
             SharedParamsForType(TensorType.UINT8, Input(0), Output(0)),
         ],
         BuiltinOperator.L2_NORMALIZATION: [
-            ExactValueForType(TensorType.INT8, Output(0), [1.0 / 128.], [0]),
+            ExactValueForType(TensorType.INT8, Output(0), [1.0 / 128.0], [0]),
         ],
         BuiltinOperator.LOG_SOFTMAX: [
             ExactValueForType(TensorType.INT8, Output(0), [16.0 / 256.0], [127]),
@@ -325,16 +316,20 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
                     if not rule.valid(op):
                         logger.w(
                             f"TFLite operator with op_type='{op.builtin_options.operator_type}' wasn't quantized "
-                            f"properly. Following TFLite quantization rule was not satisfied: '{rule}'.")
+                            f"properly. Following TFLite quantization rule was not satisfied: '{rule}'."
+                        )
                         is_error = True
         elif operator_codes[op.opcode_index] in rules:
             for rule in rules[operator_codes[op.opcode_index]]:
                 if not rule.valid(op):
                     logger.w(
                         f"TFLite operator with op_type='{operator_codes[op.opcode_index]}' wasn't quantized "
-                        f"properly. Following TFLite quantization rule was not satisfied: '{rule}'.")
+                        f"properly. Following TFLite quantization rule was not satisfied: '{rule}'."
+                    )
                     is_error = True
 
     if is_error:
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 "Some ops were not correctly quantized. Refer to previous log messages and please report this issue.")
+        logger.e(
+            logger.Code.INTERNAL_ERROR,
+            "Some ops were not correctly quantized. Refer to previous log messages and please report this issue.",
+        )

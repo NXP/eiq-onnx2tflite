@@ -38,7 +38,7 @@ class ReplaceDivWithQuantizableMul(PreprocessingStep):
                 #  reciprocal values would introduce errors.
                 continue
 
-            reciprocal_data = (1. / data).astype(data.dtype)
+            reciprocal_data = (1.0 / data).astype(data.dtype)
 
             # If the reciprocal data falls in a larger interval than the original data, quantizing it would cause a
             #  significant decrease in accuracy.
@@ -64,6 +64,8 @@ class ReplaceDivWithQuantizableMul(PreprocessingStep):
         onnx.checker.check_model(self.model)
 
         if num_affected_nodes != 0:
-            logger.w("Replacing `Div` with `Mul` to improve quantization and inference speed. This may result in a "
-                     "less accurate model. If you want to avoid this, run the quantization again with the flag "
-                     f"{logger.Style.cyan + self.disabling_flag() + logger.Style.end}.")
+            logger.w(
+                "Replacing `Div` with `Mul` to improve quantization and inference speed. This may result in a "
+                "less accurate model. If you want to avoid this, run the quantization again with the flag "
+                f"{logger.Style.cyan + self.disabling_flag() + logger.Style.end}."
+            )

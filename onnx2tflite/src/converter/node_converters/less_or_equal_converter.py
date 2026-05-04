@@ -20,7 +20,11 @@ class LessOrEqualConverter(NodeConverter):
 
     onnx_supported_types = FLOATS + INTS + UINTS
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/comparisons.cc#L408-L434
-    tflite_supported_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.INT64] # UINT8/INT8 not supported by TFLite (SIGABRT)
+    tflite_supported_types = [
+        TensorType.FLOAT32,
+        TensorType.INT32,
+        TensorType.INT64,
+    ]  # UINT8/INT8 not supported by TFLite (SIGABRT)
     verified_types = [TensorType.FLOAT32, TensorType.INT32, TensorType.INT64]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
@@ -34,8 +38,9 @@ class LessOrEqualConverter(NodeConverter):
         y = t_op.tmp_inputs[1]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "ONNX `LessOrEqual` has input tensors with different data types.")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR, "ONNX `LessOrEqual` has input tensors with different data types."
+            )
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)

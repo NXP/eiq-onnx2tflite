@@ -60,13 +60,17 @@ class DivConverter(NodeConverter):
 
         if t_op.is_quantized_without_qdq():
             # ONNXRT: INT8 and UINT8 are not supported by ONNX Runtime, so conversion cannot be verified.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX `Div` with quantized inputs of type {input_a.type} is not supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of ONNX `Div` with quantized inputs of type {input_a.type} is not supported.",
+            )
 
         if input_a.type == TensorType.INT64:
             if not self.context.conversion_config.cast_int64_to_int32:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         "TFLite operator 'Div' doesn't support type INT64. " + logger.Message.CAST_INT64_TO_INT32)
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR,
+                    "TFLite operator 'Div' doesn't support type INT64. " + logger.Message.CAST_INT64_TO_INT32,
+                )
             else:
                 self._cast_from_int64_to_int32(ops, t_op)
 

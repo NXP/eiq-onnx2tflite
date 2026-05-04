@@ -26,9 +26,14 @@ class LSTM(meta.BuiltinOptions):
     # LSTM v4+
     asymmetric_quantize_inputs: bool
 
-    def __init__(self, cell_clip: float, proj_clip: float, kernel_type: LSTMKernelType = LSTMKernelType.FULL,
-                 asymmetric_quantize_inputs: bool = False,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        cell_clip: float,
+        proj_clip: float,
+        kernel_type: LSTMKernelType = LSTMKernelType.FULL,
+        asymmetric_quantize_inputs: bool = False,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.LSTMOptions, BuiltinOperator.LSTM)
 
         self.cell_clip = cell_clip

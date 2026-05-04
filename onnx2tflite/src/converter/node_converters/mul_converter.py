@@ -44,8 +44,10 @@ class MulConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX 'Mul' operator to TFLite."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX 'Mul' has unexpected number of inputs. "
-                                                     f"Got '{len(t_op.tmp_inputs)}', expected '2'.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Mul' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
+            )
 
         x, y = t_op.tmp_inputs
 
@@ -61,8 +63,9 @@ class MulConverter(NodeConverter):
         if x_only_ones or y_only_ones:
             input_tensor = y if x_only_ones else x
 
-            if (input_tensor.shape == t_op.tmp_outputs[0].shape) and \
-                    self.builder.operator_can_be_skipped(t_op, self.inspector):
+            if (input_tensor.shape == t_op.tmp_outputs[0].shape) and self.builder.operator_can_be_skipped(
+                t_op, self.inspector
+            ):
                 # Operator can be skipped
                 self.builder.redirect_tensor(t_op.tmp_outputs[0], input_tensor)
                 return []

@@ -58,14 +58,11 @@ class ReplaceAveragePoolBeforeFullyConnectedWithSum(BaseOptimization):
             [
                 Op(["AveragePool2D"], ["x"], ["ap_out"]),
                 Op(["Reshape"], ["ap_out", ...], ["resh_out"]),
-                Op(["FullyConnected"], ["resh_out", "w", ...], ["y"])
+                Op(["FullyConnected"], ["resh_out", "w", ...], ["y"]),
             ],
             [
                 # Require either float32, or quantized tensors.
-                RuleOr(
-                    TensorsHaveType(["w", "resh_out"], TensorType.FLOAT32),
-                    TensorsAreQuantized(["w", "resh_out"])
-                ),
+                RuleOr(TensorsHaveType(["w", "resh_out"], TensorType.FLOAT32), TensorsAreQuantized(["w", "resh_out"])),
                 TensorsHaveOneConsumer(["x", "ap_out", "resh_out"]),
                 TensorIsChannelsLast("ap_out"),
                 TensorHasRank("resh_out", 2),
@@ -73,8 +70,9 @@ class ReplaceAveragePoolBeforeFullyConnectedWithSum(BaseOptimization):
                 TensorHasRank("w", 2),
                 TensorHasData("w"),
                 TensorDimensionsMatch("ap_out", 0, "resh_out", 0),  # Batch size unchanged.
-                TensorDimensionsMatch("ap_out", -1, "resh_out", -1)  # Channels unchanged.
-            ])
+                TensorDimensionsMatch("ap_out", -1, "resh_out", -1),  # Channels unchanged.
+            ],
+        )
 
         # The mapped operator (value) will later be added into the TFLite model, in front of the `key` operator.
         to_add: dict[tflite_model.Operator, tflite_model.Operator] = {}
@@ -103,8 +101,9 @@ class ReplaceAveragePoolBeforeFullyConnectedWithSum(BaseOptimization):
                 # Since the output of the `Sum` will now contain the `sums` of its input and not the `averages`, its
                 #  `scale` quantization parameter is not ideal. Multiply the `scale` by the number of elements of the
                 #  kernel to maintain the same accuracy.
-                resh_out.quantization.scale.vector = [s * num_kernel_elements for s
-                                                      in resh_out.quantization.scale.vector]
+                resh_out.quantization.scale.vector = [
+                    s * num_kernel_elements for s in resh_out.quantization.scale.vector
+                ]
 
             else:
                 # Should never happen. Raise an exception to notify us just in case.
@@ -117,7 +116,7 @@ class ReplaceAveragePoolBeforeFullyConnectedWithSum(BaseOptimization):
 
             sum_op = tflite_model.Operator(
                 builtin_options=Sum(keep_dims=False),
-                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.SUM)
+                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.SUM),
             )
             sum_op.tmp_inputs = [x, axes]
             sum_op.tmp_outputs = [resh_out]

@@ -32,19 +32,16 @@ class FuseParallelQuantizeOperators(BaseOptimization):
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
+            [Op(["Quantize"], ["x"], ["y1"]), Op(["Quantize"], ["x"], ["y2"])],
             [
-                Op(["Quantize"], ["x"], ["y1"]),
-                Op(["Quantize"], ["x"], ["y2"])
-            ], [
                 TensorsHaveSameQuantization(["y1", "y2"]),
-
                 # 'y2' will be removed from the model, so it cannot be a model output. But thanks to the nature of the
                 #  `PatternMatcher`, it doesn't matter which `Quantize` produces the model output. The `PatternMatcher`
                 #  will first match 1 `Quantize` as the first `Op` and try to optimize. If it doesn't work, it will then
                 #  match the second `Quantize` operator with the first `Op` and try to optimize that way. This will
                 #  result in a perfectly optimized pattern every time.
-                TensorIsNotModelOutput("y2")
-            ]
+                TensorIsNotModelOutput("y2"),
+            ],
         )
 
         to_remove = []
@@ -88,11 +85,9 @@ class PruneQuantizeOperators(BaseOptimization):
             self._builder,
             [
                 Op(["Quantize"], ["x"], ["y"]),
-                MultipleSameOps(["Quantize"], ["y"])  # Nothing other than `Quantize` ops can use `y`.
+                MultipleSameOps(["Quantize"], ["y"]),  # Nothing other than `Quantize` ops can use `y`.
             ],
-            [
-                TensorIsNotModelOutput("y")
-            ]
+            [TensorIsNotModelOutput("y")],
         )
 
         to_remove = []
@@ -129,8 +124,9 @@ class PruneQuantizeOperators(BaseOptimization):
 
         return len(to_remove) != 0
 
-    def _is_quantization_recasting_from_float(self, quantize_input: tflite_model.Tensor,
-                                              next_ops: list[tflite_model.Operator]) -> bool:
+    def _is_quantization_recasting_from_float(
+        self, quantize_input: tflite_model.Tensor, next_ops: list[tflite_model.Operator]
+    ) -> bool:
         r"""Check if 'next_ops' just recast from one type to another. Scale + recalculated zp
         must be the same for all nodes. Input of first Quantize op has to be float to match
         criteria.
@@ -160,8 +156,9 @@ class PruneQuantizeOperators(BaseOptimization):
             return False
 
         # All 'next_ops' has the same output type and q-params
-        next_op_output_match_first = [self._same_type_and_quantization(
-            next_ops[0].tmp_outputs[0], next_op.tmp_outputs[0]) for next_op in next_ops]
+        next_op_output_match_first = [
+            self._same_type_and_quantization(next_ops[0].tmp_outputs[0], next_op.tmp_outputs[0]) for next_op in next_ops
+        ]
         if not all(next_op_output_match_first):
             return False
 
@@ -183,8 +180,9 @@ class PruneQuantizeOperators(BaseOptimization):
 
         return False
 
-    def _is_quantization_recasting_from_integer(self, quantize_input: tflite_model.Tensor,
-                                                next_ops: list[tflite_model.Operator]) -> bool:
+    def _is_quantization_recasting_from_integer(
+        self, quantize_input: tflite_model.Tensor, next_ops: list[tflite_model.Operator]
+    ) -> bool:
         r"""Check if 'next_ops' just recast from one type to another. Scale + recalculated zp
         must be the same for all nodes. Input of first Quantize op has to be (u)int8 to
         match criteria.
@@ -215,8 +213,9 @@ class PruneQuantizeOperators(BaseOptimization):
             return False
 
         # All 'next_ops' has the same output type and q-params as input of first Quantize
-        next_op_output_match_first = [self._same_type_and_quantization(
-            quantize_input, next_op.tmp_outputs[0]) for next_op in next_ops]
+        next_op_output_match_first = [
+            self._same_type_and_quantization(quantize_input, next_op.tmp_outputs[0]) for next_op in next_ops
+        ]
         if not all(next_op_output_match_first):
             return False
 
@@ -248,8 +247,10 @@ class PruneQuantizeOperators(BaseOptimization):
         return same_type and same_quantization
 
     def _bypass_to_next_quantize_ops(
-        self, input_to_ops: dict[str, list[tflite_model.Operator]],
-        next_quantize_output: tflite_model.Tensor, quantize_input: tflite_model.Tensor
+        self,
+        input_to_ops: dict[str, list[tflite_model.Operator]],
+        next_quantize_output: tflite_model.Tensor,
+        quantize_input: tflite_model.Tensor,
     ) -> None:
         ops_after_next_quantize = input_to_ops.get(next_quantize_output.name, [])
         for op_after_next_quantize in ops_after_next_quantize:

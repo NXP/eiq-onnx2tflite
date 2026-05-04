@@ -43,8 +43,10 @@ class MaxPoolConverter(NodeConverter):
         for dim in t_op.tmp_inputs[0].shape.vector:
             if (not isinstance(dim, int)) or dim < 0:
                 # Dynamic shapes make it difficult to use the Reshape operators.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "Conversion of 1D ONNX MaxPool with a dynamic shape is not yet supported.")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of 1D ONNX MaxPool with a dynamic shape is not yet supported.",
+                )
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -121,20 +123,25 @@ class MaxPoolConverter(NodeConverter):
         if o_mp.dilations is not None:
             if any(dilation != 1 for dilation in o_mp.dilations):
                 # TFLite MaxPool2D doesn't support dilations.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"MaxPool dilations '{o_mp.dilations}' cannot be converted to TFLite!")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    f"MaxPool dilations '{o_mp.dilations}' cannot be converted to TFLite!",
+                )
 
         if o_mp.ceil_mode == 1:
             # TFLite always uses 'floor' to round, so the output shape may be different from ONNX.
             # Conversion should be possible by inserting a 'Pad' operator before the MaxPool.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX MaxPool with 'ceil_mode' == 1 is not yet supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX MaxPool with 'ceil_mode' == 1 is not yet supported."
+            )
 
         if len(t_op.tmp_outputs) == 2:
             # The 'Indices' tensor is the second output. TFLite doesn't provide such functionality.
             # Right now, there is no simple way to check if the second output is actually used by other operators.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX MaxPool with a second 'Indices' output tensor is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX MaxPool with a second 'Indices' output tensor is not possible.",
+            )
 
         ops = OpsList(middle_op=t_op)
 
@@ -158,13 +165,13 @@ class MaxPoolConverter(NodeConverter):
         t_op.builtin_options.filter_w = o_mp.kernel_shape[1]
 
         # Convert the padding
-        t_op.builtin_options.padding, explicit_padding = translator.convert_padding(o_mp.auto_pad, o_mp.pads,
-                                                                                    x.shape.vector,
-                                                                                    y.shape.vector,
-                                                                                    o_mp.kernel_shape, o_mp.strides)
+        t_op.builtin_options.padding, explicit_padding = translator.convert_padding(
+            o_mp.auto_pad, o_mp.pads, x.shape.vector, y.shape.vector, o_mp.kernel_shape, o_mp.strides
+        )
         if explicit_padding is not None:
-            pad_op = self.builder.create_pad_operator_before(t_op, 0, explicit_padding,
-                                                             constant_value=self._get_pad_constant_value(x.type))
+            pad_op = self.builder.create_pad_operator_before(
+                t_op, 0, explicit_padding, constant_value=self._get_pad_constant_value(x.type)
+            )
             ops.add_pre(pad_op)
 
         return ops
@@ -186,10 +193,13 @@ class MaxPoolConverter(NodeConverter):
         if kernel_rank - num_ones <= 2:
             # Enough dimensions are '1', so the input can be reshaped to 4D and a MaxPool2D can be applied.
             # Not sure if this is a realistic scenario and worth putting time into.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}'"
-                     f" is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not yet implemented.",
+            )
 
         else:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!",
+            )

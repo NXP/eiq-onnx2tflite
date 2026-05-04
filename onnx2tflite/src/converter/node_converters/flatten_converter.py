@@ -26,8 +26,9 @@ class FlattenConverter(NodeConverter):
 
     onnx_supported_types = ALL_TYPES
     tflite_supported_types = ALL_TYPES
-    verified_types = FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.BOOL,
-                                      TensorType.STRING]
+    verified_types = (
+        FLOATS + INTS + [TensorType.UINT8, TensorType.UINT32, TensorType.UINT64, TensorType.BOOL, TensorType.STRING]
+    )
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert: Flatten -> Reshape | Transpose + Reshape"""
@@ -44,8 +45,10 @@ class FlattenConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if axis < -rank or axis > rank:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX Flatten attribute 'axis' ({axis}) must be in range [{-rank}, {rank}]!!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX Flatten attribute 'axis' ({axis}) must be in range [{-rank}, {rank}]!!",
+            )
 
         # Ensure flatten is done in N[C]HW
         if x.tensor_format.is_channels_last():

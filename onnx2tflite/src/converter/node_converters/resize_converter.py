@@ -57,15 +57,19 @@ class ResizeConverter(NodeConverter):
                 # The output dimensions H and W are > 1.
                 align_corners, half_pixel = False, True
             else:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"Conversion of ONNX `Resize` with `coordinate_transformation_mode=pytorch_half_pixel` and "
-                         f"output shape `{y.shape}` is not possible.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    f"Conversion of ONNX `Resize` with `coordinate_transformation_mode=pytorch_half_pixel` and "
+                    f"output shape `{y.shape}` is not possible.",
+                )
 
         else:
             # Unconvertible `coordinate_transformation_mode`.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `Resize` with `coordinate_transformation_mode` = "
-                     f"`{coordinate_transformation_mode}` is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Resize` with `coordinate_transformation_mode` = "
+                f"`{coordinate_transformation_mode}` is not possible.",
+            )
 
         # noinspection PyUnboundLocalVariable
         return align_corners, half_pixel
@@ -79,8 +83,9 @@ class ResizeConverter(NodeConverter):
         """
         return any(y_dim < x_dim for x_dim, y_dim in zip(x.shape, y.shape, strict=False))
 
-    def _assert_convertible_scales(self, scales: np.ndarray, x: tflite_model.Tensor, y: tflite_model.Tensor,
-                                   axes: list[int]) -> None:
+    def _assert_convertible_scales(
+        self, scales: np.ndarray, x: tflite_model.Tensor, y: tflite_model.Tensor, axes: list[int]
+    ) -> None:
         """Make sure that the `scales` input of the ONNX `Resize` is convertible to TFLite.
             The only way to convert it is to compute the resulting shape of the output, after the input is scaled.
              This is already done by the shape inference.
@@ -104,9 +109,11 @@ class ResizeConverter(NodeConverter):
 
         # Check that the `batch` and `channels` scales are 1.
         for axis, scale in zip(axes, scales, strict=False):
-            if axis in {0, 1} and scale != 1.:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX `Resize` which scales the channels or batch dimension is not possible.")
+            if axis in {0, 1} and scale != 1.0:
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX `Resize` which scales the channels or batch dimension is not possible.",
+                )
 
         if x.tensor_format.is_channels_last():  # Should always be True.
             # The axes are for the channels first (ONNX) format. Permute them for the channels last (TFLite) format.
@@ -118,11 +125,14 @@ class ResizeConverter(NodeConverter):
             float_output_shape[axis] = scale * float_output_shape[axis]
 
         if not np.allclose(np.asarray(y.shape.vector), float_output_shape):
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX `Resize` with input shape `{x.shape}` "
-                                                        f"and scales `{scales}` is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Resize` with input shape `{x.shape}` and scales `{scales}` is not possible.",
+            )
 
-    def _get_resize_inputs(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator
-                           ) -> (tflite_model.Tensor | None, tflite_model.Tensor | None):
+    def _get_resize_inputs(
+        self, node: onnx_model.NodeProto, t_op: tflite_model.Operator
+    ) -> (tflite_model.Tensor | None, tflite_model.Tensor | None):
         """Return the input tensors `scales` and `sizes` of the ONNX `Resize`.
 
         :param node: ONNX `Resize` operator.
@@ -179,20 +189,22 @@ class ResizeConverter(NodeConverter):
             # TFLite `ResizeBilinear` and `ResizeNearest` are only implemented for 4D inputs.
             # https://github.com/tensorflow/tensorflow/blob/7ac4dc3ea9e7de8b64580bd06f3d746c4bd3f902/tensorflow/lite/kernels/resize_bilinear.cc#L75C30-L75C43
             # https://github.com/tensorflow/tensorflow/blob/7ac4dc3ea9e7de8b64580bd06f3d746c4bd3f902/tensorflow/lite/kernels/resize_nearest_neighbor.cc#L73
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Resize` is only supported for 4D inputs.")
+            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Resize` is only supported for 4D inputs.")
 
         if o_resize.antialias != 0 and self._down_sampling(x, y):
             # The ONNX `antialias` attribute is only active when downsampling, and cannot be represented in TFLite.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Resize` with `antialias` != 0 is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Resize` with `antialias` != 0 is not possible."
+            )
 
         if o_resize.keep_aspect_ratio_policy != "stretch":
             # When testing how ONNX Runtime reacts to the other policies, it seemed buggy (non-sense error messages).
             # Instead of investigating further I decied to raise error for now, until we find a model which uses this.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Conversion of ONNX `Resize` with `keep_aspect_ratio_policy` == "
-                     f"`{o_resize.keep_aspect_ratio_policy}` is not yet implemented.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "Conversion of ONNX `Resize` with `keep_aspect_ratio_policy` == "
+                f"`{o_resize.keep_aspect_ratio_policy}` is not yet implemented.",
+            )
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
@@ -211,8 +223,9 @@ class ResizeConverter(NodeConverter):
         elif o_resize.mode == "nearest":
             t_op.builtin_options = ResizeNearestNeighbor(align_corners, half_pixel)
 
-            if ((o_resize.coordinate_transformation_mode == "asymmetric" and o_resize.nearest_mode == "floor") or
-                (o_resize.coordinate_transformation_mode != "asymmetric" and o_resize.nearest_mode == "round_prefer_ceil")):
+            if (o_resize.coordinate_transformation_mode == "asymmetric" and o_resize.nearest_mode == "floor") or (
+                o_resize.coordinate_transformation_mode != "asymmetric" and o_resize.nearest_mode == "round_prefer_ceil"
+            ):
                 # TFLite can handle this natively.
                 pass
             # I haven't found a way to represent this in TFLite. There will always be a rounding error.
@@ -220,15 +233,19 @@ class ResizeConverter(NodeConverter):
                 # User has decided to accept the rounding error and to convert the model anyway.
                 pass
             else:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"Accurate conversion of ONNX `Resize` with `nearest_mode={o_resize.nearest_mode}` is not "
-                         f"possible because TFLite uses a different rounding approach. {logger.Style.cyan}If you "
-                         "are wiling to accept the error caused by different rounding, run the converter again with"
-                         " the flag `--accept-resize-rounding-error`.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    f"Accurate conversion of ONNX `Resize` with `nearest_mode={o_resize.nearest_mode}` is not "
+                    f"possible because TFLite uses a different rounding approach. {logger.Style.cyan}If you "
+                    "are wiling to accept the error caused by different rounding, run the converter again with"
+                    " the flag `--accept-resize-rounding-error`.",
+                )
 
         else:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `Resize` with mode = `{o_resize.mode}` is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Resize` with mode = `{o_resize.mode}` is not possible.",
+            )
 
         rank = x.rank
         axes = o_resize.axes or list(range(rank))
@@ -250,8 +267,10 @@ class ResizeConverter(NodeConverter):
                 # The shape inference would have already failed.
                 # If the users skipps shape inference and specifies the output shape, conversion would be possible by
                 #  adding a flag, to let the user guarantee this.
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         "Conversion of ONNX `Resize` with dynamic `scales` input is not supported.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX `Resize` with dynamic `scales` input is not supported.",
+                )
 
             scales: np.ndarray = scales.tmp_buffer.data
 

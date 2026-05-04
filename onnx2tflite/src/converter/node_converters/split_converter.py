@@ -42,8 +42,10 @@ class SplitConverter(NodeConverter):
             axis += input_rank
 
         if not (0 <= axis < input_rank):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                     f"ONNX 'Split' has invalid 'axis' attribute! ('{original}')")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                f"ONNX 'Split' has invalid 'axis' attribute! ('{original}')",
+            )
 
         return axis
 
@@ -55,8 +57,10 @@ class SplitConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"ONNX 'Split' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected 1 or 2.")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"ONNX 'Split' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected 1 or 2.",
+            )
 
         if node.version == 1:
             logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Split' version '1' is not supported.")
@@ -80,8 +84,9 @@ class SplitConverter(NodeConverter):
 
             if o_split_attributes.split is not None:
                 # Create a tensor for the 'size_splits' of the TFLite SplitV operator
-                size_splits = self.builder.create_tensor_for_data(np.asarray(o_split_attributes.split, np.int32),
-                                                                  "size_splits_")
+                size_splits = self.builder.create_tensor_for_data(
+                    np.asarray(o_split_attributes.split, np.int32), "size_splits_"
+                )
             else:
                 size_splits = None
 
@@ -92,8 +97,10 @@ class SplitConverter(NodeConverter):
         if o_split_attributes.num_outputs is not None:
             if size_splits is not None:
                 # According to the documentation, 'num_outputs' and 'split' should not both be specified.
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         "ONNX 'Split' has both 'num_outputs' and 'split' specified. Documentation prohibits this.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR,
+                    "ONNX 'Split' has both 'num_outputs' and 'split' specified. Documentation prohibits this.",
+                )
             num_splits = o_split_attributes.num_outputs
 
             # ONNXRT: There are some issues with the ONNX definition and ONNX Runtime implementation here. ONNX states (and ONNX
@@ -106,9 +113,11 @@ class SplitConverter(NodeConverter):
             #  invalid, we can exit with error as well.
             output_splits = [output.shape.get(axis) for output in t_op.tmp_outputs]
             if sum(output_splits) != t_op.tmp_inputs[0].shape.get(axis) or any(split == 0 for split in output_splits):
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                         f"ONNX 'Split' with input shape '{t_op.tmp_inputs[0].shape.vector}', axis '{axis}' and "
-                         f"num_outputs '{num_splits}' doesn't make sense.")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR,
+                    f"ONNX 'Split' with input shape '{t_op.tmp_inputs[0].shape.vector}', axis '{axis}' and "
+                    f"num_outputs '{num_splits}' doesn't make sense.",
+                )
 
             # The 'splits' corresponding to this particular situation were computed as part of shape inference, so we
             #  can use them explicitly.

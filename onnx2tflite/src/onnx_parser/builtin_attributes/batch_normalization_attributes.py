@@ -6,7 +6,7 @@
 #
 """BatchNormalization
 
-Representation of an ONNX 'BatchNormalization' operator. 
+Representation of an ONNX 'BatchNormalization' operator.
 Initialized from a protobuf descriptor object.
 """
 

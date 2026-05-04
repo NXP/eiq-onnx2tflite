@@ -18,8 +18,12 @@ class UnidirectionalSequenceRNN(meta.BuiltinOptions):
     fused_activation_function: ActivationFunctionType
     asymmetric_quantize_inputs: bool
 
-    def __init__(self, time_major: bool = True, asymmetric_quantize_inputs: bool = False,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE) -> None:
+    def __init__(
+        self,
+        time_major: bool = True,
+        asymmetric_quantize_inputs: bool = False,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+    ) -> None:
         super().__init__(BuiltinOptions.SequenceRNNOptions, BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_RNN)
 
         self.time_major = time_major

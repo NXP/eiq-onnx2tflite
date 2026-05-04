@@ -33,12 +33,10 @@ class FuseTransposeOperators(BaseOptimization):
             self._builder,
             [
                 Op(["Transpose"], ["x", "perm1"], ["y"]),
-                MultipleSameOps(["Transpose"], ["y", "perm2"])  # Nothing other than `Transpose` ops can use `y`.
+                MultipleSameOps(["Transpose"], ["y", "perm2"]),  # Nothing other than `Transpose` ops can use `y`.
             ],
-            [
-                TensorsHaveData(["perm1", "perm2"]),
-                TensorIsNotModelOutput("y")
-            ])
+            [TensorsHaveData(["perm1", "perm2"]), TensorIsNotModelOutput("y")],
+        )
 
         to_remove = []
         for [leading_transpose, following_transposes], tensor_map, _, _ in matcher.match_patterns():
@@ -80,19 +78,18 @@ class RemoveIdentityTransposeOperators(BaseOptimization):
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
-            [
-                Op(["Transpose"], ["x", "perm"], ["y"])
-            ],
+            [Op(["Transpose"], ["x", "perm"], ["y"])],
             [
                 TensorHasData("perm"),  # Note: identity permutation must be checked later.
                 RuleOr(
                     TensorIsNotModelOutput("x"),
-                    TensorIsNotModelOutput("y")
+                    TensorIsNotModelOutput("y"),
                     # If both 'x' and 'y' are model outputs, the `Transpose` cannot be removed. If the op was removed,
                     #  its input and output would be combined into 1 tensor, which would have to represent 2 model
                     #  outputs with 2 different names, which is not possible.
-                )
-            ])
+                ),
+            ],
+        )
 
         to_remove = []
         for [transpose], tensor_map, input_to_ops, _ in matcher.match_patterns():

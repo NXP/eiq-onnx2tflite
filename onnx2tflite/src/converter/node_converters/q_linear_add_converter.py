@@ -47,8 +47,9 @@ class QLinearAddConverter(NodeConverter):
 
         # ONNX only supports INT8 and UINT8
         if y.type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(logger.Code.INVALID_TYPE,
-                     f"ONNX QLinearAdd supports only INT8 and UINT8 data types. Got '{y.type}'.")
+            logger.e(
+                logger.Code.INVALID_TYPE, f"ONNX QLinearAdd supports only INT8 and UINT8 data types. Got '{y.type}'."
+            )
 
         # Assign the operator its TFLite inputs and outputs
         t_op.tmp_inputs = [a, b]

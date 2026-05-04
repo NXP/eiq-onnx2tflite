@@ -35,8 +35,10 @@ class EinsumConverter(NodeConverter):
         if "..." in equation:
             # ONNX allows this `ellipsis` in the equation. TFLite has no equivalent system. Not sure if conversion is
             #  possible.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     'Conversion of ONNX `Einsum` with ellipsis ("...") in the equation is not yet supported.')
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                'Conversion of ONNX `Einsum` with ellipsis ("...") in the equation is not yet supported.',
+            )
 
         equation = equation.replace(" ", "")  # ONNX allows spaces, TF doesn't.
 
@@ -78,16 +80,19 @@ class EinsumConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Einsum` operator into the SELECT_TF_OP `FlexEinsum`."""
         if not self.context.conversion_config.allow_select_ops:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Einsum` without SELECT_TF_OPS is not possible. " +
-                     logger.Message.ALLOW_SELECT_OPS)
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `Einsum` without SELECT_TF_OPS is not possible. " + logger.Message.ALLOW_SELECT_OPS,
+            )
 
         num_inputs = len(t_op.tmp_inputs)
         if num_inputs not in {1, 2}:
             # The `FlexEinsum` requires 1 or 2 operands in the equation.
             # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/core/util/einsum_op_util.cc#L42-L46
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     f"Conversion of ONNX `Einsum` with {num_inputs} inputs is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                f"Conversion of ONNX `Einsum` with {num_inputs} inputs is not possible.",
+            )
 
         first_input = t_op.tmp_inputs[0]
         if any(i.type != first_input.type for i in t_op.tmp_inputs):
@@ -96,8 +101,10 @@ class EinsumConverter(NodeConverter):
         if first_input.type == TensorType.FLOAT16:
             # Seems that this type is not supported by the TensorFlow DataType
             #  (see translator.tflite_type_to_tensor_flow_data_type())
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `Einsum` with input type FLOAT16 is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX `Einsum` with input type FLOAT16 is not possible.",
+            )
 
         self.assert_type_allowed(first_input.type)
 

@@ -15,7 +15,7 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 
 
 class SingleUnitaryDimensionChangeType(Enum):
-    SQUEEZE = 0,  # Removing one dimension with value 1
+    SQUEEZE = (0,)  # Removing one dimension with value 1
     UNSQUEEZE = 1  # Adding one dimensions with value 1
 
 
@@ -77,8 +77,9 @@ def _single_unitary_dimension_change(from_shape, to_shape) -> tuple[int, SingleU
 
 
 # noinspection PyPep8Naming
-def _get_permutation_for_single_unitary_change_in_NC_dims(shape_from: list[int], to_shape: list[int]) \
-        -> list[int] | None:  # noqa: N802
+def _get_permutation_for_single_unitary_change_in_NC_dims(
+    shape_from: list[int], to_shape: list[int]
+) -> list[int] | None:  # noqa: N802
     """Get permutation used by prepended 'Transpose' operator if there's only single unitary
     dimension change (single added/removed dimension with value 1) in batch or channel dimension
     done by 'Reshape' operator.
@@ -103,7 +104,7 @@ def _get_permutation_for_single_unitary_change_in_NC_dims(shape_from: list[int],
             5: {
                 0: [0, 4, 2, 3, 1],
                 1: [0, 2, 3, 1, 4],
-            }
+            },
         },
         SingleUnitaryDimensionChangeType.UNSQUEEZE: {
             3: {
@@ -113,8 +114,8 @@ def _get_permutation_for_single_unitary_change_in_NC_dims(shape_from: list[int],
             4: {
                 0: [3, 1, 2, 0],
                 1: [0, 3, 1, 2],
-            }
-        }
+            },
+        },
     }
 
     if change_details is not None:

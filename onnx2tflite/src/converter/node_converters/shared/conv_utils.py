@@ -31,8 +31,9 @@ TFTensor = tflite_model.Tensor
 TFOperator = tflite_model.Operator
 
 
-def group_conv_convertible_as_depthwise(o_conv_attributes: ConvAttributes, t_op: TFOperator,
-                                        weight_tensor_index: int) -> bool:
+def group_conv_convertible_as_depthwise(
+    o_conv_attributes: ConvAttributes, t_op: TFOperator, weight_tensor_index: int
+) -> bool:
     """Check whether provided Conv/QLinearConv ONNX operator could be converted into TFLite DepthwiseConv2D.
 
     :param o_conv_attributes: ONNX Conv/QLinearConv operator attributes.
@@ -82,8 +83,7 @@ class ConvConversionResult:
     and list of surrounding operators (Quantize, Transpose, etc.).
     """
 
-    def __init__(self, input_tensor: TFTensor, weight_tensor: TFTensor,
-                 bias_tensor: TFTensor, output_tensor: TFTensor):
+    def __init__(self, input_tensor: TFTensor, weight_tensor: TFTensor, bias_tensor: TFTensor, output_tensor: TFTensor):
         self.conv_input_tensor = input_tensor
         self.conv_weight_tensor = weight_tensor
         self.conv_bias_tensor = bias_tensor
@@ -104,8 +104,15 @@ class _InputTensorsSplitter:
     bias_tensors: list[TFTensor]
     split_ops: list[TFOperator]
 
-    def __init__(self, input_tensor: TFTensor, weight_tensor: TFTensor, bias_tensor: TFTensor, groups: int,
-                 builder: ModelBuilder, weight_out_channels_idx: int):
+    def __init__(
+        self,
+        input_tensor: TFTensor,
+        weight_tensor: TFTensor,
+        bias_tensor: TFTensor,
+        groups: int,
+        builder: ModelBuilder,
+        weight_out_channels_idx: int,
+    ):
         self.input_tensors = []
         self.weight_tensors = []
         self.bias_tensors = []
@@ -232,7 +239,7 @@ class _OutputTensorsCombiner:
 
 
 def build_input_tensor_padding(
-        o_conv_attributes, t_op, builder, input_idx=0
+    o_conv_attributes, t_op, builder, input_idx=0
 ) -> tuple[Padding, tflite_model.Operator | None]:
     """Build padding for input tensor of Conv/QLinearConv op 't_op'.
 
@@ -249,7 +256,8 @@ def build_input_tensor_padding(
         t_op.tmp_outputs[0].shape.vector,
         o_conv_attributes.kernel_shape,
         o_conv_attributes.strides,
-        o_conv_attributes.dilations)
+        o_conv_attributes.dilations,
+    )
 
     if explicit_padding is not None:
         # Must add extra 'Pad' operator
@@ -258,10 +266,15 @@ def build_input_tensor_padding(
     return padding, None
 
 
-def conv_op_factory(o_conv_attributes, input_tensor: tflite_model.Tensor,
-                    weight_tensor: tflite_model.Tensor, bias_tensor: tflite_model.Tensor,
-                    output_tensor: tflite_model.Tensor, builder,
-                    builtin_options) -> OpsList:
+def conv_op_factory(
+    o_conv_attributes,
+    input_tensor: tflite_model.Tensor,
+    weight_tensor: tflite_model.Tensor,
+    bias_tensor: tflite_model.Tensor,
+    output_tensor: tflite_model.Tensor,
+    builder,
+    builtin_options,
+) -> OpsList:
     """Build padded 'Conv(2D|3D)' TFLite operator. Padding is realized by 'builtin_options.padding'
     definition and by optional prepended 'Pad' operator.
 
@@ -287,12 +300,12 @@ def conv_op_factory(o_conv_attributes, input_tensor: tflite_model.Tensor,
 
 
 def create_separated_convolutions_based_on_group(
-        o_conv_attributes: ConvAttributes,
-        t_op: TFOperator,
-        builder: ModelBuilder,
-        conv_conversion_fn: ConvConversionFn,
-        conv_op_factory_fn: ConvOpFactory,
-        weight_out_channels_idx: int
+    o_conv_attributes: ConvAttributes,
+    t_op: TFOperator,
+    builder: ModelBuilder,
+    conv_conversion_fn: ConvConversionFn,
+    conv_op_factory_fn: ConvOpFactory,
+    weight_out_channels_idx: int,
 ) -> list[TFOperator]:
     """Build subgraph with multiple TFLite Conv2D/Conv3D operators that replace Conv/QLinearConv
     ONNX operator with 'group' attribute higher than one. Number of new Conv2D/Conv3D operators
@@ -331,8 +344,14 @@ def create_separated_convolutions_based_on_group(
     groups = o_conv_attributes.group
     conversion_result = conv_conversion_fn(o_conv_attributes, t_op)
 
-    splitter = _InputTensorsSplitter(conversion_result.conv_input_tensor, conversion_result.conv_weight_tensor,
-                                     conversion_result.conv_bias_tensor, groups, builder, weight_out_channels_idx)
+    splitter = _InputTensorsSplitter(
+        conversion_result.conv_input_tensor,
+        conversion_result.conv_weight_tensor,
+        conversion_result.conv_bias_tensor,
+        groups,
+        builder,
+        weight_out_channels_idx,
+    )
     combiner = _OutputTensorsCombiner(conversion_result.conv_output_tensor, groups, builder)
 
     conv_ops = []
@@ -343,11 +362,16 @@ def create_separated_convolutions_based_on_group(
         output_tensor = combiner.get_output_tensor(i)
 
         conv_builtin_options = cast(ConvBuiltinOptions, conversion_result.ops_list.middle_op.builtin_options)
-        conv_ops_list = conv_op_factory_fn(o_conv_attributes, input_tensor, weight_tensor, bias_tensor, output_tensor,
-                                           builder, conv_builtin_options)
+        conv_ops_list = conv_op_factory_fn(
+            o_conv_attributes, input_tensor, weight_tensor, bias_tensor, output_tensor, builder, conv_builtin_options
+        )
 
         conv_ops.extend(conv_ops_list.flatten())
 
-    return (conversion_result.ops_list.pre_ops +  # Transpose, Quantize ops
-            splitter.get_ops() + conv_ops + combiner.get_ops() +  # Split, Conv2D/Conv3D, Pad, Concatenate ops
-            conversion_result.ops_list.post_ops)  # Transpose, Quantize ops
+    return (
+        conversion_result.ops_list.pre_ops  # Transpose, Quantize ops
+        + splitter.get_ops()
+        + conv_ops
+        + combiner.get_ops()  # Split, Conv2D/Conv3D, Pad, Concatenate ops
+        + conversion_result.ops_list.post_ops
+    )  # Transpose, Quantize ops

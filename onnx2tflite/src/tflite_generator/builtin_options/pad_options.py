@@ -12,7 +12,6 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Pad(meta.BuiltinOptions):
-
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.BuiltinOptions.PadOptions, BuiltinOperator.BuiltinOperator.PAD)
 

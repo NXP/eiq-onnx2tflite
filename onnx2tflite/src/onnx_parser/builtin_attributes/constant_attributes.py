@@ -54,12 +54,21 @@ class Constant(meta.ONNXOperatorAttributes):
             elif attr.name == "value_strings":
                 self.value_strings = meta.ONNXStringListAttribute(attr)
             else:
-                logger.e(logger.Code.UNSUPPORTED_OPERATOR_ATTRIBUTES,
-                         f"ONNX Operator 'Constant' has attribute '{attr.name}' which is not yet supported!")
+                logger.e(
+                    logger.Code.UNSUPPORTED_OPERATOR_ATTRIBUTES,
+                    f"ONNX Operator 'Constant' has attribute '{attr.name}' which is not yet supported!",
+                )
 
         # Exactly 1 of the operator attributes must be given!
-        attrs = [hasattr(self, "value"), hasattr(self, "sparse_value"), hasattr(self, "value_int"),
-                 hasattr(self, "value_ints"), hasattr(self, "value_float"), hasattr(self, "value_floats"),
-                 hasattr(self, "value_string"), hasattr(self, "value_strings")]
+        attrs = [
+            hasattr(self, "value"),
+            hasattr(self, "sparse_value"),
+            hasattr(self, "value_int"),
+            hasattr(self, "value_ints"),
+            hasattr(self, "value_float"),
+            hasattr(self, "value_floats"),
+            hasattr(self, "value_string"),
+            hasattr(self, "value_strings"),
+        ]
         if sum(attrs) != 1:
             logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Constant' must have exactly 1 attribute set!")

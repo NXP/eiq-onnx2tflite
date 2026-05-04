@@ -53,13 +53,17 @@ class TransposeConverter(NodeConverter):
 
             if x.quantization is not None:
                 # TFLite inference crashes badly. Couldn't figure out why. (Fatal Python error: Aborted)
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Transpose` with > 5 dimensions and "
-                                                            "quantized data is not supported.")
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    "Conversion of ONNX `Transpose` with > 5 dimensions and quantized data is not supported.",
+                )
 
             if not self.context.conversion_config.allow_select_ops:
-                logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                         f"Conversion of ONNX `Transpose` with {input_rank} dimensions without Flex delegate is not "
-                         "possible. " + logger.Message.ALLOW_SELECT_OPS)
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    f"Conversion of ONNX `Transpose` with {input_rank} dimensions without Flex delegate is not "
+                    "possible. " + logger.Message.ALLOW_SELECT_OPS,
+                )
 
             t_op.custom_options = FlexTranspose()
 
@@ -86,9 +90,10 @@ class TransposeConverter(NodeConverter):
         else:
             perm = transpose_attrs.perm.copy()
             if len(perm) != input_rank:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                         "ONNX Transpose attribute 'perm' does not match the "
-                         f"input rank! ('{len(perm)}' != '{input_rank}')")
+                logger.e(
+                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
+                    f"ONNX Transpose attribute 'perm' does not match the input rank! ('{len(perm)}' != '{input_rank}')",
+                )
 
         if input_format.is_channels_last() and (not output_format.is_channels_last()):
             # Dimensions lose their meaning -> the output must be the same in ONNX and TFLite, but input is not the
@@ -119,7 +124,8 @@ class TransposeConverter(NodeConverter):
         if expected_output_shape != output_shape:
             logger.w(
                 f"convert_transpose: The Transpose operator with input shape '{input_shape}' and permutation '{perm}'"
-                f" should produce output with shape '{output_shape}', but will produce '{expected_output_shape}'!")
+                f" should produce output with shape '{output_shape}', but will produce '{expected_output_shape}'!"
+            )
 
         # Create the 'perm' tensor
         perm = np.asarray(perm, np.int32)

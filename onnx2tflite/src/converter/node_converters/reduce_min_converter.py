@@ -27,9 +27,15 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 class ReduceMinConverter(NodeConverter):
     node = "ReduceMin"
 
-    onnx_supported_types = FLOATS + [TensorType.INT8, TensorType.INT32, TensorType.INT64,
-                                     TensorType.UINT8, TensorType.UINT32, TensorType.UINT64,
-                                     TensorType.BOOL]
+    onnx_supported_types = FLOATS + [
+        TensorType.INT8,
+        TensorType.INT32,
+        TensorType.INT64,
+        TensorType.UINT8,
+        TensorType.UINT32,
+        TensorType.UINT64,
+        TensorType.BOOL,
+    ]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/reduce.cc#L874-L905
     tflite_supported_types = INTS + [TensorType.FLOAT32, TensorType.UINT8, TensorType.BOOL]
     verified_types = [TensorType.FLOAT32, TensorType.INT8, TensorType.INT32, TensorType.INT64, TensorType.UINT8]

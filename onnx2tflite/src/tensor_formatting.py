@@ -44,5 +44,4 @@ class TensorFormat(Enum):
         if self == TensorFormat.CHANNELS_LAST:
             return TensorFormat.CHANNELS_FIRST
 
-        logger.e(logger.Code.INTERNAL_ERROR,
-                 f"TensorFormat.to_onnx(): Unexpected format `{self}`.")
+        logger.e(logger.Code.INTERNAL_ERROR, f"TensorFormat.to_onnx(): Unexpected format `{self}`.")

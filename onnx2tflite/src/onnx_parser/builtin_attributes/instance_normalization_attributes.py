@@ -21,7 +21,7 @@ class InstanceNormalization(meta.ONNXOperatorAttributes):
         super().__init__(descriptor)
 
     def _default_values(self) -> None:
-        self.epsilon = np.float32(1.e-5)
+        self.epsilon = np.float32(1.0e-5)
 
     def _init_attributes(self) -> None:
         for attr in self._descriptor:

@@ -89,8 +89,7 @@ class MatMulConverter(NodeConverter):
 
     # noinspection PyPep8Naming
     def _convert_formatless_2D(self, t_op) -> OpsList:  # noqa: N802
-        """Convert 'MatMul' with formatless input tensors where 'y' tensor is 2D and 'x' is in range <2D, 5D>.
-        """
+        """Convert 'MatMul' with formatless input tensors where 'y' tensor is 2D and 'x' is in range <2D, 5D>."""
         y = t_op.tmp_inputs[1]
 
         ops = OpsList(middle_op=t_op)
@@ -107,8 +106,7 @@ class MatMulConverter(NodeConverter):
 
     # noinspection PyPep8Naming,PyMethodMayBeStatic
     def _convert_formatless_ND(self, t_op) -> OpsList:  # noqa: N802
-        """Convert 'MatMul' with formatless input tensors of rank 2 up to 5. Broadcasting is supported out of box.
-        """
+        """Convert 'MatMul' with formatless input tensors of rank 2 up to 5. Broadcasting is supported out of box."""
         t_op.builtin_options = batch_mat_mul_options.BatchMatMul(False, False, False)
 
         return OpsList(middle_op=t_op)
@@ -131,8 +129,9 @@ class MatMulConverter(NodeConverter):
                 t_op.tmp_inputs[input_index] = self._build_transposed_static_tensor(tensor, tensor_rank)
             elif tensor.tensor_format.is_channels_last():
                 permutation = list(translator.create_channels_last_to_channels_first_permutation(tensor_rank))
-                transpose_op = self.context.tflite_builder.create_transpose_operator_before(t_op, input_index,
-                                                                                            permutation)
+                transpose_op = self.context.tflite_builder.create_transpose_operator_before(
+                    t_op, input_index, permutation
+                )
 
                 ops.pre_ops.append(transpose_op)
 
@@ -144,8 +143,7 @@ class MatMulConverter(NodeConverter):
 
             output_rank = len(last_op.tmp_outputs[0].shape.vector)
             post_permutation = list(translator.create_channels_first_to_channels_last_permutation(output_rank))
-            post_transpose = self.context.tflite_builder.create_transpose_operator_after(last_op, 0,
-                                                                                         post_permutation)
+            post_transpose = self.context.tflite_builder.create_transpose_operator_after(last_op, 0, post_permutation)
             ops.post_ops.append(post_transpose)
 
             return ops
@@ -207,8 +205,9 @@ class MatMulConverter(NodeConverter):
                 t_op.tmp_inputs[input_index] = self._build_transposed_static_tensor(tensor, tensor_rank)
             elif tensor.tensor_format.is_channels_last():
                 permutation = list(translator.create_channels_last_to_channels_first_permutation(tensor_rank))
-                transpose_op = self.context.tflite_builder.create_transpose_operator_before(t_op, input_index,
-                                                                                            permutation)
+                transpose_op = self.context.tflite_builder.create_transpose_operator_before(
+                    t_op, input_index, permutation
+                )
                 ops.pre_ops.append(transpose_op)
 
         process_input_tensor(x, x_rank, 0)
@@ -261,17 +260,20 @@ class MatMulConverter(NodeConverter):
         y_rank = len(y.shape.vector)
 
         if x_rank > 5:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"Input of 'MatMul' must have rank in range <1,5>. Got: {x_rank}!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR, f"Input of 'MatMul' must have rank in range <1,5>. Got: {x_rank}!"
+            )
 
         if y_rank > 5:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     f"Input of 'MatMul' must have rank in range <1,5>. Got: {y_rank}!")
+            logger.e(
+                logger.Code.INVALID_ONNX_OPERATOR, f"Input of 'MatMul' must have rank in range <1,5>. Got: {y_rank}!"
+            )
 
         # Rare scenario - both inputs 1D - ignore for now
         if x_rank == 1 and y_rank == 1:
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "Both inputs of 'MatMul' has 1D rank what is currently not supported!")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, "Both inputs of 'MatMul' has 1D rank what is currently not supported!"
+            )
 
         if t_op.is_qdq_quantized():
             # (U)INT8 MatMul is basically QLinearMatMul -> use already prepared conversion code
@@ -283,8 +285,7 @@ class MatMulConverter(NodeConverter):
             #  `DequantizeLinear`, which convert between float32 and (u)int8. Our approach to QDQ conversion removes
             #  these extra ops and makes the `MatMul` inputs (u)int8, which can cause the type mismatch.
             # If the `MatMul` is not QDQ quantized, the input types must be the same.
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR,
-                     "ONNX operator 'MatMul' has inputs with different data types!")
+            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'MatMul' has inputs with different data types!")
         self.assert_type_allowed(x.type)
 
         is_channels_last = x.tensor_format.is_channels_last() or y.tensor_format.is_channels_last()

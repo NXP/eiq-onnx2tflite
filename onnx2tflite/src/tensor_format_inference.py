@@ -39,14 +39,12 @@ class TensorFormatInference:
         "LRN": {"inputs": [0], "outputs": [0]},
         "MaxPool": {"inputs": [0], "outputs": [0]},
         "QLinearConv": {"inputs": [0, 3], "outputs": [0]},
-
         # TODO Possibly consider the QLinear[Global]AveragePool.channels_last attribute?
         "QLinearGlobalAveragePool": {"inputs": [0], "outputs": [0]},
         "QLinearAveragePool": {"inputs": [0], "outputs": [0]},
-
         "Resize": {"inputs": [0], "outputs": [0]},
         "SpaceToDepth": {"inputs": [0], "outputs": [0]},
-        "Upsample": {"inputs": [0], "outputs": [0]}
+        "Upsample": {"inputs": [0], "outputs": [0]},
     }
 
     # A set of ONNX operators, which have the ability to change the format of their input or output tensors
@@ -68,7 +66,6 @@ class TensorFormatInference:
         "Squeeze",
         "Transpose",
         "Unsqueeze",
-
         # LSTM and RNN use their own format, but I believe it should be marked as FORMATLESS, because the main IO has
         #  the same shape as in the ONNX model.
         "LSTM",
@@ -151,8 +148,9 @@ class TensorFormatInference:
             elif node.op_type == "GatherND":
                 # Any `channels_last` tensors just require extra `Transpose` ops to be added. Prefer `FORMATLESS` if
                 #  possible.
-                self._assign_format_to_tensors([node.inputs[0], node.inputs[1], node.outputs[0]],
-                                               TensorFormat.FORMATLESS)
+                self._assign_format_to_tensors(
+                    [node.inputs[0], node.inputs[1], node.outputs[0]], TensorFormat.FORMATLESS
+                )
 
             elif node.op_type == "GRU":
                 self._assign_format_to_tensors(list(node.inputs) + list(node.outputs), TensorFormat.FORMATLESS)
@@ -166,9 +164,12 @@ class TensorFormatInference:
                 self._infer_format_based_on_io_ranks(node)
 
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, f"tensor_converter.identify_tensor_formats(): Operator "
-                                                      f"'{node.op_type}' can change tensor format, but the format "
-                                                      f"inference is not implemented!")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    f"tensor_converter.identify_tensor_formats(): Operator "
+                    f"'{node.op_type}' can change tensor format, but the format "
+                    f"inference is not implemented!",
+                )
 
         else:
             # The node works independently of tensor formats.
@@ -271,9 +272,11 @@ class TensorFormatInference:
 
         if (main_input_rank is None) or (main_output_rank is None):
             # In most cases, this would still be fine. But we cannot identify the cases, when it wouldn't.
-            logger.e(logger.Code.INVALID_ONNX_MODEL,
-                     f"The shapes of tensors '{node.inputs[0]}' and '{node.outputs[0]}' around a '{node.op_type}' "
-                     f"operator are not in the model. They are required for accurate conversion!")
+            logger.e(
+                logger.Code.INVALID_ONNX_MODEL,
+                f"The shapes of tensors '{node.inputs[0]}' and '{node.outputs[0]}' around a '{node.op_type}' "
+                f"operator are not in the model. They are required for accurate conversion!",
+            )
 
         elif main_output_rank == main_input_rank:
             # Operator maintains the number of dimensions -> try to propagate the format.
@@ -296,8 +299,9 @@ class TensorFormatInference:
                  None, if the tensor is not defined in the model.
         """
         # Search for the tensor in 'value_info', 'inputs' and 'outputs'
-        for value_info in itertools.chain(self.model.graph.value_info, self.model.graph.inputs,
-                                          self.model.graph.outputs):
+        for value_info in itertools.chain(
+            self.model.graph.value_info, self.model.graph.inputs, self.model.graph.outputs
+        ):
             if value_info.name == tensor_name:
                 if value_info.type.tensor_type is not None:
                     return len(value_info.type.tensor_type.shape.dims)
@@ -411,8 +415,9 @@ class TensorFormatInference:
         """
         tensors_without_inferred_format = set()
 
-        for value_info in itertools.chain(self.model.graph.value_info, self.model.graph.inputs,
-                                          self.model.graph.outputs):
+        for value_info in itertools.chain(
+            self.model.graph.value_info, self.model.graph.inputs, self.model.graph.outputs
+        ):
             tensor_name = value_info.name
             if tensor_name in self.inferred_tensor_formats:
                 value_info.tensor_format = self.inferred_tensor_formats[tensor_name]

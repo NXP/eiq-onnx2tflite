@@ -36,13 +36,15 @@ class OnnxGRU(CustomOptions):
         activations_str = [act.value for act in activations]
         direction_str = direction.value
 
-        custom_options_data = flexbuffers.Dumps({
-            "activations": activations_str,
-            "clip": clip,
-            "direction": direction_str,
-            "hidden_size": hidden_size,
-            "layout": layout,
-            "linear_before_reset": int(linear_before_reset)
-        })
+        custom_options_data = flexbuffers.Dumps(
+            {
+                "activations": activations_str,
+                "clip": clip,
+                "direction": direction_str,
+                "hidden_size": hidden_size,
+                "layout": layout,
+                "linear_before_reset": int(linear_before_reset),
+            }
+        )
 
         super().__init__("OnnxGRU", custom_options_data)

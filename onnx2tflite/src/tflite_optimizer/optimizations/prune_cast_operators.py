@@ -35,12 +35,9 @@ class FuseCastOperators(BaseOptimization):
             self._builder,
             [
                 Op(["Cast"], outputs=["y"]),
-                MultipleSameOps(["Cast"], ["y", ...])  # Only `Cast` ops can use `y`.
+                MultipleSameOps(["Cast"], ["y", ...]),  # Only `Cast` ops can use `y`.
             ],
-            [
-                TensorIsNotModelOutput("y"),
-                TensorIsNotQuantized("y")
-            ]
+            [TensorIsNotModelOutput("y"), TensorIsNotQuantized("y")],
         )
 
         to_remove = []
@@ -70,20 +67,19 @@ class RemoveCastOperatorsWithNoEffect(BaseOptimization):
     def __call__(self) -> bool:
         matcher = PatternMatcher(
             self._builder,
-            [
-                Op(["Cast"], ["x", ...], ["y"])
-            ],
+            [Op(["Cast"], ["x", ...], ["y"])],
             [
                 TensorsHaveSameType(["x", "y"]),
                 TensorsAreNotQuantized(["x", "y"]),
                 RuleOr(
                     TensorIsNotModelOutput("x"),
-                    TensorIsNotModelOutput("y")
+                    TensorIsNotModelOutput("y"),
                     # If both 'x' and 'y' are model outputs, the `Cast` cannot be removed. If the op was removed, its
                     #  input and output would be combined into 1 tensor, which would have to represent 2 model outputs
                     #  with 2 different names, which is not possible.
-                )
-            ])
+                ),
+            ],
+        )
 
         to_remove = []
         for [cast], tensor_map, input_to_ops, _ in matcher.match_patterns():

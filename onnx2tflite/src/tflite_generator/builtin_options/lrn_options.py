@@ -25,8 +25,10 @@ class LRN(meta.BuiltinOptions):
     beta: float
 
     def __init__(self, radius: int, bias: float, alpha: float, beta: float) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.LocalResponseNormalizationOptions,
-                         libBuiltinOperator.BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION)
+        super().__init__(
+            libBuiltinOptions.BuiltinOptions.LocalResponseNormalizationOptions,
+            libBuiltinOperator.BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,
+        )
         self.radius = radius
         self.bias = bias
         self.alpha = alpha

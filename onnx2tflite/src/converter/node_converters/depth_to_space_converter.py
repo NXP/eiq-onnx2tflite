@@ -41,7 +41,7 @@ class DepthToSpaceConverter(NodeConverter):
         y = t_op.tmp_outputs[0]
 
         b, h, w, c = x.shape.vector
-        c_new = c // (block_size ** 2)
+        c_new = c // (block_size**2)
 
         # Reshape #1
         pre_reshape_new_shape = [b, h, w, c_new, block_size, block_size]

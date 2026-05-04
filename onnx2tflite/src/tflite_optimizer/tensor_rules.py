@@ -20,8 +20,13 @@ from onnx2tflite.src.tflite_optimizer.pattern_matcher import NameToTensorMap, op
 
 class TensorRule(ABC):
     @abstractmethod
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         pass
 
     @abstractmethod
@@ -35,8 +40,13 @@ class MultipleTensorRule(TensorRule):
     def rules(self) -> list[TensorRule]:
         """The individual tensor rules."""
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         return all(rule(tensor_map, input_to_ops, output_to_op, builder) for rule in self.rules)
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
@@ -48,8 +58,13 @@ class TensorHasRank(TensorRule):
     tensor: str
     rank: int
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].rank == self.rank
@@ -66,8 +81,13 @@ class TensorHasRank(TensorRule):
 class TensorHasData(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].tmp_buffer.data is not None
@@ -97,8 +117,13 @@ class TensorHasStaticValue(TensorRule):
     tensor: str
     value: int | float | list[int] | list[float]
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 data = tensor_map[self.tensor].tmp_buffer.data
@@ -147,8 +172,13 @@ class TensorHasNConsumers(TensorRule):
     tensor: str
     n: int
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         model_outputs = builder.get_sub_graph().outputs.tmp_outputs
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
@@ -193,16 +223,25 @@ class TensorConsumedOnlyBy(TensorRule):
     tensor: str
     consuming_operator_type: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
-                return all(operator_is_type(op, self.consuming_operator_type, builder) for op in
-                           input_to_ops.get(tensor_map[self.tensor].name, []))
+                return all(
+                    operator_is_type(op, self.consuming_operator_type, builder)
+                    for op in input_to_ops.get(tensor_map[self.tensor].name, [])
+                )
             case list():
                 for t in tensor_map[self.tensor]:
-                    if not all(operator_is_type(op, self.consuming_operator_type, builder) for op in
-                               input_to_ops.get(t.name, [])):
+                    if not all(
+                        operator_is_type(op, self.consuming_operator_type, builder)
+                        for op in input_to_ops.get(t.name, [])
+                    ):
                         return False
             case _:
                 raise ValueError
@@ -219,8 +258,13 @@ class TensorDimensionsMatch(TensorRule):
     tensor_2: str
     dim_idx_2: int
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         t1 = tensor_map[self.tensor_1]
         t2 = tensor_map[self.tensor_2]
 
@@ -246,8 +290,13 @@ class TensorHasDimensionOfSize(TensorRule):
     dim_index: int
     dim_size: int
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].shape[self.dim_index] == self.dim_size
@@ -266,8 +315,13 @@ class TensorHasDimensionOfSize(TensorRule):
 class TensorsHaveSameShape(TensorRule):
     tensors: list[str]
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         mapped_tensors = [tensor_map[tensor] for tensor in self.tensors]
         if any(type(t) is not tflite_model.Tensor for t in mapped_tensors):
             raise NotImplementedError("Tensor rule `TensorsHaveSameShape` is not implemented for sets of tensors.")
@@ -290,8 +344,13 @@ class TensorsHaveSameShape(TensorRule):
 class TensorsHaveSameType(TensorRule):
     tensors: list[str]
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         if len(self.tensors) == 0:
             return True
 
@@ -311,8 +370,13 @@ class RuleIf(TensorRule):
     condition_rule: TensorRule
     body_rule: TensorRule
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         if self.condition_rule(tensor_map, input_to_ops, output_to_op, builder):
             return self.body_rule(tensor_map, input_to_ops, output_to_op, builder)
 
@@ -323,12 +387,16 @@ class RuleIf(TensorRule):
 
 
 class RuleOr(TensorRule):
-
     def __init__(self, *rules: TensorRule):
         self.rules = list(rules)
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         return any(rule(tensor_map, input_to_ops, output_to_op, builder) for rule in self.rules)
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
@@ -336,12 +404,16 @@ class RuleOr(TensorRule):
 
 
 class RuleAnd(TensorRule):
-
     def __init__(self, *rules: TensorRule):
         self.rules = list(rules)
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         return all(rule(tensor_map, input_to_ops, output_to_op, builder) for rule in self.rules)
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
@@ -353,8 +425,13 @@ class TensorHasType(TensorRule):
     tensor: str
     type_: TensorType
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].type == self.type_
@@ -381,8 +458,13 @@ class TensorsHaveType(MultipleTensorRule):
 class TensorIsChannelsLast(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].tensor_format.is_channels_last()
@@ -399,8 +481,13 @@ class TensorIsChannelsLast(TensorRule):
 class TensorIsChannelsFirst(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].tensor_format.is_channels_first()
@@ -417,8 +504,13 @@ class TensorIsChannelsFirst(TensorRule):
 class TensorIsFormatless(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].tensor_format == TensorFormat.FORMATLESS
@@ -435,8 +527,13 @@ class TensorIsFormatless(TensorRule):
 class TensorIsQuantized(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].quantization is not None
@@ -453,8 +550,13 @@ class TensorIsQuantized(TensorRule):
 class TensorIsNotQuantized(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops_map: InputTensorToOpsMap,
-                 output_to_op_map: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops_map: InputTensorToOpsMap,
+        output_to_op_map: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor].quantization is None
@@ -471,8 +573,13 @@ class TensorIsNotQuantized(TensorRule):
 class TensorIsPerTensorQuantized(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 tensor = tensor_map[self.tensor]
@@ -519,8 +626,13 @@ class TensorsArePerTensorQuantized(MultipleTensorRule):
 class TensorsHaveSameQuantization(TensorRule):
     tensors: list[str]
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         if len(self.tensors) == 0:
             return True
 
@@ -536,8 +648,9 @@ class TensorsHaveSameQuantization(TensorRule):
 
         first_quantization = all_tensors[0].quantization
         first_type = all_tensors[0].type
-        return all(t.quantization == first_quantization for t in all_tensors) and \
-            all(t.type == first_type for t in all_tensors)
+        return all(t.quantization == first_quantization for t in all_tensors) and all(
+            t.type == first_type for t in all_tensors
+        )
 
     def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
         return all(tensor in tensor_map for tensor in self.tensors)
@@ -547,8 +660,13 @@ class TensorsHaveSameQuantization(TensorRule):
 class TensorIsNotModelOutput(TensorRule):
     tensor: str
 
-    def __call__(self, tensor_map: NameToTensorMap, input_to_ops: InputTensorToOpsMap,
-                 output_to_op: OutputTensorToOpMap, builder: "model_builder.ModelBuilder") -> bool:
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
         match tensor_map[self.tensor]:
             case tflite_model.Tensor():
                 return tensor_map[self.tensor] not in builder.get_sub_graph().outputs.tmp_outputs

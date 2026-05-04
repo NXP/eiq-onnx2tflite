@@ -56,8 +56,9 @@ class ReduceSumConverter(NodeConverter):
         attrs = cast(ReduceSum, node.attributes)
 
         ops = OpsList(middle_op=t_op)
-        convert_axes_from_input_tensor(t_op, self.builder, self.inspector, ops, attrs.noop_with_empty_axes,
-                                       node.op_type)
+        convert_axes_from_input_tensor(
+            t_op, self.builder, self.inspector, ops, attrs.noop_with_empty_axes, node.op_type
+        )
 
         t_op.builtin_options = sum_options.Sum(bool(attrs.keepdims))
 

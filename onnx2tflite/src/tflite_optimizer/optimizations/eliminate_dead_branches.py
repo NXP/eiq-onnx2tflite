@@ -11,7 +11,6 @@ from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import Bas
 
 
 class EliminateDeadBranches(BaseOptimization):
-
     def __call__(self) -> bool:
         _, output_to_ops = self._create_tensor_to_operator_dictionaries()
 

@@ -32,82 +32,145 @@ def _get_user_choice_parser() -> argparse.ArgumentParser:
     responsibility.
     """
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--guarantee-non-negative-indices", action=argparse.BooleanOptionalAction, default=False,
-                        help="Guarantee that an 'indices' input tensor will always contain non-negative values. This "
-                             "applies to operators: 'Gather', 'GatherND', 'OneHot' and 'ScatterND'.")
-    parser.add_argument("--cast-int64-to-int32", action=argparse.BooleanOptionalAction, default=False,
-                        help="Cast some nodes with type INT64 to INT32 when TFLite doesn't support INT64. Such nodes "
-                             "are often used in ONNX to calculate shapes/indices, so full range of INT64 isn't "
-                             "necessary. This applies to operators: `Abs` and `Div`.")
-    parser.add_argument("--accept-resize-rounding-error", action=argparse.BooleanOptionalAction, default=False,
-                        help="Accept the error caused by a different rounding approach of the ONNX 'Resize' and TFLite "
-                             "'ResizeNearestNeighbor' operators, and convert the model anyway.")
-    parser.add_argument("--skip-opset-version-check", action=argparse.BooleanOptionalAction, default=False,
-                        help="Ignore the checks for supported opset versions of the ONNX model and try to convert it "
-                             "anyway. This can result in an invalid output TFLite model.")
+    parser.add_argument(
+        "--guarantee-non-negative-indices",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Guarantee that an 'indices' input tensor will always contain non-negative values. This "
+        "applies to operators: 'Gather', 'GatherND', 'OneHot' and 'ScatterND'.",
+    )
+    parser.add_argument(
+        "--cast-int64-to-int32",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Cast some nodes with type INT64 to INT32 when TFLite doesn't support INT64. Such nodes "
+        "are often used in ONNX to calculate shapes/indices, so full range of INT64 isn't "
+        "necessary. This applies to operators: `Abs` and `Div`.",
+    )
+    parser.add_argument(
+        "--accept-resize-rounding-error",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Accept the error caused by a different rounding approach of the ONNX 'Resize' and TFLite "
+        "'ResizeNearestNeighbor' operators, and convert the model anyway.",
+    )
+    parser.add_argument(
+        "--skip-opset-version-check",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Ignore the checks for supported opset versions of the ONNX model and try to convert it "
+        "anyway. This can result in an invalid output TFLite model.",
+    )
 
     return parser
 
 
 def _get_conversion_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--allow-inputs-stripping", action=argparse.BooleanOptionalAction, default=True,
-                        help="Model inputs will be removed if they are not necessary for inference and "
-                             "their values are derived during the conversion.")
-    parser.add_argument("--keep-io-tensors-format", action=argparse.BooleanOptionalAction, default=True,
-                        help="Keep the format of input and output tensors of the converted model the same, "
-                             "as in the original ONNX model (NCHW).")
-    parser.add_argument("--skip-shape-inference", action=argparse.BooleanOptionalAction, default=False,
-                        help="Shape inference will be skipped before model conversion. This option can "
-                             "be used only if model's shapes are fully defined. Defined shapes are necessary for "
-                             "successful conversion.")
-    parser.add_argument("--qdq-aware-conversion", action=argparse.BooleanOptionalAction, default=True,
-                        help="Quantized QDQ model with QDQ pairs (Q-Ops created by QDQ quantizer) will be "
-                             "converted into optimized variant with QDQ pairs represented as tensors' "
-                             "quantization parameters.")
-    parser.add_argument("-s", "--symbolic-dimension-into-static", dest="symbolic_dimensions_mapping",
-                        type=str, action="extend", nargs="+", metavar="DIM_NAME:SIZE",
-                        help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
-                             "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
-                             "can be used multiple times.")
-    parser.add_argument("-m", "--set-input-shape", dest="input_shapes_mapping",
-                        type=str, action="extend", nargs="+", metavar="INPUT_NAME:SHAPE",
-                        help="Override model input shape. Provided mapping must follow format '<input_name>:(<dim_0>,"
-                             "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
-                             "times.")
-    parser.add_argument("--dont-skip-nodes-with-known-outputs", action=argparse.BooleanOptionalAction, default=False,
-                        help="Sometimes it is possible to statically infer the output data of some nodes. These nodes "
-                             "will then not be a part of the output model. This flag will force the converter to keep "
-                             "them in anyway.")
+    parser.add_argument(
+        "--allow-inputs-stripping",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Model inputs will be removed if they are not necessary for inference and "
+        "their values are derived during the conversion.",
+    )
+    parser.add_argument(
+        "--keep-io-tensors-format",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Keep the format of input and output tensors of the converted model the same, "
+        "as in the original ONNX model (NCHW).",
+    )
+    parser.add_argument(
+        "--skip-shape-inference",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Shape inference will be skipped before model conversion. This option can "
+        "be used only if model's shapes are fully defined. Defined shapes are necessary for "
+        "successful conversion.",
+    )
+    parser.add_argument(
+        "--qdq-aware-conversion",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Quantized QDQ model with QDQ pairs (Q-Ops created by QDQ quantizer) will be "
+        "converted into optimized variant with QDQ pairs represented as tensors' "
+        "quantization parameters.",
+    )
+    parser.add_argument(
+        "-s",
+        "--symbolic-dimension-into-static",
+        dest="symbolic_dimensions_mapping",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="DIM_NAME:SIZE",
+        help="Change symbolic dimension in model to static (fixed) value. Provided mapping must "
+        "follow this format '<dim_name>:<dim_size>', for example 'batch:1'. This argument "
+        "can be used multiple times.",
+    )
+    parser.add_argument(
+        "-m",
+        "--set-input-shape",
+        dest="input_shapes_mapping",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="INPUT_NAME:SHAPE",
+        help="Override model input shape. Provided mapping must follow format '<input_name>:(<dim_0>,"
+        "<dim_1>,...)', for example 'input_1:(1,3,224,224)'. This argument can be used multiple "
+        "times.",
+    )
+    parser.add_argument(
+        "--dont-skip-nodes-with-known-outputs",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Sometimes it is possible to statically infer the output data of some nodes. These nodes "
+        "will then not be a part of the output model. This flag will force the converter to keep "
+        "them in anyway.",
+    )
 
-    parser.add_argument("--allow-select-ops", action=argparse.BooleanOptionalAction, default=True,
-                        help="Allow the converter to use the `SELECT_TF_OPS` operators, which require Flex delegate at "
-                             "runtime.")
+    parser.add_argument(
+        "--allow-select-ops",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Allow the converter to use the `SELECT_TF_OPS` operators, which require Flex delegate at runtime.",
+    )
 
-    parser.add_argument("--generate-artifacts-after-failed-shape-inference", action=argparse.BooleanOptionalAction,
-                        default=True,
-                        help="If the shape inference fails or is incomplete, generate the partly inferred ONNX model as"
-                             " `sym_shape_infer_temp.onnx`.")
-    parser.add_argument("--duplicate-dequantize-linear", action=argparse.BooleanOptionalAction, default=True,
-                        help="Duplicate DequantizeLinear nodes with static inputs and multiple consumers. It increases "
-                             "success rate of QDQ cluster recognition leading to more quantized nodes.")
+    parser.add_argument(
+        "--generate-artifacts-after-failed-shape-inference",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="If the shape inference fails or is incomplete, generate the partly inferred ONNX model as"
+        " `sym_shape_infer_temp.onnx`.",
+    )
+    parser.add_argument(
+        "--duplicate-dequantize-linear",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Duplicate DequantizeLinear nodes with static inputs and multiple consumers. It increases "
+        "success rate of QDQ cluster recognition leading to more quantized nodes.",
+    )
     return parser
 
 
 def parse_arguments() -> Namespace:
     parser = argparse.ArgumentParser(
-        prog="onnx2tflite", parents=[_get_conversion_parser(), _get_user_choice_parser()],
+        prog="onnx2tflite",
+        parents=[_get_conversion_parser(), _get_user_choice_parser()],
         description="""
             Convert a '.onnx' DNN model to an equivalent '.tflite' model.
             By default the output '.tflite' file will be generated in the current 
             working directory and have the same name as the input '.onnx' file.
-        """
+        """,
     )
     parser.add_argument("onnx_file", help="Path to ONNX (*.onnx) model.")
-    parser.add_argument("-o", "--output", type=str, required=False, metavar="out",
-                        help="Path to output '.tflite' file.")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Print detailed information related to conversion process.")
+    parser.add_argument(
+        "-o", "--output", type=str, required=False, metavar="out", help="Path to output '.tflite' file."
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print detailed information related to conversion process."
+    )
 
     return parser.parse_args()
 
@@ -134,7 +197,8 @@ def run_conversion() -> None:
         assert isinstance(args.symbolic_dimensions_mapping, list)
         try:
             args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
-                args.symbolic_dimensions_mapping)
+                args.symbolic_dimensions_mapping
+            )
         except Exception as err:  # noqa: BLE001
             context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
 

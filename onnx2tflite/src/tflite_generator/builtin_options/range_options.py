@@ -15,7 +15,6 @@ from onnx2tflite.src.tflite_generator.meta import meta
 
 
 class Range(meta.BuiltinOptions):
-
     def __init__(self) -> None:
         super().__init__(BuiltinOptions.RangeOptions, BuiltinOperator.RANGE)
 

@@ -31,8 +31,11 @@ class Preprocessor:
             try:
                 preprocessing_step.run()
 
-            except Exception as e: # noqa: BLE001
-                logger.e(logger.Code.PREPROCESSING_ERROR,
-                         "An unexpected error occurred during preprocessing. Run the quantization again with the "
-                         f"flag {logger.Style.cyan + preprocessing_step.disabling_flag() + logger.Style.end} to avoid "
-                         "this.", e)
+            except Exception as e:  # noqa: BLE001
+                logger.e(
+                    logger.Code.PREPROCESSING_ERROR,
+                    "An unexpected error occurred during preprocessing. Run the quantization again with the "
+                    f"flag {logger.Style.cyan + preprocessing_step.disabling_flag() + logger.Style.end} to avoid "
+                    "this.",
+                    e,
+                )

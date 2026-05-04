@@ -22,11 +22,13 @@ class FullyConnected(meta.BuiltinOptions):
     keep_num_dims: bool
     asymmetric_quantize_inputs: bool
 
-    def __init__(self,
-                 fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
-                 weights_format: FullyConnectedOptionsWeightsFormat = FullyConnectedOptionsWeightsFormat.DEFAULT,
-                 keep_num_dims: bool = False,
-                 asymmetric_quantize_inputs: bool = False) -> None:
+    def __init__(
+        self,
+        fused_activation_function: ActivationFunctionType = ActivationFunctionType.NONE,
+        weights_format: FullyConnectedOptionsWeightsFormat = FullyConnectedOptionsWeightsFormat.DEFAULT,
+        keep_num_dims: bool = False,
+        asymmetric_quantize_inputs: bool = False,
+    ) -> None:
         super().__init__(BuiltinOptions.FullyConnectedOptions, BuiltinOperator.FULLY_CONNECTED)
         self.fused_activation_function = fused_activation_function
         self.weights_format = weights_format

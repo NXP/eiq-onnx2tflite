@@ -71,8 +71,10 @@ class SumConverter(NodeConverter):
 
             if uses_shape_broadcasting(t_op):
                 # TFLite 'AddN' doesn't support shape broadcasting at all. Need to implement explicit support.
-                logger.e(logger.Code.NOT_IMPLEMENTED,
-                         "ONNX Operator 'Sum' with more than 2 inputs uses shape broadcasting. This requires explicit "
-                         "support by the converter, which has not yet been implemented!")
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "ONNX Operator 'Sum' with more than 2 inputs uses shape broadcasting. This requires explicit "
+                    "support by the converter, which has not yet been implemented!",
+                )
 
         return additional_ops + [t_op]

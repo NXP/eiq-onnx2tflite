@@ -44,8 +44,9 @@ class EluConverter(NodeConverter):
         if not np.allclose(attrs.alpha, 1.0):
             # TFLite only uses `alpha=1.0`. Other values could be converted into multiple operators, but it doesn't seem
             #  like a common use-case.
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     f"Conversion of ONNX `Elu` with `alpha={attrs.alpha}` is not supported.")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED, f"Conversion of ONNX `Elu` with `alpha={attrs.alpha}` is not supported."
+            )
 
         t_op.opcode_index = self.builder.op_code_index_for_op_type(BuiltinOperator.ELU)
 

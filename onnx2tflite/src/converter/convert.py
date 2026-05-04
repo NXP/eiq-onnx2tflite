@@ -45,14 +45,18 @@ def _assert_supported_opset(model: onnx_model.ModelProto, conversion_context: Co
         logger.e(logger.Code.INVALID_ONNX_MODEL, "The provided ONNX model doesn't have a specified opset version.")
 
     if onnx_opset_version < MINIMUM_REQUIRED_OPSET:
-        logger.e(logger.Code.NOT_IMPLEMENTED, f"This model uses opset {onnx_opset_version}. Conversion of ONNX models"
-                                              f" with opset < {MINIMUM_REQUIRED_OPSET} is not supported. " +
-                 logger.Message.IGNORE_OPSET_VERSION)
+        logger.e(
+            logger.Code.NOT_IMPLEMENTED,
+            f"This model uses opset {onnx_opset_version}. Conversion of ONNX models"
+            f" with opset < {MINIMUM_REQUIRED_OPSET} is not supported. " + logger.Message.IGNORE_OPSET_VERSION,
+        )
 
     if onnx_opset_version > MAXIMUM_VERIFIED_OPSET:
-        logger.e(logger.Code.NOT_IMPLEMENTED, f"This model uses opset {onnx_opset_version}. Correct conversion of ONNX "
-                                              f"models with opset > {MAXIMUM_VERIFIED_OPSET} is not guaranteed. " +
-                 logger.Message.IGNORE_OPSET_VERSION)
+        logger.e(
+            logger.Code.NOT_IMPLEMENTED,
+            f"This model uses opset {onnx_opset_version}. Correct conversion of ONNX "
+            f"models with opset > {MAXIMUM_VERIFIED_OPSET} is not guaranteed. " + logger.Message.IGNORE_OPSET_VERSION,
+        )
 
 
 def _convert(conversion_context: ConversionContext) -> tflite_model.Model:
@@ -105,8 +109,10 @@ def parse_symbolic_dimensions_mapping(mapped_symbolic_dimensions: list[str] | st
         mapping_details = mapping.split(":")
 
         if len(mapping_details) != 2 or not mapping_details[1].isdigit():
-            raise Exception(f"Symbolic dimension mapping '{mapping}' in invalid format. Must be "
-                            f"'<dim_name>:<dimension_size>' for example 'batch:1'.")
+            raise Exception(
+                f"Symbolic dimension mapping '{mapping}' in invalid format. Must be "
+                f"'<dim_name>:<dimension_size>' for example 'batch:1'."
+            )
         parsed_mapping[mapping_details[0]] = int(mapping_details[1])
 
     return parsed_mapping
@@ -128,23 +134,27 @@ def parse_input_shape_mapping(mapped_input_shapes: list[str] | str) -> dict[str,
     for mapping in mapped_input_shapes:
         mapping_details = mapping.split(":")
 
-        input_shape = (mapping_details[1]
-                       .replace("(", "")  # remove ( and )
-                       .replace(")", "")
-                       .split(","))
+        input_shape = (
+            mapping_details[1]
+            .replace("(", "")  # remove ( and )
+            .replace(")", "")
+            .split(",")
+        )
 
         if len(mapping_details) != 2 or not all([dim.isdigit() for dim in input_shape]):
-            raise Exception(f"Input shape definition '{mapping}' in invalid format. Must be "
-                            f"<dim_name>:(<dim_0>,<dim_1>,...) for example 'input_1:(1,3,224,224)'.")
+            raise Exception(
+                f"Input shape definition '{mapping}' in invalid format. Must be "
+                f"<dim_name>:(<dim_0>,<dim_1>,...) for example 'input_1:(1,3,224,224)'."
+            )
         parsed_mapping[mapping_details[0]] = tuple([int(dim) for dim in input_shape])
 
     return parsed_mapping
 
 
 def build_conversion_context(
-        onnx_model: onnx_model.ModelProto,
-        conversion_config: ConversionConfig | None = None,
-        inferred_tensor_data: dict[str, np.ndarray] | None = None
+    onnx_model: onnx_model.ModelProto,
+    conversion_config: ConversionConfig | None = None,
+    inferred_tensor_data: dict[str, np.ndarray] | None = None,
 ) -> ConversionContext:
     """Build conversion context for converted ONNX model.
 
@@ -155,8 +165,17 @@ def build_conversion_context(
     """
     if conversion_config is None:
         conversion_config = ConversionConfig()
-    description = "doc:'" + onnx_model.doc_string + "' domain:'" + onnx_model.domain \
-                  + "' producer:'" + onnx_model.producer_name + " " + onnx_model.producer_version + "'"
+    description = (
+        "doc:'"
+        + onnx_model.doc_string
+        + "' domain:'"
+        + onnx_model.domain
+        + "' producer:'"
+        + onnx_model.producer_name
+        + " "
+        + onnx_model.producer_version
+        + "'"
+    )
 
     tflite_builder = model_builder.ModelBuilder(3, description, conversion_config)
     onnx_inspector = model_inspector.ONNXModelInspector(onnx_model, inferred_tensor_data)
@@ -167,8 +186,8 @@ def build_conversion_context(
 
 
 def convert_model(
-        source: str | onnx.ModelProto,
-        conversion_config: ConversionConfig | None = None,
+    source: str | onnx.ModelProto,
+    conversion_config: ConversionConfig | None = None,
 ) -> bytearray:
     """Convert an ONNX model into TFLite. Model could be provided through path to *.onnx file
     or directly as ModelProto object.
@@ -195,9 +214,11 @@ def convert_model(
                 # Use model directly
                 parsed_onnx_model = source
             else:
-                logger.e(logger.Code.INVALID_INPUT,
-                         f"Cannot initialize ONNX model from object of type '{type(source)}'! "
-                         f"Expected type 'onnx.ModelProto' or 'string'.")
+                logger.e(
+                    logger.Code.INVALID_INPUT,
+                    f"Cannot initialize ONNX model from object of type '{type(source)}'! "
+                    f"Expected type 'onnx.ModelProto' or 'string'.",
+                )
 
             # Dictionary mapping names of ONNX tensors to their data, inferred by the shape inference.
             inferred_tensor_data = {}
@@ -207,16 +228,17 @@ def convert_model(
                 if conversion_config.skip_shape_inference:
                     try:
                         onnx.checker.check_model(parsed_onnx_model, full_check=True)
-                    except Exception as e: # noqa: BLE001
-                        logger.e(logger.Code.SHAPE_INFERENCE_ERROR,
-                                 f"ONNX model's shapes not completely defined: {e!s}")
+                    except Exception as e:  # noqa: BLE001
+                        logger.e(
+                            logger.Code.SHAPE_INFERENCE_ERROR, f"ONNX model's shapes not completely defined: {e!s}"
+                        )
                 else:
                     parsed_onnx_model = ModelShapeInference.infer_shapes(
                         parsed_onnx_model,
                         symbolic_dimensions_mapping=conversion_config.symbolic_dimensions_mapping,
                         input_shapes_mapping=conversion_config.input_shapes_mapping,
                         inferred_tensor_data=inferred_tensor_data,
-                        generate_artifacts_after_failed_shape_inference=conversion_config.generate_artifacts_after_failed_shape_inference
+                        generate_artifacts_after_failed_shape_inference=conversion_config.generate_artifacts_after_failed_shape_inference,
                     )
 
             with loggingContext(BasicLoggingContext.CONVERSION_PREPROCESSING):
@@ -244,10 +266,13 @@ def convert_model(
         except Error as e:
             # Just propagate the error
             raise e
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             logger.d(f"Generic conversion exception caught ({type(e).__name__}). {traceback.format_exc()}")
-            logger.e(logger.Code.INTERNAL_ERROR,
-                     f"Unexpected internal error: '[{type(e).__name__}] {e!s}'. Please report this issue on "
-                     f"https://github.com/NXP/eiq-onnx2tflite/issues.", exception=e)
+            logger.e(
+                logger.Code.INTERNAL_ERROR,
+                f"Unexpected internal error: '[{type(e).__name__}] {e!s}'. Please report this issue on "
+                f"https://github.com/NXP/eiq-onnx2tflite/issues.",
+                exception=e,
+            )
 
         return flatbuffer_model

@@ -18,8 +18,9 @@ class LeakyRelu(meta.BuiltinOptions):
     alpha: float
 
     def __init__(self, alpha: float) -> None:
-        super().__init__(libBuiltinOptions.BuiltinOptions.LeakyReluOptions,
-                         libBuiltinOperator.BuiltinOperator.LEAKY_RELU)
+        super().__init__(
+            libBuiltinOptions.BuiltinOptions.LeakyReluOptions, libBuiltinOperator.BuiltinOperator.LEAKY_RELU
+        )
         self.alpha = alpha
 
     def gen_tflite(self, builder: fb.Builder) -> int:

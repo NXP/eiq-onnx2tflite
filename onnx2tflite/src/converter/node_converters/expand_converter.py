@@ -59,18 +59,21 @@ class ExpandConverter(NodeConverter):
                 return []
 
         if any(input_tensor.tensor_format.is_channels_last() for input_tensor in t_op.tmp_inputs):
-            logger.e(logger.Code.NOT_IMPLEMENTED,
-                     "ONNX Operator 'Expand' uses shape broadcasting for its input tensors."
-                     " This requires explicit support by the converter and has not yet been "
-                     "implemented!")
+            logger.e(
+                logger.Code.NOT_IMPLEMENTED,
+                "ONNX Operator 'Expand' uses shape broadcasting for its input tensors."
+                " This requires explicit support by the converter and has not yet been "
+                "implemented!",
+            )
 
         ops = OpsList()
 
         x_shape_tensor = self.builder.create_tensor_for_data(np.array(x.shape.vector, np.int64), "x_shape")
 
         broadcasted_shape = [max(new_shape.rank, x.rank)]
-        broadcast_output_tensor = self.builder.create_empty_tensor("broadcasted_shape", TensorType.INT64,
-                                                                   broadcasted_shape)
+        broadcast_output_tensor = self.builder.create_empty_tensor(
+            "broadcasted_shape", TensorType.INT64, broadcasted_shape
+        )
 
         # Prepend 'BroadcastArgs' operator to compute the output shape (result of broadcasting 'x.shape' and
         #  'new_shape.value')

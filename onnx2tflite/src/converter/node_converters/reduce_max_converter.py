@@ -26,9 +26,15 @@ from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
 
 class ReduceMaxConverter(NodeConverter):
     node = "ReduceMax"
-    onnx_supported_types = FLOATS + [TensorType.INT8, TensorType.INT32, TensorType.INT64,
-                                     TensorType.UINT8, TensorType.UINT32, TensorType.UINT64,
-                                     TensorType.BOOL]
+    onnx_supported_types = FLOATS + [
+        TensorType.INT8,
+        TensorType.INT32,
+        TensorType.INT64,
+        TensorType.UINT8,
+        TensorType.UINT32,
+        TensorType.UINT64,
+        TensorType.BOOL,
+    ]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/reduce.cc#L874-L905
     tflite_supported_types = INTS + [TensorType.FLOAT32, TensorType.UINT8, TensorType.BOOL]
     verified_types = [TensorType.FLOAT32, TensorType.INT8, TensorType.INT32, TensorType.INT64, TensorType.UINT8]
@@ -57,8 +63,9 @@ class ReduceMaxConverter(NodeConverter):
         attrs = cast(ReduceMax, node.attributes)
 
         ops = OpsList(middle_op=t_op)
-        convert_axes_from_input_tensor(t_op, self.builder, self.inspector, ops, attrs.noop_with_empty_axes,
-                                       node.op_type)
+        convert_axes_from_input_tensor(
+            t_op, self.builder, self.inspector, ops, attrs.noop_with_empty_axes, node.op_type
+        )
 
         t_op.builtin_options = reduce_max_options.ReduceMax(bool(attrs.keepdims))
 
@@ -76,8 +83,9 @@ class ReduceMaxConverter(NodeConverter):
 
         if x.type == TensorType.BOOL:
             # The TFLite inference crashes when trying to run the operator, without any useful error message.
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE,
-                     "Conversion of ONNX `ReduceMax` with type BOOL is not possible.")
+            logger.e(
+                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `ReduceMax` with type BOOL is not possible."
+            )
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
