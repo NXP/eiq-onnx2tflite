@@ -176,7 +176,6 @@ def _quantize_model(onnx_model: onnx.ModelProto, output_onnx_model_path, args: d
     :param output_onnx_model_path: Path where final quantized model should be saved.
     :param args: Quantization arguments as dict provided via CLI.
     """
-
     calibration_data_reader = (
         None
         if args.get("use_random_calibration_dataset", False)

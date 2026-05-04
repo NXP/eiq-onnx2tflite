@@ -151,7 +151,6 @@ def propagate_quantization(from_tensor: tflite_model.Tensor, to_tensor: tflite_m
     checks the consistency.
     :raises: logger.Error - INVALID_ONNX_MODEL
     """
-
     # noinspection PyTypeChecker
     if not _validate_or_set_quant_params(to_tensor, from_tensor.quantization):
         logger.e(

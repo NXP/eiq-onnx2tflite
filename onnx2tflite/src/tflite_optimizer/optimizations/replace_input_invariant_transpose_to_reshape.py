@@ -33,6 +33,7 @@ class ReplaceInputInvariantTransposeWithReshape(BaseOptimization):
         Example:
             Input shape [1,20,20,1] and permutation [0,3,1,2] are tensor invariant, because we're
             effectively moving dimensions of size 1 (dim 3), which doesn't change the tensor layout.
+
         """
 
         def input_dim_is_not_one(index):

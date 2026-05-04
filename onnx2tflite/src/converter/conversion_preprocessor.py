@@ -8,11 +8,11 @@ from dataclasses import dataclass
 
 import onnx
 
+from onnx2tflite.src import logger
+from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.preprocessing_steps.duplicate_dequantize_linear_for_each_consumer import (
     DuplicateDequantizeLinearForEachConsumer,
 )
-from onnx2tflite.src import logger
-from onnx2tflite.src.conversion_config import ConversionConfig
 
 
 @dataclass

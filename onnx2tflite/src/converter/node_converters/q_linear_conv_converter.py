@@ -20,9 +20,9 @@ from onnx2tflite.src.converter.node_converters.shared import conv_utils
 from onnx2tflite.src.converter.quantization_utils import (
     calculate_uint_to_int_re_quantization_zero_point,
     get_symmetric_zero_point_for_type,
+    propagate_quantization,
     re_quantize_static_tensor,
     set_quantization_parameters_to_tensor,
-    propagate_quantization,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
@@ -388,10 +388,9 @@ class QLinearConvConverter(NodeConverter):
         kernel_rank = len(attrs.kernel_shape)
         if kernel_rank == 1:
             return self._convert_1d_q_linear_conv(attrs, t_op)
-        elif kernel_rank == 2:
+        if kernel_rank == 2:
             return self._convert_2d_q_linear_conv(attrs, t_op)
-        else:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX QLinearConv with '{kernel_rank}' dimensions is not possible!",
-            )
+        logger.e(
+            logger.Code.CONVERSION_IMPOSSIBLE,
+            f"Conversion of ONNX QLinearConv with '{kernel_rank}' dimensions is not possible!",
+        )

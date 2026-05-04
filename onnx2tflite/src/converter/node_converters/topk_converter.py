@@ -16,11 +16,8 @@ from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import topk_attributes
-from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import neg_options, topk_v2_options
-from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
-from onnx2tflite.src.tflite_generator.tflite_model import Operator, Tensor
+from onnx2tflite.src.tflite_generator.builtin_options import topk_v2_options
 
 
 class TopKConverter(NodeConverter):

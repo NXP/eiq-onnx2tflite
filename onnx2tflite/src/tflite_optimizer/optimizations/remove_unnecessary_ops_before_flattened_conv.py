@@ -8,32 +8,31 @@
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
 from onnx2tflite.src.tflite_optimizer.tensor_rules import (
-    TensorHasStaticValue,
-    TensorsHaveOneConsumer,
-    TensorHasRank,
     TensorHasDimensionOfSize,
+    TensorHasRank,
+    TensorHasStaticValue,
     TensorIsNotModelOutput,
+    TensorsHaveOneConsumer,
 )
 
 
 class RemoveUnnecessaryOpsBeforeFlattenedConv(BaseOptimization):
-    """
-    Remove unnecessary Reshape and Transpose operations before a flattened Conv operation.
+    """Remove unnecessary Reshape and Transpose operations before a flattened Conv operation.
 
-          │ 2D                               │
-     ┌────▼────┐                             │
-     │Transpose◄─── perm=[1,0]               │
-     └────┬────┘                             │
-          │ 2D                               │
-     ┌────▼────┐            ───────►    ┌────▼────┐
-     │ Reshape │                        │ Reshape │
-     └────┬────┘                        └────┬────┘
-          │ 4D with shape (1,1,1,C)          │ 4D with same shape
-     ┌────▼────┐                        ┌────▼────┐
-     │ Conv2D  │                        │ Conv2D  ◄─── Weights transposed
-     └────┬────┘                        └────┬────┘
-          │                                  │
-          ▼                                  ▼
+         │ 2D                               │
+    ┌────▼────┐                             │
+    │Transpose◄─── perm=[1,0]               │
+    └────┬────┘                             │
+         │ 2D                               │
+    ┌────▼────┐            ───────►    ┌────▼────┐
+    │ Reshape │                        │ Reshape │
+    └────┬────┘                        └────┬────┘
+         │ 4D with shape (1,1,1,C)          │ 4D with same shape
+    ┌────▼────┐                        ┌────▼────┐
+    │ Conv2D  │                        │ Conv2D  ◄─── Weights transposed
+    └────┬────┘                        └────┬────┘
+         │                                  │
+         ▼                                  ▼
 
     """
 

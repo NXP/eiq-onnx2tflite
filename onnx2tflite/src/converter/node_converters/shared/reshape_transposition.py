@@ -79,7 +79,7 @@ def _single_unitary_dimension_change(from_shape, to_shape) -> tuple[int, SingleU
 # noinspection PyPep8Naming
 def _get_permutation_for_single_unitary_change_in_NC_dims(
     shape_from: list[int], to_shape: list[int]
-) -> list[int] | None:  # noqa: N802
+) -> list[int] | None:
     """Get permutation used by prepended 'Transpose' operator if there's only single unitary
     dimension change (single added/removed dimension with value 1) in batch or channel dimension
     done by 'Reshape' operator.
