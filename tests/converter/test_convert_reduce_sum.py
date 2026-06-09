@@ -547,3 +547,24 @@ def test_convert_reduce_sum__quantized(type_: TensorProto.DataType):
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model)
     assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
+
+
+def test_convert_reduce_sum__multiple_reduces():
+    x_shape = [5, 10, 15]
+
+    np.random.seed(42)
+    x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
+
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('ReduceSum', ['x', 'axes'], ['a']),
+            onnx.helper.make_node('ReduceSum', ['a', 'axes'], ['y'])
+        ],
+        'ReduceSum test',
+        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, x_shape)],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
+        [onnx.helper.make_tensor('axes', TensorProto.INT64, [2], [0, 2])]
+    )
+    onnx_model = onnx.helper.make_model(graph)
+    # Check axes tensor were not rewritten and not causing conversion to crash with incorrect type
+    executors.convert_run_compare(onnx_model, x_data)

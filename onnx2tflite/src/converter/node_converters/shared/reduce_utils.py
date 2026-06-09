@@ -71,6 +71,11 @@ def convert_axes_from_input_tensor(
 
         # Make sure the `axes` are int32.
         if tensor_has_data(axes_tensor):
+            # Clone tensor if it has multiple consumers
+            if inspector.get_number_of_onnx_consumers_safe(axes_tensor.name) != 1:
+                # noinspection PyTypeChecker
+                axes_tensor = builder.create_tensor_for_data(axes_tensor.tmp_buffer.data, "axes")
+
             # Cast the `axes` to int32 statically.
             axes_tensor.tmp_buffer.data = axes_tensor.tmp_buffer.data.astype(np.int32)
             axes_tensor.type = TensorType.INT32
@@ -80,7 +85,7 @@ def convert_axes_from_input_tensor(
             #  this case, so it must have been skipped. If the `axes` are empty at runtime, ONNX will reduce over
             #  all dimensions, whereas TFLite will not reduce at all. So the behavior is different, and it depends
             #  on runtime data. Conversion could be implemented by adding multiple extra operators.
-            # I don't thing that completely prohibiting the conversion here is ideal, since the issue arises only in
+            # I don't think that completely prohibiting the conversion here is ideal, since the issue arises only in
             #  an edge case, which is hopefully not very common. Just print a warning message for now.
             logger.w(
                 f"Conversion of ONNX `{op_type}` with a dynamic `axes` input will not be correct, if the `axes`"
