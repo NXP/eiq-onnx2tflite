@@ -105,7 +105,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops = []
 
         # ---- Mean(x) ----
-        mean_1_out = self.builder.duplicate_tensor(x, name_suffix="_mean")
+        mean_1_out = self.builder.duplicate_tensor(x, name_suffix="_mean", empty_buffer=True)
         axes_1 = self.builder.create_tensor_for_data(np.array(axes, np.int32), "axes")
 
         mean_1 = tflite_model.Operator(builtin_options=Mean(True))
@@ -155,7 +155,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(rsqrt)
 
         # ---- Sub(x, mean_1_out) ----  (x - mean(x))
-        sub_out = self.builder.duplicate_tensor(x, name_suffix="_minus_mean")
+        sub_out = self.builder.duplicate_tensor(x, name_suffix="_minus_mean", empty_buffer=True)
 
         sub = tflite_model.Operator(builtin_options=Sub())
         sub.tmp_inputs = [x, mean_1_out]
@@ -173,7 +173,7 @@ class InstanceNormalizationConverter(NodeConverter):
         ops.append(mul_1)
 
         # ---- Mul(mul_1_out, rsqrt_out) ----  (scale * (x - mean) / sqrt(variance + epsilon))
-        mul_2_out = self.builder.duplicate_tensor(x, name_suffix="_normalized")
+        mul_2_out = self.builder.duplicate_tensor(x, name_suffix="_normalized", empty_buffer=True)
 
         mul_2 = tflite_model.Operator(builtin_options=Mul())
         mul_2.tmp_inputs = [mul_1_out, rsqrt_out]

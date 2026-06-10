@@ -35,8 +35,8 @@ class TanConverter(NodeConverter):
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)
 
-        cos_output = self.builder.duplicate_tensor(x, name_suffix="_cos_out")
-        sin_output = self.builder.duplicate_tensor(x, name_suffix="_sin_out")
+        cos_output = self.builder.duplicate_tensor(x, name_suffix="_cos_out", empty_buffer=True)
+        sin_output = self.builder.duplicate_tensor(x, name_suffix="_sin_out", empty_buffer=True)
 
         sin_op = tflite_model.Operator()
         sin_op.opcode_index = self.builder.op_code_index_for_op_type(BuiltinOperator.SIN)

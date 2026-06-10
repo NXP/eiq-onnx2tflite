@@ -64,7 +64,7 @@ class MaxPoolConverter(NodeConverter):
         # Generate tensors taking part in the conversion
         reshape_pre_input = t_op.tmp_inputs[0]
 
-        reshape_pre_output = self.builder.duplicate_tensor(reshape_pre_input, name_suffix="_4D_")
+        reshape_pre_output = self.builder.duplicate_tensor(reshape_pre_input, name_suffix="_4D_", empty_buffer=True)
         reshape_pre_output.shape = tflite_model.Shape(reshape_pre_output_shape)
 
         reshape_post_input = self.builder.duplicate_tensor(t_op.tmp_outputs[0], name_suffix="_4D_")

@@ -56,7 +56,7 @@ class QuickGeluConverter(NodeConverter):
             mul_1_output = x
         else:
             # Create a `Mul` operator.
-            mul_1_output = self.builder.duplicate_tensor(x, name_suffix="_scaled")
+            mul_1_output = self.builder.duplicate_tensor(x, name_suffix="_scaled", empty_buffer=True)
             alpha = self.builder.create_tensor_for_data(np.array([qg_attributes.alpha], np.float32), "alpha")
 
             mul_1_op = tflite_model.Operator(builtin_options=Mul())

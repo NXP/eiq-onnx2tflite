@@ -64,7 +64,7 @@ class BatchNormalizationConverter(NodeConverter):
 
         # Create the tensors taking part in the equation
         multiplication_factor = self.builder.create_tensor_for_data(tmp, "BatchNorm_multiplication_factor")
-        fraction = self.builder.duplicate_tensor(x, "BatchNorm_fraction")
+        fraction = self.builder.duplicate_tensor(x, "BatchNorm_fraction", empty_buffer=True)
 
         # Create 'Mul' operator, to multiply the input with the static tensor `(scale / sqrt(var + eps))`
         mul = tflite_model.Operator(builtin_options=mul_options.Mul())
@@ -96,11 +96,11 @@ class BatchNormalizationConverter(NodeConverter):
 
         # Create tensors taking part in the equation
         epsilon = self.builder.create_tensor_for_data(np.asarray([attrs.epsilon], np.float32), "eps")
-        var_eps = self.builder.duplicate_tensor(x)
-        inv_sqrt = self.builder.duplicate_tensor(x)
-        normalized_x = self.builder.duplicate_tensor(x)
-        scaled_x = self.builder.duplicate_tensor(x)
-        fraction = self.builder.duplicate_tensor(x)
+        var_eps = self.builder.duplicate_tensor(x, empty_buffer=True)
+        inv_sqrt = self.builder.duplicate_tensor(x, empty_buffer=True)
+        normalized_x = self.builder.duplicate_tensor(x, empty_buffer=True)
+        scaled_x = self.builder.duplicate_tensor(x, empty_buffer=True)
+        fraction = self.builder.duplicate_tensor(x, empty_buffer=True)
 
         var_eps.shape = tflite_model.Shape(var.shape.vector.copy())
         inv_sqrt.shape = tflite_model.Shape(var.shape.vector.copy())

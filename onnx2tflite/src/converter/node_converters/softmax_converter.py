@@ -144,7 +144,7 @@ class SoftmaxConverter(NodeConverter):
         x = op_softmax.tmp_inputs[0]
         y = op_softmax.tmp_outputs[0]
 
-        t1 = self.builder.duplicate_tensor(x, "softmax_reshape_1_")
+        t1 = self.builder.duplicate_tensor(x, "softmax_reshape_1_", empty_buffer=True)
         t1.shape = tflite_model.Shape(reshape_inner_shape)
         t1.tensor_format = TensorFormat.FORMATLESS
 
