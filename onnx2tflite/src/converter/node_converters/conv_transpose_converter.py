@@ -117,6 +117,9 @@ class ConvTransposeConverter(NodeConverter):
             ops.add_post(self.builder.create_transpose_operator_before(t_op, 1, [1, 2, 3, 0]))
         weight_tensor.tensor_format = TensorFormat.TRANSPOSE_CONV_2D_WEIGHT_FORMAT
 
+        if weight_tensor.quantization is not None:
+            weight_tensor.quantization.quantized_dimension = 0
+
         if explicit_padding:
             # Add padding to output shape to make sure we have computed all the data we need
             for idx, padding in enumerate(explicit_padding):
