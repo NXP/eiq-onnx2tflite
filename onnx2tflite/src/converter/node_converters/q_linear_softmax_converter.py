@@ -144,11 +144,11 @@ class QLinearSoftmaxConverter(NodeConverter):
         x = op_ql_softmax.tmp_inputs[0]
         y = op_ql_softmax.tmp_outputs[0]
 
-        t1 = self.builder.duplicate_tensor(x, "q_linear_softmax_reshape_1_")
+        t1 = self.builder.duplicate_tensor(x, "q_linear_softmax_reshape_1_", empty_buffer=True)
         t1.shape = tflite_model.Shape(reshape_inner_shape)
         t1.tensor_format = TensorFormat.FORMATLESS
 
-        t2 = self.builder.duplicate_tensor(y, "q_linear_softmax_reshape_2_")
+        t2 = self.builder.duplicate_tensor(y, "q_linear_softmax_reshape_2_", empty_buffer=True)
         t2.shape = tflite_model.Shape(reshape_inner_shape)
         t2.tensor_format = TensorFormat.FORMATLESS
 

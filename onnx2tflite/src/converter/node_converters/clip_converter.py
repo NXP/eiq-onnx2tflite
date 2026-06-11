@@ -252,7 +252,7 @@ class ClipConverter(NodeConverter):
             min_op = tflite_model.Operator(builtin_options=minimum_options.Minimum())
             if len(ops_to_add) == 1:
                 # A Maximum op will come before the Minimum -> create an in-between tensor.
-                input_tensor = self.builder.duplicate_tensor(x)
+                input_tensor = self.builder.duplicate_tensor(x, empty_buffer=True)
                 ops_to_add[0].tmp_outputs[0] = input_tensor
 
             else:

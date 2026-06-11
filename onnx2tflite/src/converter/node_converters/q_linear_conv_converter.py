@@ -267,7 +267,7 @@ class QLinearConvConverter(NodeConverter):
         # -- Generate tensors taking part in the conversion --
         input_reshape_x = t_op.tmp_inputs[0]
 
-        input_reshape_y = self.builder.duplicate_tensor(input_reshape_x, name_suffix="_4D_")
+        input_reshape_y = self.builder.duplicate_tensor(input_reshape_x, name_suffix="_4D_", empty_buffer=True)
         input_reshape_y.shape = tflite_model.Shape(conv_2d_input_shape)
 
         output_reshape_x = self.builder.duplicate_tensor(t_op.tmp_outputs[0], name_suffix="_4D_")

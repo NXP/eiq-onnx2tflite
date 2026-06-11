@@ -102,24 +102,24 @@ class LayerNormalizationConverter(NodeConverter):
         # Create the tensors taking part in the computation. Names are based on the ONNX documentation.
         axes_tensor = self.builder.create_tensor_for_data(axes, "axes")
         epsilon_tensor = self.builder.create_tensor_for_data(epsilon, "epsilon")
-        d = self.builder.duplicate_tensor(x, "D")
-        d_squared = self.builder.duplicate_tensor(x, "D squared")
-        var = self.builder.duplicate_tensor(x, "var")
-        var_eps = self.builder.duplicate_tensor(x, "var_eps")
-        normalized = self.builder.duplicate_tensor(x, "normalized")
-        normalized_scaled = self.builder.duplicate_tensor(x, "normalized_scaled")
+        d = self.builder.duplicate_tensor(x, "D", empty_buffer=True)
+        d_squared = self.builder.duplicate_tensor(x, "D squared", empty_buffer=True)
+        var = self.builder.duplicate_tensor(x, "var", empty_buffer=True)
+        var_eps = self.builder.duplicate_tensor(x, "var_eps", empty_buffer=True)
+        normalized = self.builder.duplicate_tensor(x, "normalized", empty_buffer=True)
+        normalized_scaled = self.builder.duplicate_tensor(x, "normalized_scaled", empty_buffer=True)
 
         if len(t_op.tmp_outputs) >= 2:
             # The operator also outputs the 'Mean' tensor
             mean = t_op.tmp_outputs[1]
         else:
-            mean = self.builder.duplicate_tensor(x, "mean")
+            mean = self.builder.duplicate_tensor(x, "mean", empty_buffer=True)
 
         if len(t_op.tmp_outputs) == 3:
             # The operator also outputs the 'InvStdDev ' tensor
             inv_std_dev = t_op.tmp_outputs[2]
         else:
-            inv_std_dev = self.builder.duplicate_tensor(x, "inv_std_dev")
+            inv_std_dev = self.builder.duplicate_tensor(x, "inv_std_dev", empty_buffer=True)
 
         # Create the operators
         mean_1_op = tflite_model.Operator(builtin_options=mean_options.Mean(True))

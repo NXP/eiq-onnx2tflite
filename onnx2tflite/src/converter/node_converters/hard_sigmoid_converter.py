@@ -70,7 +70,7 @@ class HardSigmoidConverter(NodeConverter):
             mul_output = x
         else:
             # Create a `Mul` operator
-            mul_output = self.builder.duplicate_tensor(x)
+            mul_output = self.builder.duplicate_tensor(x, empty_buffer=True)
 
             mul_op = tflite_model.Operator(builtin_options=mul_options.Mul())
             mul_op.tmp_inputs = [
@@ -87,7 +87,7 @@ class HardSigmoidConverter(NodeConverter):
             add_output = mul_output
         else:
             # Create an `Add` operator
-            add_output = self.builder.duplicate_tensor(x)
+            add_output = self.builder.duplicate_tensor(x, empty_buffer=True)
 
             add_op = tflite_model.Operator(builtin_options=add_options.Add())
             add_op.tmp_inputs = [
@@ -100,7 +100,7 @@ class HardSigmoidConverter(NodeConverter):
 
         # ---- Create a `Minimum` operator ----
         # Alternatively we can use ReluN1To1, if it has better support by the boards.
-        min_output = self.builder.duplicate_tensor(x)
+        min_output = self.builder.duplicate_tensor(x, empty_buffer=True)
 
         min_op = tflite_model.Operator(builtin_options=minimum_options.Minimum())
         min_op.tmp_inputs = [add_output, self.builder.create_tensor_for_data(np.array([1.0], np.float32), "one")]

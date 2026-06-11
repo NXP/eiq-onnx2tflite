@@ -58,7 +58,7 @@ class ReduceL2Converter(NodeConverter):
             axes_tensor = self.builder.create_tensor_for_data(np.asarray(axes, np.int32), "axes")
             t_op.tmp_inputs.append(axes_tensor)
 
-        square_out = self.builder.duplicate_tensor(x, name_suffix="_squared")
+        square_out = self.builder.duplicate_tensor(x, name_suffix="_squared", empty_buffer=True)
 
         square_op = tflite_model.Operator(builtin_options=square_options.Square())
         square_op.tmp_inputs = [x]
@@ -167,7 +167,7 @@ class ReduceL2Converter(NodeConverter):
             # Default is to reduce all axes.
             axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
 
-        square_output = self.builder.duplicate_tensor(x, name_suffix="_squared")
+        square_output = self.builder.duplicate_tensor(x, name_suffix="_squared", empty_buffer=True)
 
         square_op = tflite_model.Operator(builtin_options=square_options.Square())
         square_op.tmp_inputs = [x]

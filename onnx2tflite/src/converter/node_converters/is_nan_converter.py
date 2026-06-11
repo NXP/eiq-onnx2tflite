@@ -35,7 +35,7 @@ class IsNaNConverter(NodeConverter):
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
-        is_equal = self.builder.duplicate_tensor(x)
+        is_equal = self.builder.duplicate_tensor(x, empty_buffer=True)
 
         equal = tflite_model.Operator(builtin_options=equal_options.Equal())
         equal.tmp_inputs = [x, x]

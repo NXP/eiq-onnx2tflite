@@ -190,7 +190,7 @@ class QGemmConverter(NodeConverter):
             zp = [get_symmetric_zero_point_for_type(x.type)]
             alpha_tensor = quantize_static_float_tensor(self.builder, alpha_tensor, x.type, [alpha], zp)
 
-            mul_output = self.context.tflite_builder.duplicate_tensor(x, name_suffix="_scaled")
+            mul_output = self.context.tflite_builder.duplicate_tensor(x, name_suffix="_scaled", empty_buffer=True)
 
             # Mul output tensor is quantized as 'alpha * input_scale'. This means that the literal 8bit values
             #  at the output of `Mul` will be exactly the same as the input values. Just their corresponding

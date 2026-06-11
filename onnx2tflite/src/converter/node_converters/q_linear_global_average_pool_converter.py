@@ -101,10 +101,12 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
         original_output_tensor = t_op.tmp_outputs[0]
 
         # Create new tensors for the QLinearGlobalAveragePool operator
-        new_input_tensor = self.builder.duplicate_tensor(original_input_tensor, "QLinearGlobalAveragePool_input")
+        new_input_tensor = self.builder.duplicate_tensor(original_input_tensor, "QLinearGlobalAveragePool_input",
+                                                         empty_buffer=True)
         new_input_tensor.shape = tflite_model.Shape(reshape_1_output_shape)
 
-        new_output_tensor = self.builder.duplicate_tensor(original_output_tensor, "QLinearGlobalAveragePool_output")
+        new_output_tensor = self.builder.duplicate_tensor(original_output_tensor, "QLinearGlobalAveragePool_output",
+                                                          empty_buffer=True)
         new_output_tensor.shape = tflite_model.Shape(reshape_2_input_shape)
 
         t_op.tmp_inputs[0] = new_input_tensor

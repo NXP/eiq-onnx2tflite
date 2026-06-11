@@ -152,10 +152,10 @@ class QLinearAveragePoolConverter(NodeConverter):
         # -- Generate tensors taking part in the conversion --
         reshape1_input = t_op.tmp_inputs[0]
 
-        reshape1_output = self.builder.duplicate_tensor(reshape1_input, name_suffix="_4D_")
+        reshape1_output = self.builder.duplicate_tensor(reshape1_input, name_suffix="_4D_", empty_buffer=True)
         reshape1_output.shape = tflite_model.Shape(reshape1_output_shape)
 
-        reshape2_input = self.builder.duplicate_tensor(reshape1_input, name_suffix="_4D_")
+        reshape2_input = self.builder.duplicate_tensor(reshape1_input, name_suffix="_4D_", empty_buffer=True)
         reshape2_input.shape = tflite_model.Shape(reshape2_input_shape)
 
         reshape2_output = t_op.tmp_outputs[0]
