@@ -72,7 +72,7 @@ def test_convert_conv_transpose_qdq__per_channel__int8(intermediate_tflite_model
     kernel_shape = [3, 3]
     input_shape = [2, 3, 4, 5]
     output_shape = [2, 3, 6, 7]
-    weight_shape = [input_shape[1], 3] + kernel_shape
+    weight_shape = [input_shape[1], 8] + kernel_shape
     bias_shape = [weight_shape[1]]
     np.random.seed(23)
 
