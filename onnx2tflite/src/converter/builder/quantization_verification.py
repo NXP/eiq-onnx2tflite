@@ -83,6 +83,12 @@ class SharedParamsForType(QuantizationRule):
         # Check quantization values (scales & zero-points)
         scales_same = all([first_quantization.scale == t.quantization.scale for t in shared_tensors[1:]])
         zp_same = all([first_quantization.zero_point == t.quantization.zero_point for t in shared_tensors[1:]])
+
+        if not scales_same or not zp_same:
+            tensor_names = [tensor.name for tensor in shared_tensors]
+            logger.w(f"Following tensors must have the same quantization parameters, "
+                     f"but they don't: {', '.join(tensor_names)}.")
+
         return scales_same and zp_same
 
     def __str__(self):
@@ -307,6 +313,7 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
 
     ops: list[tflite_model.Operator] = model.sub_graphs.vector[0].operators.vector
     operator_codes = {idx: code.builtin_code for idx, code in enumerate(model.operator_codes.vector)}
+    operator_type_str_map = {v: k for k, v in BuiltinOperator.__dict__.items() if isinstance(v, int)}
     is_error = False
 
     for op in ops:
@@ -314,8 +321,10 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
             if op.builtin_options.operator_type in rules:
                 for rule in rules[op.builtin_options.operator_type]:
                     if not rule.valid(op):
+                        # noinspection PyTypeChecker
+                        op_type = int(op.builtin_options.operator_type)
                         logger.w(
-                            f"TFLite operator with op_type='{op.builtin_options.operator_type}' wasn't quantized "
+                            f"TFLite operator '{operator_type_str_map[op_type]}(op_type={op_type})' wasn't quantized "
                             f"properly. Following TFLite quantization rule was not satisfied: '{rule}'."
                         )
                         is_error = True
