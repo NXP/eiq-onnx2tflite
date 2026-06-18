@@ -83,7 +83,7 @@ def test_convert_pad_v2_with_constant_zero(shape: list[int], pads: list[int]):
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
-def test_convert_pad_v2_with_negative_pads():
+def test_convert_pad_v2__with_negative_pads():
     shape = [13, 37]
     pads = [0, 0, 0, -1]
     graph = onnx.helper.make_graph(
@@ -109,7 +109,7 @@ def test_convert_pad_v2_with_negative_pads():
         pytest.param([10, 5, 3, 4], [0, 2, 0, 0, 4, 1, 0, 2], 4.5, id="4D"),
         pytest.param([7, 4, 5, 3, 4], [0, 2, 0, 1, 19, 0, 4, 1, 0, 2], 5.6, id="5D"),
     ])
-def test_convert_pad_v2_with_constant(shape: list[int], pads: list[int], value: float):
+def test_convert_pad_v2__with_constant(shape: list[int], pads: list[int], value: float):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node("Pad", ['x'], ['o'], mode='constant', pads=pads, value=value)],
         'Pad test',
@@ -130,7 +130,7 @@ def test_convert_pad_v2_with_constant(shape: list[int], pads: list[int], value: 
         pytest.param([10, 20, 4], [0, 2, 4, 1, 0, 2], id="3D"),
         pytest.param([10, 5, 3, 4], [0, 2, 0, 0, 4, 1, 0, 2], id="4D"),
     ])
-def test_convert_pad_v2_with_channels_first_format(shape: list[int], pads: list[int]):
+def test_convert_pad_v2__with_channels_first_format(shape: list[int], pads: list[int]):
     kernel_shape = [1] * (len(shape) - 2)
     print(kernel_shape)
     graph = onnx.helper.make_graph(
@@ -150,7 +150,7 @@ def test_convert_pad_v2_with_channels_first_format(shape: list[int], pads: list[
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
-def test_convert_pad_v2_skipping(intermediate_tflite_model_provider):
+def test_convert_pad_v2__skipping(intermediate_tflite_model_provider):
     shape = [4, 10]
     pads = [0, 0, 0, 0]
     graph = onnx.helper.make_graph(
@@ -174,7 +174,7 @@ def test_convert_pad_v2_skipping(intermediate_tflite_model_provider):
     assert ops[0].builtin_options.operator_type == BuiltinOperator.PAD
 
 
-def test_convert_pad_v2_bugged_reflect():
+def test_convert_pad_v2__bugged_reflect():
     shape = [2, 2]
     pads = [2, 2, 2, 2]
     graph = onnx.helper.make_graph(
@@ -199,7 +199,7 @@ def test_convert_pad_v2_bugged_reflect():
         pytest.param([10, 20, 4], [0, 2, 3, 1, 0, 2], id="3D"),
         pytest.param([10, 5, 3, 4], [0, 2, 0, 0, 4, 1, 0, 2], id="4D"),
     ])
-def test_convert_pad_v2_reflect(shape, pads):
+def test_convert_pad_v2__reflect(shape, pads):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node("Pad", ['x'], ['o'], mode='reflect', pads=pads, value=1.0)],
         'Pad test',
@@ -214,7 +214,7 @@ def test_convert_pad_v2_reflect(shape, pads):
     executors.convert_run_compare(onnx_model, input_data, conversion_config=config)
 
 
-def test_convert_pad_v2_edge():
+def test_convert_pad_v2__edge():
     shape = [2, 2]
     pads = [2, 2, 2, 2]
     graph = onnx.helper.make_graph(
@@ -240,7 +240,7 @@ def test_convert_pad_v2_edge():
         pytest.param([10, 5, 3, 4], [0, 2, 0, 0, 4, 1, 0, 2], id="4D"),
         pytest.param([7, 4, 5, 3, 4], [0, 2, 0, 1, 19, 0, 4, 1, 0, 2], id="5D"),
     ])
-def test_convert_pad_v19_constant_mode(shape: list[int], pads: list[int]):
+def test_convert_pad__constant_mode(shape: list[int], pads: list[int]):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node("Pad", ['x', 'pads', 'constant'], ['o'], mode='constant')],
         'Pad test',
@@ -258,7 +258,7 @@ def test_convert_pad_v19_constant_mode(shape: list[int], pads: list[int]):
     executors.convert_run_compare(onnx_model, input_data)
 
 
-def test_convert_pad_v19_dynamic_pads():
+def test_convert_pad__dynamic_pads():
     shape = [2, 2]
     pads = [2, 2, 2, 2]
     graph = onnx.helper.make_graph(
@@ -277,7 +277,7 @@ def test_convert_pad_v19_dynamic_pads():
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
 
 
-def test_convert_pad_v19_dynamic_axes():
+def test_convert_pad__dynamic_axes():
     shape = [2, 2]
     axes = [0, 2]
     pads = [1, 1, 1, 1]
@@ -302,7 +302,7 @@ def test_convert_pad_v19_dynamic_axes():
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
 
 
-def test_convert_pad_v19__default_axes():
+def test_convert_pad__default_axes():
     shape = [5, 10, 15, 20]
     pads = list(range(len(shape) * 2))  # Different padding everywhere.
 
@@ -328,13 +328,37 @@ def test_convert_pad_v19__default_axes():
 @pytest.mark.parametrize(
     "shape, pads",
     [
+        pytest.param([5], [0, 1], id="1D"),
+        pytest.param([2, 3], [0, 0, 0, 0], id="2D,zeros"),
+        pytest.param([2, 3], [1, 1, 1, 1], id="2D"),
+        pytest.param([1, 2, 3], [0, 0, 1, 0, 0, 1], id="3D"),
+        pytest.param([1, 2, 3, 4], [0, 0, 0, 0, 0, 0, 1, 1], id="4D"),
+    ])
+def test_convert_pad__edge_mode(shape: list[int], pads: list[int]):
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node("Pad", ['x', 'pads', '', ''], ['o'], mode='edge')],
+        'Pad test',
+        [onnx.helper.make_tensor_value_info("x", TensorProto.FLOAT, shape)],
+        [onnx.helper.make_tensor_value_info("o", TensorProto.FLOAT, ())],
+        [onnx.helper.make_tensor('pads', TensorProto.INT64, [len(pads)], pads)]
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    input_data = np.arange(np.prod(shape)).reshape(shape).astype(np.float32)
+
+    executors.convert_run_compare(onnx_model, input_data)
+
+
+@pytest.mark.parametrize(
+    "shape, pads",
+    [
         pytest.param([42], [1, 17], id="1D"),
         pytest.param([10, 20], [0, 2, 4, 1], id="2D"),
         pytest.param([10, 20, 4], [0, 2, 4, 1, 0, 2], id="3D"),
         pytest.param([10, 5, 3, 4], [0, 2, 0, 0, 4, 1, 0, 2], id="4D"),
         pytest.param([7, 4, 5, 3, 4], [0, 2, 0, 1, 19, 0, 4, 1, 0, 2], id="5D"),
     ])
-def test_convert_pad_v19_implicit_operands(shape: list[int], pads: list[int]):
+def test_convert_pad__implicit_operands(shape: list[int], pads: list[int]):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node("Pad", ['x', 'pads'], ['o'], mode='constant')],
         'Pad test',
@@ -369,7 +393,7 @@ def test_convert_pad_v19_implicit_operands(shape: list[int], pads: list[int]):
         pytest.param(TensorProto.BOOL, logger.Code.CONVERSION_IMPOSSIBLE, id="BOOL"),
         pytest.param(TensorProto.STRING, logger.Code.CONVERSION_IMPOSSIBLE, id="STRING"),
     ])
-def test_convert_pad_v19_implicit_constant_different_types(data_type: TensorProto.DataType, code: logger.Code | None):
+def test_convert_pad__implicit_constant_different_types(data_type: TensorProto.DataType, code: logger.Code | None):
     shape = [2, 3, 4, 5]
     pads = [1] * 8
     graph = onnx.helper.make_graph(
@@ -391,7 +415,7 @@ def test_convert_pad_v19_implicit_constant_different_types(data_type: TensorProt
         assert logger.conversion_log.get_node_error_code(0) == code
 
 
-def test_convert_pad_with_quantized_input():
+def test_convert_pad__with_quantized_input():
     shape = [3, 3]
     pads = [2] * (2 * len(shape))
     padded_shape = [el + 4 for el in shape]
@@ -421,7 +445,7 @@ def test_convert_pad_with_quantized_input():
     executors.convert_run_compare(onnx_model, input_data)
 
 
-def test_convert_pad_with_quantized_input__non_zero_constant():
+def test_convert_pad__with_quantized_input__non_zero_constant():
     shape = [3, 3]
     pads = [2] * (2 * len(shape))
     padded_shape = [el + 4 for el in shape]
@@ -452,7 +476,7 @@ def test_convert_pad_with_quantized_input__non_zero_constant():
     executors.convert_run_compare(onnx_model, input_data)
 
 
-def test_convert_pad_v19_bugged_reflect_mode():
+def test_convert_pad__bugged_reflect_mode():
     shape = [2, 2]
     pads = [2] * 4
     graph = onnx.helper.make_graph(
@@ -479,7 +503,7 @@ def test_convert_pad_v19_bugged_reflect_mode():
         pytest.param([10, 5, 3, 4], [0, 2, 0, 0, 4, 1, 0, 2], id="4D"),
         pytest.param([7, 4, 5, 3, 20], [0, 2, 0, 1, 19, 0, 3, 1, 0, 2], id="5D"),
     ])
-def test_convert_pad_v19_reflect_mode(shape, pads):
+def test_convert_pad__reflect_mode(shape, pads):
     graph = onnx.helper.make_graph(
         [onnx.helper.make_node("Pad", ['x', 'pads'], ['o'], mode='reflect')],
         'Pad test',
@@ -496,7 +520,7 @@ def test_convert_pad_v19_reflect_mode(shape, pads):
     executors.convert_run_compare(onnx_model, input_data)
 
 
-def test_convert_pad_v19_edge_mode():
+def test_convert_pad__edge_mode__unsupported_size():
     shape = [2, 2]
     pads = [2] * 4
     graph = onnx.helper.make_graph(
@@ -514,7 +538,7 @@ def test_convert_pad_v19_edge_mode():
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
 
 
-def test_convert_pad_v19_wrap_mode():
+def test_convert_pad__wrap_mode():
     shape = [2, 2]
     pads = [2] * 4
     graph = onnx.helper.make_graph(
@@ -560,5 +584,34 @@ def test_convert_pad__quantized(type_: TensorProto.DataType):
         ]
     )
     onnx_model = onnx.helper.make_model(graph)
+
+    executors.convert_run_compare(onnx_model, data)
+
+
+def test_convert_pad__quantized__edge_mode():
+    shape = [2, 4, 6, 8]
+
+    flat_size = np.prod([s + 2 for s in shape])
+
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('QuantizeLinear', ['x', 's', 'zp'], ['x1']),
+            onnx.helper.make_node('Pad', ['x1', 'pads'], ['x2'], mode="edge"),
+            onnx.helper.make_node('Reshape', ['x2', 'flat_shape'], ['x3']),
+            onnx.helper.make_node('DequantizeLinear', ['x3', 's', 'zp'], ['y'])
+        ],
+        'Quantized input test',
+        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
+        [
+            onnx.helper.make_tensor('s', TensorProto.FLOAT, [1], [.0042]),
+            onnx.helper.make_tensor('zp', TensorProto.INT8, [1], [12]),
+            onnx.helper.make_tensor('flat_shape', TensorProto.INT64, [1], [flat_size]),
+            onnx.helper.make_tensor('pads', TensorProto.INT64, [8], [1] * 8)
+        ]
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    data = np.random.random(shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, data)

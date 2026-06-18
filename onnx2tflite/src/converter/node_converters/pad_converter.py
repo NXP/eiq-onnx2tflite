@@ -22,8 +22,10 @@ from onnx2tflite.src.converter.quantization_utils import propagate_quantization,
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import mirror_pad_options, pad_options, pad_v2_options
+from onnx2tflite.src.tflite_generator.builtin_options import mirror_pad_options, pad_options, pad_v2_options, \
+    slice_options, concatenation_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS, name_for_type
+from onnx2tflite.src.tflite_generator.tflite_model import Tensor, Operator
 
 
 # noinspection PyMethodMayBeStatic
@@ -378,11 +380,43 @@ class PadConverter(NodeConverter):
         if o_pad.mode == "edge":
             # Conversion may be possible via other operators. Not sure. I haven't found a reasonable way to represent it
             #  in TFLite.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX 'Pad' version 11 or newer in 'edge' mode is not "
-                "implemented and may not be possible!",
-            )
+
+            tfl_paddings = list(paddings_tensor.tmp_buffer.data)
+            allowed_pad_range = np.all(np.isin(tfl_paddings, [0, 1]))
+
+            if not allowed_pad_range:
+                logger.e(
+                    logger.Code.NOT_IMPLEMENTED,
+                    "Conversion of ONNX 'Pad' version 11 or newer in 'edge' mode is currently implemented only "
+                    "for paddings of size 0 or 1!",
+                )
+
+            if np.sum(tfl_paddings) == 0:  # Zero paddings -> no-op
+                t_op.tmp_inputs = [x]  # Discard other inputs
+                self.builder.turn_operator_to_identity(t_op)
+                return [t_op]
+
+            current_input_tensor = t_op.tmp_inputs[0]
+            ops = []
+
+            # Iterate through paddings
+            for dim_idx, padded_axis in enumerate(tfl_paddings):
+                padding_start = int(padded_axis[0])
+                padding_end = int(padded_axis[1])
+
+                if not padding_start and not padding_end:
+                    continue
+
+                # Build padding via Slice + Concatenation for each axis with path
+                axis_ops = self._create_edge_padding_for_axis(current_input_tensor, padding_start, padding_end, dim_idx)
+
+                current_input_tensor = axis_ops.middle_op.tmp_outputs[0]
+                ops.extend(axis_ops.flatten())
+
+            # Connect output of last Concatenation to original output tensor
+            ops[-1].tmp_outputs = [y]
+
+            return ops
 
         elif o_pad.mode == "wrap":
             # The 'wrap' mode has quite complicated behavior and I have not found reasonable way to represent it in
@@ -398,6 +432,75 @@ class PadConverter(NodeConverter):
                 logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
                 f"ONNX 'Pad' has unexpected 'mode' attribute '{o_pad.mode}'.",
             )
+
+    def _create_edge_padding_for_axis(self, input_tensor: Tensor, padding_start: int, padding_end: int,
+                                      axis: int) -> OpsList:
+        """
+        Construct axis padding (size=1) by duplicating edge values using Slice & Concatenation operations.
+        If there is both begin and end padding, this function returns following graph:
+                       │
+            ┌──────────┼──────────┐
+         ┌──▼──┐       │       ┌──▼──┐
+         │Slice│ # R   │       │Slice│ # L (left) edge padding
+         └──┬──┘       │       └──┬──┘
+            │   ┌──────▼──────┐   │
+            └──►│Concatenation│◄──┘
+                └──────┬──────┘
+                       ▼
+        """
+        ops = OpsList()
+        concat_inputs = []
+        input_shape = list(input_tensor.shape.vector)
+
+        if padding_start == 1:
+            begin = [0] * len(input_shape)  # Slice from the beginning
+            slice_op, slice_output_tensor = self._create_edge_slice(axis, begin, input_tensor)
+            concat_inputs.append(slice_output_tensor)
+            ops.add_pre(slice_op)
+
+        concat_inputs.append(input_tensor)
+
+        if padding_end == 1:
+            begin = [0] * len(input_shape)
+            begin[axis] = input_shape[axis] - 1 # We need to cut last "row" in each dimension
+            slice_op, slice_output_tensor = self._create_edge_slice(axis, begin, input_tensor)
+            concat_inputs.append(slice_output_tensor)
+            ops.add_pre(slice_op)
+
+        concat_output_shape = list(input_shape)
+        concat_output_shape[axis] = concat_output_shape[axis] + padding_start + padding_end
+        concat_output_tensor = self.builder.create_empty_tensor(input_tensor.name + "_concatenated",
+                                                                input_tensor.type, concat_output_shape)
+        propagate_quantization(input_tensor, concat_output_tensor)
+
+        concat_op = tflite_model.Operator(builtin_options=concatenation_options.Concatenation(axis))
+        concat_op.tmp_inputs = concat_inputs
+        concat_op.tmp_outputs = [concat_output_tensor]
+
+        ops.middle_op = concat_op
+
+        return ops
+
+    def _create_edge_slice(self, axis: int, begin: list[int], input_tensor: Tensor) -> tuple[Operator, Tensor]:
+        input_shape = list(input_tensor.shape.vector)
+        size = list(input_shape)
+        # Only padding with size=1 is implemented. If there is need to be more generic, it can be solved
+        # by additional Tile operator
+        size[axis] = 1
+
+        begin_tensor = self.builder.create_tensor_for_data(np.asarray(begin, np.int32), "begin")
+        size_tensor = self.builder.create_tensor_for_data(np.asarray(size, np.int32), "size")
+        slice_output_shape = list(input_shape)
+        slice_output_shape[axis] = 1
+        slice_output_tensor = self.builder.create_empty_tensor(input_tensor.name + "_slice",
+                                                               input_tensor.type, slice_output_shape)
+        propagate_quantization(input_tensor, slice_output_tensor)
+
+        slice_op = tflite_model.Operator(builtin_options=slice_options.Slice())
+        slice_op.tmp_inputs = [input_tensor, begin_tensor, size_tensor]
+        slice_op.tmp_outputs = [slice_output_tensor]
+
+        return slice_op, slice_output_tensor
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Pad' operator to TFLite 'Pad', 'PadV2' or 'MirrorPad'.
