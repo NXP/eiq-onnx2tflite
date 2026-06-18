@@ -115,6 +115,30 @@ def test_convert_4d_concat_with_negative_axis():
     executors.convert_run_compare(original_model, input_data)
 
 
+def test_convert_concat__4d__three_inputs():
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node("Concat", ["x", "y", "z"], ["out"], axis=1)],
+        "concat",
+        [
+            onnx.helper.make_tensor_value_info("x", TensorProto.FLOAT, (2, 3, 4, 5)),
+            onnx.helper.make_tensor_value_info("y", TensorProto.FLOAT, (2, 4, 4, 5)),
+            onnx.helper.make_tensor_value_info("z", TensorProto.FLOAT, (2, 1, 4, 5))
+        ],
+        [onnx.helper.make_tensor_value_info("out", TensorProto.FLOAT, ())],
+    )
+
+    original_model = onnx.helper.make_model(graph)
+    onnx.checker.check_model(original_model)
+
+    input_data = {
+        0: np.arange(math.prod((2, 3, 4, 5))).reshape((2, 3, 4, 5)).astype(np.float32),
+        1: np.arange(math.prod((2, 4, 4, 5))).reshape((2, 4, 4, 5)).astype(np.float32),
+        2: np.arange(math.prod((2, 1, 4, 5))).reshape((2, 1, 4, 5)).astype(np.float32),
+    }
+
+    executors.convert_run_compare(original_model, input_data)
+
+
 def test_convert_4d_concat_with_invalid_axis():
     node = onnx.helper.make_node("Concat", ["X", "Y"], ["Z"], axis=-5)
 
