@@ -7,16 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-23
+
 ### Added
 - 
 - `[onnx2tflite]` Support for QDQ variant of DepthToSpace and SpaceToDepth operators
 - `[onnx2tflite]` Support for TopK operator (quantized and float variant)
 - `[onnx2tflite]` Support for DepthToSpace with mode="CRD"
-- `[onnx2tflite]` Add support for Pad operator with mode="edge" and padding size up to "1"
+- `[onnx2tflite]` Support for Pad operator with mode="edge" and padding size up to "1"
 
 ### Fixed
 
+- `[onnx2tflite]` Fixed static tensor data propagation into intermediate tensors
 - `[onnx2tflite]` Fixed shape inference for Einsum operator
+- `[onnx2tflite]` Fixed incorrectly set quantized dimension for TransposeConv
+- `[onnx2tflite]` Fixed incorrect axes tensor type of ReduceX operators
 
 ## [0.10.0] - 2026-03-31
 
