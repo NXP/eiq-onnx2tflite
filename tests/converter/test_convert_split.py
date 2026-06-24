@@ -118,7 +118,7 @@ def test_convert_split_v2_with_attribute_split():
         pytest.param([2, 4, 6, 8], [4, 1, 1, 2], -1, id="negative axis"),
 
     ])
-def test_convert_split_with_default_split(input_shape: List[int], split: List[int], axis: int):
+def test_convert_split_with_explicit_split(input_shape: List[int], split: List[int], axis: int):
     output_names = [f"o{i}" for i in range(len(split))]
 
     graph = onnx.helper.make_graph(
