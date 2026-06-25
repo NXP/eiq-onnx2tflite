@@ -77,7 +77,7 @@ def _single_unitary_dimension_change(from_shape, to_shape) -> tuple[int, SingleU
 
 
 # noinspection PyPep8Naming
-def _get_permutation_for_single_unitary_change_in_NC_dims(
+def _get_permutation_for_single_unitary_change_in_NC_dims(  # noqa: N802
     shape_from: list[int], to_shape: list[int]
 ) -> list[int] | None:
     """Get permutation used by prepended 'Transpose' operator if there's only single unitary
