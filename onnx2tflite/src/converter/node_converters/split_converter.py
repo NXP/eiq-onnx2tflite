@@ -77,7 +77,10 @@ class SplitConverter(NodeConverter):
         if main_input.tensor_format.is_channels_last():
             # Change the 'axis' to match the input format
             axis = translator.create_channels_last_to_channels_first_permutation(rank)[axis]
-        axis_tensor = self.builder.create_tensor_for_data(np.asarray([axis], np.int32), "split_dim_")
+
+        # Some tools expect axis tensor with shape [] and not [1] so it has to be squeezed
+        axis_data = np.asarray([axis], np.int32).squeeze()
+        axis_tensor = self.builder.create_tensor_for_data(axis_data, "split_dim_")
 
         if node.version < 13:
             # `split` is an operator attribute.
