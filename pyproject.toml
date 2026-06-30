@@ -22,9 +22,9 @@ dynamic = ["version", "dependencies"]
 description = "ONNX2TFLite project offers tools for ONNX models quantization and their conversion into TFLite"
 license = { text = "PROPRIETARY" }
 keywords = ["onnx2tflite", "onnx2quant", "nxp", "eiq", "toolkit", "converter", "quantizer", "onnx", "tflite"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Intended Audience :: Developers",
 ]
 
@@ -37,7 +37,7 @@ onnx2quant = "onnx2quant.__main__:run_quantization_wrapper"
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 exclude = [
     "thirdparty/",
     "utils/",

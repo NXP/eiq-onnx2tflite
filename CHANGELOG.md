@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `[onnx2tflite]` Fixed incorrectly set quantized dimension for TransposeConv
 - `[onnx2tflite]` Fixed incorrect axes tensor type of ReduceX operators
 
+### Changed
+
+- `[onnx2tflite|onnx2quant]` Change required Python version to 3.11+
+
 ## [0.10.0] - 2026-03-31
 
 ### Added

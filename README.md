@@ -2,7 +2,7 @@
 
 [![latest-version](https://img.shields.io/github/v/release/nxp/eiq-onnx2tflite?label=Release
 )](https://eiq.nxp.com/repository/eiq-onnx2tflite/)
-![python-badge](https://img.shields.io/badge/Python-3.10+-green)
+![python-badge](https://img.shields.io/badge/Python-3.11+-green)
 ![tensorflow-badge](https://img.shields.io/badge/TensorFlow-2.18.1-FF6F00?logo=tensorflow)
 ![onnx-badge](https://img.shields.io/badge/ONNX-1.20.1-005CED?logo=onnx)
 ![ORT-badge](https://img.shields.io/badge/ONNX_Runtime-1.24.3-lightgray?logo=onnx)
