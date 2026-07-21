@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `[onnx2quant]` Fixed quantization of Conv nodes with a dynamic (non-initializer) weight input.
+
 ## [0.11.0] - 2026-06-23
 
 ### Added

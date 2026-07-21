@@ -10,6 +10,7 @@ import tempfile
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import onnx
@@ -926,6 +927,57 @@ class QDQQuantizer:
     def __init__(self, op_types_to_quantize: list[str] | None = None):
         self.op_types_to_quantize = op_types_to_quantize or self.default_op_types_to_quantize
         self._register_custom_qdq_quantizers()
+        self._register_tensor_quant_override_rules()
+
+    # noinspection PyMethodMayBeStatic
+    def _register_tensor_quant_override_rules(self) -> None:
+        """Register per-operator rules that produce ORT 'TensorQuantOverrides' entries.
+
+        Each rule is a callable with signature:
+            rule(node: onnx.NodeProto, initializer_names: set[str], overrides: dict) -> None
+        """
+        self._tensor_quant_override_rules: dict[str, type[callable]] = {
+            "Conv": self._override_conv_dynamic_weight,
+        }
+
+    # noinspection PyMethodMayBeStatic
+    def _override_conv_dynamic_weight(
+        self, node: onnx.NodeProto, initializer_names: set[str], overrides: dict[str, list[dict]]
+    ) -> None:
+        """Force symmetric quantization for a Conv node's weight when it is dynamic.
+
+        Conv always has a required weight input at index 1 (only bias at index 2 is optional).
+        For a dynamic (non-initializer) weight, ORT quantizes it as an activation (asymmetric,
+        non-zero zero point). TFLite Conv2D / DepthwiseConv2D require the weight zero point to
+        be exactly 0 (INT8), so symmetric quantization must be enforced.
+        """
+        weight_name = node.input[1]
+        if weight_name not in initializer_names:
+            overrides[weight_name] = [{"symmetric": True}]
+            logger.w(
+                f"Conv node '{node.name}' has a dynamic (non-initializer) weight input "
+                f"'{weight_name}'. Forcing symmetric quantization for the weight tensor to "
+                "satisfy TFLite requirements. Slight accuracy degradation compared to "
+                "asymmetric quantization may occur."
+            )
+
+    # noinspection PyUnresolvedReferences
+    def _build_tensor_quant_overrides(self, model_proto: onnx_model.ModelProto) -> dict[str, list[dict]]:
+        """Scan the model and build ORT 'TensorQuantOverrides' for tensors that need
+        special quantization to satisfy TFLite constraints.
+
+        :param model_proto: ONNX model proto (after shape inference and optimization).
+        :return: Dict mapping tensor name to a list of ORT quantization override dicts.
+        """
+        initializer_names = {init.name for init in model_proto.graph.initializer}
+        overrides: dict[str, list[dict]] = {}
+
+        for node in model_proto.graph.node:
+            rule = self._tensor_quant_override_rules.get(node.op_type)
+            if rule is not None:
+                rule(node, initializer_names, overrides)
+
+        return overrides
 
     # noinspection PyMethodMayBeStatic
     def _register_custom_qdq_quantizers(self) -> None:
@@ -1062,12 +1114,16 @@ class QDQQuantizer:
                 logger.w(f"Optimization step failed with: {type(e).__name__}. Skipping.")
                 logger.d(f"Optimization step failure reason: {traceback.format_exc()}")
 
-            extra_options = {
+            extra_options: dict[str, Any] = {
                 "DedicatedQDQPair": True,
                 "ForceQuantizeNoInputCheck": True,
                 "ActivationSymmetric": False,  # False by default. Necessary to have correct q-params for Softmax.
                 "QDQDisableWeightAdjustForInt32Bias": True,
             }
+
+            tensor_quant_overrides = self._build_tensor_quant_overrides(inferred_model_proto)
+            if tensor_quant_overrides:
+                extra_options["TensorQuantOverrides"] = tensor_quant_overrides
 
             if quantization_config.use_random_calibration_dataset:
                 calibration_data_reader = RandomDataCalibrationDataReader.from_onnx_model(
