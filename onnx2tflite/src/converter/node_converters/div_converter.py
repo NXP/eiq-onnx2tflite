@@ -37,8 +37,11 @@ class DivConverter(NodeConverter):
             ops.add_pre(self.builder.create_cast_before(t_op, 0, TensorType.INT32))
 
         if tensor_has_data(y):
-            y.tmp_buffer.data = y.tmp_buffer.data.astype(np.int32)
-            y.type = TensorType.INT32
+            cast_input = self.builder.duplicate_tensor(y, y.name + "_casted")
+            cast_input.tmp_buffer.data = cast_input.tmp_buffer.data.astype(np.int32)
+            cast_input.type = TensorType.INT32
+
+            t_op.tmp_inputs[1] = cast_input
         else:
             ops.add_pre(self.builder.create_cast_before(t_op, 1, TensorType.INT32))
 
