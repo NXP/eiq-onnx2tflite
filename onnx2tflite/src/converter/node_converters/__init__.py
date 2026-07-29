@@ -34,6 +34,7 @@ from .expand_converter import ExpandConverter
 from .flatten_converter import FlattenConverter
 from .floor_converter import FloorConverter
 from .gather_converter import GatherConverter
+from .gather_elements_converter import GatherElementsConverter
 from .gather_nd_converter import GatherNDConverter
 from .gelu_converter import GeluConverter
 from .gemm_converter import GemmConverter
@@ -147,6 +148,7 @@ __all__ = [
     FlattenConverter,
     FloorConverter,
     GatherConverter,
+    GatherElementsConverter,
     GatherNDConverter,
     GeluConverter,
     GemmConverter,

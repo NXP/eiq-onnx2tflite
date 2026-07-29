@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `[onnx2tflite]` Support for GatherElements operator (static and dynamic indices)
+
 ### Fixed
 
 - `[onnx2quant]` Fixed quantization of Conv nodes with a dynamic (non-initializer) weight input.

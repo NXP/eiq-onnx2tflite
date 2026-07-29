@@ -671,9 +671,9 @@ NODE = {
     # "test_gather_0": {},
     # "test_gather_1": {},
     # "test_gather_2d_indices": {},
-    # "test_gather_elements_0": {},
-    # "test_gather_elements_1": {},
-    # "test_gather_elements_negative_indices": {},
+    "test_gather_elements_0": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}},
+    "test_gather_elements_1": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}},
+    # "test_gather_elements_negative_indices": {},  # Dynamic negative indices are not supported by TFLite `GatherND`.
     # "test_gather_negative_indices": {},
     "test_gathernd_example_float32": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}},
     "test_gathernd_example_int32": {CONVERSION_ARGS: {"guarantee_non_negative_indices": True}},

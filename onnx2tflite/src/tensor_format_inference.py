@@ -52,6 +52,7 @@ class TensorFormatInference:
         "Einsum",
         "Flatten",
         "Gather",
+        "GatherElements",
         "GatherND",
         "GRU",
         "OneHot",
@@ -145,7 +146,7 @@ class TensorFormatInference:
                     # The 'indices' tensor is dynamic -> the formats will have to be inferred later
                     self._assign_format_to_tensors([node.inputs[0], node.outputs[0]], TensorFormat.FORMATLESS)
 
-            elif node.op_type == "GatherND":
+            elif node.op_type in ("GatherElements", "GatherND"):
                 # Any `channels_last` tensors just require extra `Transpose` ops to be added. Prefer `FORMATLESS` if
                 #  possible.
                 self._assign_format_to_tensors(

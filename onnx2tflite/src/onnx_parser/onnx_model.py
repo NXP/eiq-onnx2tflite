@@ -233,6 +233,7 @@ class NodeProto(meta.ONNXObject):
         "Flatten": builtin_attributes.Flatten,
         "Floor": None,
         "Gather": builtin_attributes.Gather,
+        "GatherElements": builtin_attributes.GatherElements,
         "GatherND": builtin_attributes.GatherND,
         "Gelu": builtin_attributes.Gelu,
         "Gemm": builtin_attributes.Gemm,

@@ -62,6 +62,7 @@ class OperatorConverter:
         "Flatten": node_converters.FlattenConverter,
         "Floor": node_converters.FloorConverter,
         "Gather": node_converters.GatherConverter,
+        "GatherElements": node_converters.GatherElementsConverter,
         "GatherND": node_converters.GatherNDConverter,
         "Gelu": node_converters.GeluConverter,
         "Gemm": node_converters.GemmConverter,

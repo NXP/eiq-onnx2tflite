@@ -24,6 +24,7 @@ from .einsum_attributes import Einsum
 from .elu_attributes import Elu
 from .flatten_attributes import Flatten
 from .gather_attributes import Gather
+from .gather_elements_attributes import GatherElements
 from .gather_nd_attributes import GatherND
 from .gelu_attributes import Gelu
 from .gemm_attributes import Gemm
@@ -93,6 +94,7 @@ __all__ = [
     Elu,
     Flatten,
     Gather,
+    GatherElements,
     GatherND,
     Gelu,
     Gemm,
