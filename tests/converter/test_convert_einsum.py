@@ -76,7 +76,6 @@ def test_convert_einsum__equations(equation: str):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         i: (np.random.random(shape).astype(np.float32) - 0.5) * 10 for i, (_, shape) in enumerate(shapes)
     }
@@ -117,7 +116,6 @@ def test_convert_einsum__no_output_in_equation(equation: str):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         i: (np.random.random(shape).astype(np.float32) - 0.5) * 10 for i, (_, shape) in enumerate(shapes)
     }

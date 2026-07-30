@@ -20,7 +20,6 @@ from tests import executors
 def test_convert_cast__quantized__same_type(_type: TensorProto.DataType):
     shape = [3, 14, 15]
 
-    np.random.seed(42)
     data = (np.random.random(shape) * 100).astype(np.float32)  # [0, 100)
 
     graph = onnx.helper.make_graph(

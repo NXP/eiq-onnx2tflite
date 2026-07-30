@@ -33,7 +33,6 @@ def test_convert_global_max_pool(input_shape: list[int]):
 
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     x_data = np.random.random(input_shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, x_data)

@@ -40,7 +40,6 @@ def test_convert_gather_elements(axis: int, indices: list):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     data = np.random.random(shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, data)
@@ -68,7 +67,6 @@ def test_convert_gather_elements__negative_indices(axis: int, indices: list):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     data = np.random.random(shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, data)
@@ -92,7 +90,6 @@ def test_convert_gather_elements__channels_first__input():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     data = np.random.random(shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, data)
@@ -115,8 +112,6 @@ def test_convert_gather_elements__channels_first__output():
         ]
     )
     onnx_model = onnx.helper.make_model(graph)
-
-    np.random.seed(42)
     data = np.random.random(shape).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, data)
@@ -161,7 +156,6 @@ def test_convert_gather_elements__dynamic_indices__flag(axis: int):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     data = {
         0: np.arange(np.prod(shape)).reshape(shape).astype(np.float32),
         1: indices
@@ -181,7 +175,6 @@ def test_convert_gather_elements__types(type_: TensorProto.DataType):
 
     indices = [[0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1]]
 
-    np.random.seed(42)
     data = (np.random.random(shape) * 100).astype(to_numpy_type(type_))
 
     indices = np.asarray(indices, np.int64)
@@ -222,7 +215,6 @@ def test_convert_gather_elements__quantized(type_: TensorProto.DataType):
     shape = [3, 4]
     indices = np.asarray([[0, 1, 0, 1], [1, 0, 1, 0], [0, 0, 1, 1]], np.int64)
 
-    np.random.seed(42)
     data = (np.random.random(shape) * 100).astype(np.float32)  # [0, 100)
 
     graph = onnx.helper.make_graph(

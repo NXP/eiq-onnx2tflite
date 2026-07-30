@@ -27,8 +27,6 @@ from tests import executors
 def test_convert_reduce_max__v18(axes: list[int]):
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -52,8 +50,6 @@ def test_convert_reduce_max__v18(axes: list[int]):
 def test_convert_reduce_max__v18_channels_first_static_axes(axes: list[int]):
     x_shape = [5, 10, 15, 20]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -73,8 +69,6 @@ def test_convert_reduce_max__v18_channels_first_static_axes(axes: list[int]):
 @pytest.mark.parametrize("axes", [[0], [1], [2], [3]], ids=lambda x: f'axes={x}')
 def test_convert_reduce_max__channels_first_input_and_output(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -96,8 +90,6 @@ def test_convert_reduce_max__channels_first_input_and_output(axes: list[int]):
 @pytest.mark.parametrize("axes", [[0], [1], [2], [3]], ids=lambda x: f'axes={x}')
 def test_convert_reduce_max__channels_first_output(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -124,8 +116,6 @@ def test_convert_reduce_max__channels_first_output(axes: list[int]):
     ], ids=lambda x: f'axes={x}')
 def test_convert_reduce_max__v18_channels_first__keepdims_false__different_axes(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 

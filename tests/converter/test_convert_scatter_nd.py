@@ -42,7 +42,6 @@ def test_convert_scatter_nd__dynamic_inputs(x_shape, indices_shape, updates_shap
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         0: (np.random.random(x_shape).astype(np.float32) - 0.5) * 20,  # <-10, 10)
         1: np.array(updates, np.float32),
@@ -82,7 +81,6 @@ def test_convert_scatter_nd__channels_first__main_input():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         0: (np.random.random(x_shape).astype(np.float32) - 0.5) * 20,  # <-10, 10)
         1: np.array(updates, np.float32),
@@ -117,7 +115,6 @@ def test_convert_scatter_nd__channels_first__updates():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         0: (np.random.random(x_shape).astype(np.float32) - 0.5) * 20,  # <-10, 10)
         1: np.array(updates, np.float32),
@@ -152,7 +149,6 @@ def test_convert_scatter_nd__channels_first__indices():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         0: (np.random.random(x_shape).astype(np.float32) - 0.5) * 20,  # <-10, 10)
         1: np.array(updates, np.float32),
@@ -185,7 +181,6 @@ def test_convert_scatter_nd__static_indices__dynamic_updates(intermediate_tflite
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = {
         0: (np.random.random(x_shape).astype(np.float32) - 0.5) * 20,  # <-10, 10)
         1: np.array(updates, np.float32)
@@ -224,7 +219,6 @@ def test_convert_scatter_nd__static_inputs(x_shape, indices_shape, updates_shape
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = (np.random.random(x_shape).astype(np.float32) - 0.5) * 20  # <-10, 10)
 
     executors.convert_run_compare(onnx_model, input_data)

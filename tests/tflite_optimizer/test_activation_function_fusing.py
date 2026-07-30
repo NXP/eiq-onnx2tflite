@@ -32,7 +32,6 @@ def test_activation_fusing__conv2d(activation: str, intermediate_tflite_model_pr
     shape = [2, 4, 6, 8]
     w_shape = [4, 4, 1, 1]
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -81,7 +80,6 @@ def test_activation_fusing__conv3d(activation: str, intermediate_tflite_model_pr
     shape = [2, 4, 6, 8, 10]
     w_shape = [4, 4, 1, 1, 1]
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -130,7 +128,6 @@ def test_activation_fusing__depthwise_conv2d(activation: str, intermediate_tflit
     shape = [2, 1, 6, 8]
     w_shape = [1, 1, 3, 3]
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -179,7 +176,6 @@ def test_activation_fusing__transpose_conv(activation: str, intermediate_tflite_
     shape = [2, 4, 6, 8]
     w_shape = [4, 4, 1, 1]
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -227,7 +223,6 @@ def test_activation_fusing__transpose_conv(activation: str, intermediate_tflite_
 def test_activation_fusing__max_pool_2d(activation: str, intermediate_tflite_model_provider):
     shape = [2, 4, 6, 8]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
     match activation:
@@ -273,7 +268,6 @@ def test_activation_fusing__max_pool_2d(activation: str, intermediate_tflite_mod
 def test_activation_fusing__average_pool_2d(activation: str, intermediate_tflite_model_provider):
     shape = [2, 4, 6, 8]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
     match activation:
@@ -327,7 +321,6 @@ def test_activation_fusing__fully_connected(activation: str, intermediate_tflite
     shape = [5, 10]
     w_shape = [2, 10]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
 
@@ -374,7 +367,6 @@ def test_activation_fusing__fully_connected(activation: str, intermediate_tflite
 def test_activation_fusing__add__mul__sub__div(activation: str, op: str, intermediate_tflite_model_provider):
     shape = [2, 3, 4, 5]
 
-    np.random.seed(42)
     a_data = np.random.random(shape).astype('float32') * 5. - 10.
     b_data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -420,7 +412,6 @@ def test_activation_fusing__quantized__conv2d(intermediate_tflite_model_provider
     shape = [2, 4, 6, 8]
     w_shape = [4, 4, 1, 1]
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -456,7 +447,6 @@ def test_activation_fusing__quantized__depthwise_conv2d(intermediate_tflite_mode
     shape = [2, 1, 6, 8]
     w_shape = [1, 1, 3, 3]  # input_channels == output_channels == group. This will get converted to DepthwiseConv2D.
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -492,7 +482,6 @@ def test_activation_fusing__quantized__transpose_conv(intermediate_tflite_model_
     shape = [2, 4, 6, 8]
     w_shape = [4, 4, 2, 3]
 
-    np.random.seed(42)
     w_data = np.random.random(w_shape).astype('float32') * 5. - 10.
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
@@ -528,7 +517,6 @@ def test_activation_fusing__quantized__transpose_conv(intermediate_tflite_model_
 def test_activation_fusing__quantized__max_pool_2d(intermediate_tflite_model_provider):
     shape = [2, 4, 6, 8]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
     onnx_model = onnx.helper.make_model(
@@ -562,7 +550,6 @@ def test_activation_fusing__quantized__max_pool_2d__different_output_quantizatio
         intermediate_tflite_model_provider):
     shape = [2, 4, 6, 8]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
     onnx_model = onnx.helper.make_model(
@@ -609,7 +596,6 @@ def test_activation_fusing__quantized__max_pool_2d__different_output_quantizatio
 def test_activation_fusing__quantized__average_pool_2d(intermediate_tflite_model_provider):
     shape = [2, 4, 6, 8]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
     onnx_model = onnx.helper.make_model(
@@ -654,7 +640,6 @@ def test_activation_fusing__quantized__average_pool_2d__different_output_quantiz
         intermediate_tflite_model_provider):
     shape = [2, 4, 6, 8]
 
-    np.random.seed(42)
     data = np.random.random(shape).astype('float32') * 5. - 10.
 
     onnx_model = onnx.helper.make_model(
@@ -702,7 +687,6 @@ def test_activation_fusing__quantized__fully_connected(intermediate_tflite_model
     a_shape = [5, 10]
     b_shape = [2, 10]
 
-    np.random.seed(42)
     data = {
         0: np.random.random(a_shape).astype('float32') * 5. - 10.,
         1: np.random.random(b_shape).astype('float32') * 5. - 10.
@@ -742,7 +726,6 @@ def test_activation_fusing__quantized__fully_connected(intermediate_tflite_model
 def test_activation_fusing__quantized__add__mul__sub(op: str, intermediate_tflite_model_provider):
     shape = [13, 37]
 
-    np.random.seed(42)
     data = {
         0: np.random.random(shape).astype('float32') * 5. - 10.,
         1: np.random.random(shape).astype('float32') * 5. - 10.

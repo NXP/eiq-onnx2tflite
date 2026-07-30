@@ -8,6 +8,7 @@ import logging
 import os
 import pathlib
 
+import numpy as np
 import onnx
 import onnxruntime
 import pytest
@@ -34,6 +35,10 @@ def cifar10_tflite(artifacts_dir):
         "model_path": os.path.join(artifacts_dir, "models", "cifar10_model.tflite"),
         "inputs_dir": os.path.join(artifacts_dir, "inputs", "image-32x32")
     }
+
+@pytest.fixture(autouse=True)
+def init_seeds():
+    np.random.seed(42)
 
 
 # noinspection SpellCheckingInspection

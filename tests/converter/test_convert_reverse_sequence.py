@@ -25,7 +25,6 @@ from tests import executors
         [2, 3, 4, 5, 6]
     ], ids=lambda x: f'{len(x)}D')
 def test_convert_reverse_sequence__shapes(shape: list[int]):
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=1, high=shape[0], size=[shape[1]]).astype('int64')
 
     graph = onnx.helper.make_graph(
@@ -37,7 +36,6 @@ def test_convert_reverse_sequence__shapes(shape: list[int]):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = np.arange(np.prod(shape)).reshape(shape).astype('float32')
 
     executors.convert_run_compare(onnx_model, input_data)
@@ -46,7 +44,6 @@ def test_convert_reverse_sequence__shapes(shape: list[int]):
 def test_convert_reverse_sequence__zero_sequence_len():
     shape = [4, 20]
 
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=0, high=shape[0], size=[shape[1]]).astype('int64')
 
     graph = onnx.helper.make_graph(
@@ -89,7 +86,6 @@ def test_convert_reverse_sequence__dynamic_sequence_len():
 def test_convert_reverse_sequence__types(type_: TensorProto.DataType):
     shape = [4, 20]
 
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=1, high=shape[0], size=[shape[1]]).astype('int64')
 
     graph = onnx.helper.make_graph(
@@ -110,7 +106,6 @@ def test_convert_reverse_sequence__unsupported_type():
     type_ = TensorProto.DOUBLE
 
     shape = [4, 10]
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=1, high=shape[0], size=[shape[1]]).astype('int64')
 
     graph = onnx.helper.make_graph(
@@ -132,7 +127,6 @@ def test_convert_reverse_sequence__quantized():
     type_ = TensorProto.UINT8
 
     shape = [4, 10]
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=1, high=shape[0], size=[shape[1]]).astype('int64')
     graph = onnx.helper.make_graph(
         [
@@ -164,7 +158,6 @@ def test_convert_reverse_sequence__quantized():
 def test_convert_reverse_sequence__specific_axes(batch_axis: int, time_axis: int):
     shape = [8, 6, 4, 2]
 
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=1, high=shape[time_axis], size=[shape[batch_axis]]).astype('int64')
 
     graph = onnx.helper.make_graph(
@@ -176,7 +169,6 @@ def test_convert_reverse_sequence__specific_axes(batch_axis: int, time_axis: int
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = np.arange(np.prod(shape)).reshape(shape).astype('float32')
 
     executors.convert_run_compare(onnx_model, input_data)
@@ -191,7 +183,6 @@ def test_convert_reverse_sequence__specific_axes(batch_axis: int, time_axis: int
 def test_convert_reverse_sequence__channels_first(batch_axis: int, time_axis: int):
     shape = [8, 6, 4, 2]
 
-    np.random.seed(42)
     sequence_lens = np.random.randint(low=1, high=shape[time_axis], size=[shape[batch_axis]]).astype('int64')
 
     graph = onnx.helper.make_graph(
@@ -206,7 +197,6 @@ def test_convert_reverse_sequence__channels_first(batch_axis: int, time_axis: in
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = np.arange(np.prod(shape)).reshape(shape).astype('float32')
 
     executors.convert_run_compare(onnx_model, input_data)

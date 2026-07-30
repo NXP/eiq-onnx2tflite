@@ -101,7 +101,6 @@ def test_pick_out_operators_with_custom_model():
 
 
 def generate_input_data(model: onnx.ModelProto):
-    np.random.seed(42)
     inputs = [
         {
             'shape': [dim.dim_value for dim in input_tensor.type.tensor_type.shape.dim],

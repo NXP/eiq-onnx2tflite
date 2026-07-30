@@ -63,8 +63,6 @@ def _get_rnn_model(nodes: list[onnx.NodeProto], x_shape, w_shape, r_shape, b_sha
 def test_convert_simple_forward_rnn(seq_length: int, batch_size: int, input_size: int, hidden_size: int):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(seq_length, batch_size, input_size, hidden_size)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -84,8 +82,6 @@ def test_convert_simple_forward_rnn(seq_length: int, batch_size: int, input_size
 def test_convert_full_forward_rnn(seq_length: int, batch_size: int, input_size: int, hidden_size: int):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(seq_length, batch_size, input_size, hidden_size)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model(
@@ -103,8 +99,6 @@ def test_convert_full_forward_rnn(seq_length: int, batch_size: int, input_size: 
     ])
 def test_convert_forward_rnn_with_activations(activations: list[str]):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -125,8 +119,6 @@ def test_convert_forward_rnn_with_activations(activations: list[str]):
 def test_convert_forward_rnn_with_unsupported_activations(activations: list[str]):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
 
-    np.random.seed(42)
-
     onnx_model = _get_rnn_model([
         onnx.helper.make_node('RNN', ['x', 'w', 'r'], ['y'], direction='forward', hidden_size=16,
                               activations=activations)
@@ -141,8 +133,6 @@ def test_convert_forward_rnn_with_unsupported_activations(activations: list[str]
 def test_convert_forward_rnn_with_channels_first_input():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -156,8 +146,6 @@ def test_convert_forward_rnn_with_channels_first_input():
 def test_convert_forward_rnn_with_channels_first_output():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -170,8 +158,6 @@ def test_convert_forward_rnn_with_channels_first_output():
 
 def test_convert_forward_rnn_with_channels_first_input_and_output():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -274,8 +260,6 @@ def test_convert_simple_reverse_rnn(seq_length: int, batch_size: int, input_size
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(seq_length, batch_size, input_size,
                                                          hidden_size)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -296,8 +280,6 @@ def test_convert_full_reverse_rnn(seq_length: int, batch_size: int, input_size: 
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(seq_length, batch_size, input_size,
                                                          hidden_size)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model(
@@ -315,8 +297,6 @@ def test_convert_full_reverse_rnn(seq_length: int, batch_size: int, input_size: 
     ])
 def test_convert_reverse_rnn_with_activations(activations: list[str]):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -337,8 +317,6 @@ def test_convert_reverse_rnn_with_activations(activations: list[str]):
 def test_convert_reverse_rnn_with_unsupported_activations(activations: list[str]):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
 
-    np.random.seed(42)
-
     onnx_model = _get_rnn_model([
         onnx.helper.make_node('RNN', ['x', 'w', 'r'], ['y'], direction='reverse', hidden_size=16,
                               activations=activations)
@@ -353,8 +331,6 @@ def test_convert_reverse_rnn_with_unsupported_activations(activations: list[str]
 def test_convert_reverse_rnn_with_channels_first_input():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -368,8 +344,6 @@ def test_convert_reverse_rnn_with_channels_first_input():
 def test_convert_reverse_rnn_with_channels_first_output():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -382,8 +356,6 @@ def test_convert_reverse_rnn_with_channels_first_output():
 
 def test_convert_reverse_rnn_with_channels_first_input_and_output():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes()
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -409,8 +381,6 @@ def test_convert_simple_bidirectional_rnn(seq_length: int, batch_size: int, inpu
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(seq_length, batch_size, input_size,
                                                          hidden_size, 2)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -431,8 +401,6 @@ def test_convert_full_bidirectional_rnn(seq_length: int, batch_size: int, input_
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(seq_length, batch_size, input_size,
                                                          hidden_size, 2)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model(
@@ -451,8 +419,6 @@ def test_convert_full_bidirectional_rnn(seq_length: int, batch_size: int, input_
     ])
 def test_convert_bidirectional_rnn_with_activations(activations: list[str]):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(num_directions=2)
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -473,8 +439,6 @@ def test_convert_bidirectional_rnn_with_activations(activations: list[str]):
 def test_convert_bidirectional_rnn_with_unsupported_activations(activations: list[str]):
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(num_directions=2)
 
-    np.random.seed(42)
-
     onnx_model = _get_rnn_model([
         onnx.helper.make_node('RNN', ['x', 'w', 'r'], ['y'], direction='bidirectional', hidden_size=16,
                               activations=activations)
@@ -489,8 +453,6 @@ def test_convert_bidirectional_rnn_with_unsupported_activations(activations: lis
 def test_convert_bidirectional_rnn_with_channels_first_input():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(num_directions=2)
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     onnx_model = _get_rnn_model([
@@ -503,8 +465,6 @@ def test_convert_bidirectional_rnn_with_channels_first_input():
 
 def test_convert_bidirectional_rnn_with_channels_first_output():
     x_shape, w_shape, r_shape, b_shape = _get_rnn_shapes(num_directions=2)
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 

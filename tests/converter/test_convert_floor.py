@@ -33,7 +33,6 @@ def test_convert_floor__shapes(shape: list[int]):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    np.random.seed(42)
     input_data = (np.random.random(shape) * 20. - 10.).astype(np.float32)
 
     executors.convert_run_compare(onnx_model, input_data)

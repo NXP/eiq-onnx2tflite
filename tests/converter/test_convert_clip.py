@@ -23,7 +23,6 @@ from tests import executors
 def test_convert_clip__quantized__into_maximum_minimum(_type: TensorProto.DataType, intermediate_tflite_model_provider):
     shape = [3, 14, 15]
 
-    np.random.seed(42)
     data = (np.random.random(shape) * 100).astype(np.float32)  # [0, 100)
 
     graph = onnx.helper.make_graph(
@@ -60,7 +59,6 @@ def test_convert_clip__quantized__into_maximum_minimum(_type: TensorProto.DataTy
 def test_convert_clip__quantized__into_relu(_type: TensorProto.DataType, intermediate_tflite_model_provider):
     shape = [3, 14, 15]
 
-    np.random.seed(42)
     data = (np.random.random(shape) * 100).astype(np.float32)  # [0, 100)
 
     graph = onnx.helper.make_graph(
@@ -101,8 +99,6 @@ def test_convert_clip__quantized__into_relu(_type: TensorProto.DataType, interme
 def test_convert_clip_v6(min: float, max: float):
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -126,8 +122,6 @@ def test_convert_clip_v6(min: float, max: float):
     ])
 def test_convert_clip_v11(min: float, max: float):
     x_shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -155,8 +149,6 @@ def test_convert_clip_v11(min: float, max: float):
     ])
 def test_convert_clip_v11_dynamic_min_max(min: float, max: float):
     x_shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = {
         0: np.random.rand(*x_shape).astype(np.float32) - 0.5,
@@ -190,8 +182,6 @@ def test_convert_clip_v11_dynamic_min_max(min: float, max: float):
 def test_convert_clip_as_relu(min: float, max: float, builtin_operator: BuiltinOperator,
                               intermediate_tflite_model_provider):
     x_shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -228,8 +218,6 @@ def test_convert_clip_as_relu(min: float, max: float, builtin_operator: BuiltinO
     ])
 def test_convert_per_tensor_int_quantized_clip(min: float, max: float):
     x_shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = (np.random.rand(*x_shape).astype(np.float32) * 20.) - 10.
 
@@ -272,8 +260,6 @@ def test_convert_per_tensor_int_quantized_clip_as_special_relu(min: float, max: 
                                                                builtin_operator: BuiltinOperator,
                                                                intermediate_tflite_model_provider):
     x_shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = (np.random.rand(*x_shape).astype(np.float32) * 20.) - 10.
 
@@ -325,8 +311,6 @@ def test_convert_per_tensor_uint_quantized_clip_as_special_relu(min: float, max:
                                                                 intermediate_tflite_model_provider):
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = (np.random.rand(*x_shape).astype(np.float32) * 20.) - 10.
 
     graph = onnx.helper.make_graph(
@@ -371,8 +355,6 @@ def test_convert_per_tensor_quantized_clip_as_relu(scale: float, zp: int, data_t
                                                    intermediate_tflite_model_provider):
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = (np.random.rand(*x_shape).astype(np.float32) * 20.) - 10.
 
     graph = onnx.helper.make_graph(
@@ -405,8 +387,6 @@ def test_convert_per_tensor_quantized_clip_as_relu(scale: float, zp: int, data_t
 def test_convert_clip_v6_default_values():
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     # Contains some very large numbers and some +-inf
     x_data = ((np.random.rand(*x_shape) - 0.5) * 8.0e+38).astype(np.float32)
 
@@ -435,8 +415,6 @@ def test_convert_clip_v6_default_values():
     ])
 def test_convert_clip_v11_default_values(data_type: TensorProto.DataType):
     x_shape = [2, 3]
-
-    np.random.seed(42)
 
     dtype = types.to_numpy_type(data_type)
 
@@ -492,8 +470,6 @@ def test_convert_clip_with_reversed_min_max():
     x_shape = [5, 10, 15]
     min_value = 10
     max_value = 5
-
-    np.random.seed(42)
 
     x_data = (np.random.rand(*x_shape) * 15.).astype(np.float32)
 

@@ -19,8 +19,6 @@ from tests import executors
 def test_convert_dropout__skipped(intermediate_tflite_model_provider):
     shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -43,8 +41,6 @@ def test_convert_dropout__skipped(intermediate_tflite_model_provider):
 def test_convert_dropout__not_skipped(intermediate_tflite_model_provider):
     shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -63,8 +59,6 @@ def test_convert_dropout__not_skipped(intermediate_tflite_model_provider):
 def test_convert_dropout__with_seed_attribute():
     shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -81,8 +75,6 @@ def test_convert_dropout__with_seed_attribute():
 
 def test_convert_dropout__with_ratio_attribute():
     shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*shape).astype(np.float32) - 0.5
 

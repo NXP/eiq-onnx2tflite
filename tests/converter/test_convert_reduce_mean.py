@@ -26,8 +26,6 @@ from tests import executors
 def test_convert_reduce_mean__v18(axes: list[int]):
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -51,8 +49,6 @@ def test_convert_reduce_mean__v18(axes: list[int]):
 def test_convert_reduce_mean__v18_channels_first_static_axes(axes: list[int]):
     x_shape = [5, 10, 15, 20]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -72,8 +68,6 @@ def test_convert_reduce_mean__v18_channels_first_static_axes(axes: list[int]):
 @pytest.mark.parametrize("axes", [[0], [1], [2], [3]], ids=lambda x: f'axes={x}')
 def test_convert_reduce_mean__channels_first_input_and_output(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -95,8 +89,6 @@ def test_convert_reduce_mean__channels_first_input_and_output(axes: list[int]):
 @pytest.mark.parametrize("axes", [[0], [1], [2], [3]], ids=lambda x: f'axes={x}')
 def test_convert_reduce_mean__channels_first_output(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -123,8 +115,6 @@ def test_convert_reduce_mean__channels_first_output(axes: list[int]):
     ], ids=lambda x: f'axes={x}')
 def test_convert_reduce_mean__v18_channels_first__keepdims_false__different_axes(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -175,7 +165,6 @@ def test_convert_reduce_mean__v18_dynamic_axes():
 def test_convert_reduce_mean__v18_inferred_dynamic_axes(indices: list[int]):
     x_shape = [1, 2, 3, 20]
 
-    np.random.seed(42)
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -206,7 +195,6 @@ def test_convert_reduce_mean__v18_inferred_dynamic_axes(indices: list[int]):
 def test_convert_reduce_mean__v18_channels_first_inferred_dynamic_axes(indices: list[int]):
     x_shape = [1, 2, 3, 20]
 
-    np.random.seed(42)
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -233,8 +221,6 @@ def test_convert_reduce_mean__v18_dynamic_axes__cast_operator():
     axes = [-2, 0]
     output_shape = [1, 2, 1, 20]
 
-    np.random.seed(42)
-
     input_data = {
         0: np.random.rand(*shape).astype(np.float32) - 0.5,
         1: np.asarray(axes, np.int64)
@@ -259,8 +245,6 @@ def test_convert_reduce_mean__v18_dynamic_axes__cast_operator():
 def test_convert_reduce_mean__v18_default_axes():
     x_shape = [5, 10, 15]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -282,8 +266,6 @@ def test_convert_reduce_mean__v18_default_axes():
     ], ids=lambda x: f'axes={x}')
 def test_convert_reduce_mean__v13(axes: list[int]):
     x_shape = [5, 10, 15]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
@@ -307,8 +289,6 @@ def test_convert_reduce_mean__v13(axes: list[int]):
 def test_convert_reduce_mean__v13_channels_first_input(axes: list[int]):
     x_shape = [5, 10, 15, 20]
 
-    np.random.seed(42)
-
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 
     graph = onnx.helper.make_graph(
@@ -327,8 +307,6 @@ def test_convert_reduce_mean__v13_channels_first_input(axes: list[int]):
 @pytest.mark.parametrize("axes", [[0], [1], [2], [-1], [-2]], ids=lambda x: f'axes={x}')
 def test_convert_reduce_mean__v13_channels_first_output(axes: list[int]):
     x_shape = [2, 3, 4, 5]
-
-    np.random.seed(42)
 
     x_data = np.random.rand(*x_shape).astype(np.float32) - 0.5
 

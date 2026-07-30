@@ -25,7 +25,6 @@ from tests import executors
         [2, 3, 4, 5, 6],
     ], ids=lambda x: f'{len(x)}D')
 def test_convert_hard_swish(shape: list[int]):
-    np.random.seed(42)
     x_data = np.random.random(np.prod(shape)).reshape(shape).astype(np.float32)
 
     graph = onnx.helper.make_graph(

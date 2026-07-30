@@ -34,7 +34,6 @@ def test_convert_greater_or_equal__types(type_: TensorProto.DataType):
     )
 
     onnx_model = onnx.helper.make_model(graph)
-    np.random.seed(42)
 
     input_data = {
         0: (np.random.random(100) * 100).astype(to_numpy_type(type_)),
@@ -108,7 +107,6 @@ def test_convert_greater_or_equal__shape_broadcasting(x_shape, y_shape):
     )
 
     onnx_model = onnx.helper.make_model(graph)
-    np.random.seed(42)
 
     input_data = {
         0: np.random.random(x_shape).astype(np.float32),
@@ -140,7 +138,6 @@ def test_convert_greater_or_equal__channels_first_shape_broadcasting(x_shape, y_
     )
 
     onnx_model = onnx.helper.make_model(graph)
-    np.random.seed(42)
 
     input_data = {
         0: np.random.random(x_shape).astype(np.float32),
