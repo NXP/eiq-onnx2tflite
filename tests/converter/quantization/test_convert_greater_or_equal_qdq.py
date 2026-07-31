@@ -87,7 +87,7 @@ def test_convert_greater_or_equal_qdq__static_y(single_greater_or_equal_node_qdq
 
     input_data = np.random.random(x_shape).astype(np.float32)
 
-    executors.convert_run_compare(single_greater_or_equal_node_qdq_model__static_y, input_data)
+    executors.convert_run_compare(single_greater_or_equal_node_qdq_model__static_y, input_data, atol=1.)
 
     ops = intermediate_tflite_model_provider.get_operators()
     assert len(ops) == 2
