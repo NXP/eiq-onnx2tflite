@@ -208,6 +208,7 @@ class NodeProto(meta.ONNXObject):
         "And": None,
         "ArgMax": builtin_attributes.ArgMax,
         "ArgMin": builtin_attributes.ArgMin,
+        "Atan": None,
         "AveragePool": builtin_attributes.AveragePool,
         "BatchNormalization": builtin_attributes.BatchNormalization,
         "Cast": builtin_attributes.Cast,

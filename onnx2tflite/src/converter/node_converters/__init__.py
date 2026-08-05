@@ -9,6 +9,7 @@ from .add_converter import AddConverter
 from .and_converter import AndConverter
 from .arg_max_converter import ArgMaxConverter
 from .arg_min_converter import ArgMinConverter
+from .atan_converter import AtanConverter
 from .average_pool_converter import AveragePoolConverter
 from .batch_normalization_converter import BatchNormalizationConverter
 from .cast_converter import CastConverter
@@ -123,6 +124,7 @@ __all__ = [
     AndConverter,
     ArgMaxConverter,
     ArgMinConverter,
+    AtanConverter,
     AveragePoolConverter,
     BatchNormalizationConverter,
     CastConverter,

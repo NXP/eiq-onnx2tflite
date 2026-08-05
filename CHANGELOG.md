@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `[onnx2tflite]` Support for GatherElements operator (static and dynamic indices)
+- `[onnx2tflite]` Support for Atan operator
 
 ### Fixed
 

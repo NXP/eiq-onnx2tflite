@@ -37,6 +37,7 @@ class OperatorConverter:
         "And": node_converters.AndConverter,
         "ArgMax": node_converters.ArgMaxConverter,
         "ArgMin": node_converters.ArgMinConverter,
+        "Atan": node_converters.AtanConverter,
         "AveragePool": node_converters.AveragePoolConverter,
         "BatchNormalization": node_converters.BatchNormalizationConverter,
         "Cast": node_converters.CastConverter,
