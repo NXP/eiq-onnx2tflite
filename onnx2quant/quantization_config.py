@@ -28,6 +28,11 @@ class QuantizationConfig:
         self.per_channel: bool = PER_CHANNEL_DEFAULT
         self.generate_artifacts_after_failed_shape_inference: bool = True
 
+        # Node/op based quantization selection
+        self.op_types_to_quantize: list[str] | None = None
+        self.nodes_to_quantize: list[str] | None = None
+        self.nodes_to_exclude: list[str] | None = None
+
         # Preprocessing flags.
         self.replace_div_with_mul: bool = True
         self.replace_constant_with_static_tensor: bool = True

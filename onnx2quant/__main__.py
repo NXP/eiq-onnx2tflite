@@ -115,8 +115,40 @@ def _parse_arguments() -> argparse.Namespace:
         help="If the shape inference fails or is incomplete, generate the partially inferred ONNX model "
         "as 'sym_shape_infer_temp.onnx'.",
     )
+    parser.add_argument(
+        "--op-types-to-quantize",
+        dest="op_types_to_quantize",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="OP_TYPE",
+        help="Restrict quantization to the given ONNX operator types (for example 'Conv MatMul'). Only "
+        "operator types supported by the converter are quantized; unsupported types are ignored. This "
+        "argument can be used multiple times.",
+    )
+    parser.add_argument(
+        "--nodes-to-quantize",
+        dest="nodes_to_quantize",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="NODE_NAME",
+        help="Quantize only the nodes with the given names. When provided, nodes not in this list are left "
+        "unquantized. This argument can be used multiple times.",
+    )
+    parser.add_argument(
+        "--nodes-to-exclude",
+        dest="nodes_to_exclude",
+        type=str,
+        action="extend",
+        nargs="+",
+        metavar="NODE_NAME",
+        help="Exclude the nodes with the given names from quantization. This argument can be used multiple "
+        "times.",
+    )
 
     calibration_dataset_arguments = parser.add_mutually_exclusive_group(required=True)
+
     calibration_dataset_arguments.add_argument(
         "-c",
         "--calibration-dataset-mapping",

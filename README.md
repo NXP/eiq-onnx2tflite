@@ -120,6 +120,8 @@ usage: onnx2quant [-h] [--replace-div-with-mul | --no-replace-div-with-mul]
                   [--per-channel | --no-per-channel] [-l | --allow-opset-10-and-lower | --no-allow-opset-10-and-lower]
                   [-s [SYMBOLIC_DIMENSIONS_MAPPING ...]] [-m [INPUT_SHAPES_MAPPING ...]]
                   [--generate-artifacts-after-failed-shape-inference | --no-generate-artifacts-after-failed-shape-inference]
+                  [--op-types-to-quantize OP_TYPE [OP_TYPE ...]] [--nodes-to-quantize NODE_NAME [NODE_NAME ...]]
+                  [--nodes-to-exclude NODE_NAME [NODE_NAME ...]]
                   (-c CALIBRATION_DATASET_MAPPING [CALIBRATION_DATASET_MAPPING ...] | -u)
                   onnx_model
 
@@ -156,6 +158,15 @@ options:
   --generate-artifacts-after-failed-shape-inference, --no-generate-artifacts-after-failed-shape-inference
                         If the shape inference fails or is incomplete, generate the partially inferred ONNX model as
                         'sym_shape_infer_temp.onnx'.
+  --op-types-to-quantize OP_TYPE [OP_TYPE ...]
+                        Restrict quantization to the given ONNX operator types (for example 'Conv MatMul'). Only operator
+                        types supported by the converter are quantized; unsupported types are ignored. This argument can be
+                        used multiple times.
+  --nodes-to-quantize NODE_NAME [NODE_NAME ...]
+                        Quantize only the nodes with the given names. When provided, nodes not in this list are left
+                        unquantized. This argument can be used multiple times.
+  --nodes-to-exclude NODE_NAME [NODE_NAME ...]
+                        Exclude the nodes with the given names from quantization. This argument can be used multiple times.
   -c INPUT_NAME;DATASET_PATH [INPUT_NAME;DATASET_PATH ...], --calibration-dataset-mapping INPUT_NAME;DATASET_PATH [INPUT_NAME;DATASET_PATH ...]
                         Mapping between model input and calibration dataset directory with *.npy files. Value must be in
                         format '<input_name>;<path_to_dir>', for example 'input_1;data_3_224/'. Argument can be used

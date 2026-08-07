@@ -1032,6 +1032,28 @@ class QDQQuantizer:
         """Detect if model already has QuantizeLinear or DequantizeLinear ops."""
         return any(node.op_type == "QuantizeLinear" or node.op_type == "DequantizeLinear" for node in model.graph.node)
 
+    def _resolve_op_types_to_quantize(self, op_types_to_quantize: list[str] | None) -> list[str]:
+        """Resolve the effective 'op_types_to_quantize'.
+
+        When the user does not provide any override, the internal default list is used.
+        When an override is provided, entries that are not part of the internal default list
+        are dropped with a warning.
+
+        :param op_types_to_quantize: User provided op types or None.
+        :return: List of op types to quantize.
+        """
+        if not op_types_to_quantize:
+            return self.op_types_to_quantize
+
+        unsupported = [op for op in op_types_to_quantize if op not in self.default_op_types_to_quantize]
+        if unsupported:
+            logger.w(
+                f"Op types {unsupported} are not supported for QDQ quantization and will be ignored. "
+                f"Supported op types: {self.default_op_types_to_quantize}."
+            )
+
+        return [op for op in op_types_to_quantize if op in self.default_op_types_to_quantize]
+
     def quantize_model(
         self,
         model_proto: onnx_model.ModelProto,
@@ -1137,7 +1159,9 @@ class QDQQuantizer:
                 output_model_path,
                 per_channel=quantization_config.per_channel,
                 calibration_data_reader=calibration_data_reader,
-                op_types_to_quantize=self.op_types_to_quantize,
+                op_types_to_quantize=self._resolve_op_types_to_quantize(quantization_config.op_types_to_quantize),
+                nodes_to_quantize=quantization_config.nodes_to_quantize,
+                nodes_to_exclude=quantization_config.nodes_to_exclude,
                 extra_options=extra_options,
             )
 
