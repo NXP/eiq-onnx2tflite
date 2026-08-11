@@ -3,9 +3,11 @@
 Project contains [ONNX repository](https://github.com/onnx/onnx) as a git submodule with test specifications that has to
 be initialized before running any local tests:
 
+This project is managed with the [`uv`](https://docs.astral.sh/uv/) package manager.
+
 ```commandline
 git submodule update --init --recursive
-pip install -e .[dev]
+uv sync
 ```
 
 ## Project structure
@@ -36,6 +38,6 @@ The code in the **onnx2tflite/src** directory is split into multiple subdirector
 downloaded model artifacts (models & input vectors) with provided script before running any tests:
 
 ```commandline
-python tests/download_models.py
-pytest tests
+uv run python tests/download_models.py
+uv run pytest tests
 ```

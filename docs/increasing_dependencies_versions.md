@@ -70,7 +70,8 @@ for the review.
 
 1. Update the subproject in `thirdparty/onnx`.
 2. Update the Readme.md `onnx-badge` item
-3. Update the [requirements.txt](../requirements.txt) and [pyproject.toml](../eiq/converter/onnx2tflite/pyproject.toml)
+3. Update the dependency pin in [pyproject.toml](../pyproject.toml) `[project.dependencies]`,
+   run `uv lock`.
 4. Update the `MAXIMUM_VERIFIED_OPSET` in `convert.py`.
 
 ### Update the list of test
@@ -161,8 +162,8 @@ Due to reasons mentioned above, we have to keep eye on:
 
 ### Update the ONNX Runtime version
 
-1. Update the ONNX Runtime version in [requirements.txt](../requirements.txt) and
-   [pyproject.toml](../eiq/converter/onnx2tflite/pyproject.toml)
+1. Update the ONNX Runtime version in the [pyproject.toml](../pyproject.toml)
+   `[project.dependencies]`, then run `uv lock`.
 
 #### Note for versioning in requirements.txt
 
@@ -201,8 +202,9 @@ Typically, the changes in the Tensorflow Lite are extensive, so following approa
 
 ### Update the TensorFlow Lite version
 
-1. Increase version of TensorFlow in **requirements-dev.txt**, **Makefile** (target `get-tflite-schema`) and
-   **README.md** (`tensorflow-badge`).
+1. Increase the TensorFlow version in the `[dependency-groups] dev` group of
+   [pyproject.toml](../pyproject.toml) (run `uv lock` afterwards), in the **Makefile**
+   (target `get-tflite-schema`) and in **README.md** (`tensorflow-badge`).
 
 2. Update the version of the flatbuffers library in [Makefile](../Makefile) to version used by the
    corresponding version of the TensorFlow. You can find it in the
