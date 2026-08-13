@@ -14,9 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `[onnx2tflite]` Support for Atan operator
 - `[onnx2quant]` Add --op-types-to-quantize, --nodes-to-quantize, and --nodes-to-exclude CLI arguments to allow restricting quantization to specific operator types or nodes
 
+### Changed
+
+- `[onnx2tflite]` Identity (no-op) operators are now represented using a lightweight `Reshape` instead of a `Transpose`/`FlexTranspose`.
+
 ### Fixed
 
 - `[onnx2quant]` Fixed quantization of Conv nodes with a dynamic (non-initializer) weight input.
+
 
 ## [0.11.0] - 2026-06-23
 

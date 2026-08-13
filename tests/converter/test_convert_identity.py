@@ -12,8 +12,8 @@ from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.src import logger
-from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
+
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
 
@@ -42,7 +42,7 @@ def test_convert_identity__not_skipped(shape: list[int], intermediate_tflite_mod
 
 
 def test_convert_identity__not_skipped__7d(intermediate_tflite_model_provider):
-    # The `Identity` will be turned to a `FlexTranspose` operator.
+    # The `Identity` will be turned to a `Reshape` operator.
     shape = [2, 1, 3, 1, 2, 4, 2]
 
     np.random.seed(42)
@@ -57,9 +57,8 @@ def test_convert_identity__not_skipped__7d(intermediate_tflite_model_provider):
 
     onnx_model = onnx.helper.make_model(graph)
 
-    config = ConversionConfig({'allow_select_ops': True})
-    executors.convert_run_compare(onnx_model, data, conversion_config=config)
-    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.CUSTOM])
+    executors.convert_run_compare(onnx_model, data)
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 @pytest.mark.parametrize(
