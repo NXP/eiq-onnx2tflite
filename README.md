@@ -14,10 +14,22 @@ in models suitable for subsequent conversion into TFLite.
 
 ## Installation
 
+Install the published package with `uv` (or `pip`):
+
 ```commandline
-pip install -r requirements.txt
-pip install --index-url https://eiq.nxp.com/repository/ eiq-onnx2tflite
+uv pip install --index-url https://eiq.nxp.com/repository/ eiq-onnx2tflite
 ```
+
+For development from a checkout, use the project environment managed by
+[`uv`](https://docs.astral.sh/uv/):
+
+```commandline
+uv sync
+```
+
+This creates a `.venv` and installs the runtime plus `dev` dependencies from the
+committed `uv.lock`. See [Project structure & testing](docs/project_development_basics.md)
+for details.
 
 ## ONNX2TFLite converter
 

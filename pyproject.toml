@@ -8,17 +8,13 @@ include = ["onnx2tflite*", "onnx2quant*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "onnx2tflite.__version__" }
-dependencies = { file = ["requirements.txt"] }
-
-[tool.setuptools.dynamic.optional-dependencies]
-dev = { file = ["requirements-dev.txt"] }
 
 [project]
 name = "eiq-onnx2tflite"
 authors = [
     { name = "NXP" },
 ]
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "ONNX2TFLite project offers tools for ONNX models quantization and their conversion into TFLite"
 license = { text = "PROPRIETARY" }
 keywords = ["onnx2tflite", "onnx2quant", "nxp", "eiq", "toolkit", "converter", "quantizer", "onnx", "tflite"]
@@ -26,6 +22,28 @@ requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3.11",
     "Intended Audience :: Developers",
+]
+dependencies = [
+    "flatbuffers==24.3.25", # TensorFlow dependency
+    "numpy",
+    "protobuf",
+    "onnx~=1.20.1",
+    "onnxruntime~=1.24.3",
+    "sympy",
+    "deprecated",
+]
+
+[project.optional-dependencies]
+dev = [
+    "tensorflow==2.18.1",
+    "Pillow",
+    "pytest",
+    "pytest-html",
+    "pytest-mock",
+    "coverage",
+    "py-cpuinfo",
+    "ruff",
+    "requests",
 ]
 
 [project.urls]
