@@ -12,7 +12,6 @@ from onnx import TensorProto
 
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
-from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests import executors
 
 
@@ -74,25 +73,54 @@ def test_convert_elu__invalid_alpha():
     assert 'alpha=0.5' in logger.conversion_log.get_node_error_message(0)
 
 
-@pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
-def test_convert_elu__quantized(type_: TensorProto.DataType):
+def test_convert_elu__quantized_int8():
+    shape = [42]
+
+    data = (np.random.random(shape) * 10. - 5.).astype(np.float32)
+
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('QuantizeLinear', ['x', 's', 'zp'], ['x1']),
+            onnx.helper.make_node('DequantizeLinear', ['x1', 's', 'zp'], ['x2']),
+            onnx.helper.make_node('Elu', ['x2'], ['x3']),
+            onnx.helper.make_node('QuantizeLinear', ['x3', 's', 'zp'], ['x4']),
+            onnx.helper.make_node('DequantizeLinear', ['x4', 's', 'zp'], ['y'])
+        ],
+        'Quantized INT8 Elu test',
+        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
+        [
+            onnx.helper.make_tensor('s', TensorProto.FLOAT, [1], [.0042]),
+            onnx.helper.make_tensor('zp', TensorProto.INT8, [1], [12])
+        ]
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    executors.convert_run_compare(onnx_model, data)
+
+
+def test_convert_elu__quantized_uint8_unsupported():
     shape = [3, 14, 15]
 
     graph = onnx.helper.make_graph(
         [
             onnx.helper.make_node('QuantizeLinear', ['x', 's', 'zp'], ['x1']),
-            onnx.helper.make_node('Elu', ['x1'], ['y'])
+            onnx.helper.make_node('DequantizeLinear', ['x1', 's', 'zp'], ['x2']),
+            onnx.helper.make_node('Elu', ['x2'], ['x3']),
+            onnx.helper.make_node('QuantizeLinear', ['x3', 's', 'zp'], ['x4']),
+            onnx.helper.make_node('DequantizeLinear', ['x4', 's', 'zp'], ['y'])
         ],
-        'Quantized input test',
+        'Quantized UINT8 Elu test',
         [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
-        [onnx.helper.make_tensor_value_info('y', type_, ())],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
         [
-            onnx.helper.make_tensor('s', TensorProto.FLOAT, [1], [1.42]),
-            onnx.helper.make_tensor('zp', type_, [1], [12])
+            onnx.helper.make_tensor('s', TensorProto.FLOAT, [1], [.0042]),
+            onnx.helper.make_tensor('zp', TensorProto.UINT8, [1], [12])
         ]
     )
     onnx_model = onnx.helper.make_model(graph)
 
     with pytest.raises(logger.Error):
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
+    assert logger.conversion_log.get_node_error_code(2) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert 'INT8' in logger.conversion_log.get_node_error_message(2)

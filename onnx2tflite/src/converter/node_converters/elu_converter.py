@@ -23,24 +23,27 @@ class EluConverter(NodeConverter):
     node = "Elu"
 
     onnx_supported_types = FLOATS
-    # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/activations.cc#L1503-L1522
+    # https://github.com/tensorflow/tensorflow/blob/v2.18.1/tensorflow/lite/kernels/activations.cc#L1503-L1522
     tflite_supported_types = [TensorType.FLOAT32, TensorType.INT8]
     verified_types = [TensorType.FLOAT32]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Elu`` operator into TFLite `Elu`."""
-        if len(t_op.tmp_inputs) != 1 or len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Elu` has invalid number of input and output tensors.")
 
         x = t_op.tmp_inputs[0]
-        y = t_op.tmp_outputs[0]
-        if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Elu` has different input and output types.")
 
-        if not t_op.is_qdq_quantized():
+        if t_op.is_qdq_quantized():
+            # TFLite `ELU` has no UINT8 quantized kernel. Only INT8 is supported.
+            if x.type != TensorType.INT8:
+                logger.e(
+                    logger.Code.CONVERSION_IMPOSSIBLE,
+                    f"Quantized ONNX `Elu` is only supported for INT8, got `{x.type}`.",
+                )
+        else:
             self.assert_type_allowed(x.type)
 
         attrs = cast(elu_attributes.Elu, node.attributes)
+
         if not np.allclose(attrs.alpha, 1.0):
             # TFLite only uses `alpha=1.0`. Other values could be converted into multiple operators, but it doesn't seem
             #  like a common use-case.

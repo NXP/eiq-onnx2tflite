@@ -88,6 +88,7 @@ class QDQClustersRecognizer:
         "Conv",
         "ConvTranspose",
         "DepthToSpace",
+        "Elu",
         "Equal",
         "Expand",
         "Flatten",
@@ -700,6 +701,15 @@ class QDQReduceProd(QDQOperator):
             super().quantize()
 
 
+class QDQElu(QDQOperator):
+    def quantize(self) -> None:
+        assert self.node.op_type == "Elu"
+
+        # TFLite `ELU` has only an INT8 quantized kernel (no UINT8).
+        if self.quantizer.activation_qType == TensorProto.INT8:
+            super().quantize()
+
+
 class QDQScatterND(QDQOperator):
     def quantize(self) -> None:
         node = self.node
@@ -849,7 +859,7 @@ class QDQQuantizer:
         # "Div",  # TFLite supports only quantized uint8 https://github.com/tensorflow/tensorflow/issues/42882
         # "Dropout",  # Not supported by the nature of the operator
         # "Einsum",  # Represented as Flex Operator
-        # "Elu",
+        "Elu",
         "Equal",
         # "Erf",  # TFLite doesn't support quantized version of this operator
         "Expand",
@@ -986,6 +996,7 @@ class QDQQuantizer:
         QDQRegistry["Clip"] = QDQClip
         QDQRegistry["Concat"] = QDQConcat
         QDQRegistry["DepthToSpace"] = QDQDirect8BitOp
+        QDQRegistry["Elu"] = QDQElu
         QDQRegistry["Expand"] = QDQDirect8BitOp
         QDQRegistry["Flatten"] = QDQDirect8BitOp
         QDQRegistry["GatherND"] = QDQDirect8BitOp
