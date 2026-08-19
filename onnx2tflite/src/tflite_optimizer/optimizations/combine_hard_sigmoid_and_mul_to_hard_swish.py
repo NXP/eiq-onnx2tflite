@@ -14,8 +14,10 @@ from onnx2tflite.src.tflite_optimizer.pattern_matcher import OneOf, Op, PatternM
 from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     RuleOr,
     TensorHasNConsumers,
+    TensorHasQuantizedStaticValue,
     TensorHasStaticValue,
     TensorHasType,
+    TensorsArePerTensorQuantized,
     TensorsAreQuantized,
     TensorsHaveOneConsumer,
     TensorsHaveType,
@@ -25,7 +27,9 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import (
 class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
     def __call__(self) -> bool:
         made_changes = self._combine_float_variant()
-        made_changes |= self._combine_quantized_variant()
+        made_changes |= self._combine_partially_quantized_variant()
+        made_changes |= self._combine_fully_quantized_variant()
+
 
         return made_changes
 
@@ -102,7 +106,7 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
 
         return len(to_remove) != 0
 
-    def _combine_quantized_variant(self) -> bool:
+    def _combine_partially_quantized_variant(self) -> bool:
         """Fuse some operators in the following pattern. The ops `Mul`, `Add` `Minimum` and `Relu` compute the
          `HardSigmoid` operation, as there is no `HardSigmoid` operator in TFLite.
 
@@ -177,6 +181,87 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
                     TensorsHaveType(["x", "y"], TensorType.INT8),
                     TensorsHaveType(["x", "y"], TensorType.UINT8),
                 ),
+            ],
+        )
+
+        # The mapped operator (value) will be inserted into the model later, at the position of the `key` operator.
+        to_add: dict[tflite_model.Operator, tflite_model.Operator] = {}
+        to_remove = []
+        for pattern_ops, tensor_map, _, _ in matcher.match_patterns():
+            x, y = tensor_map["x"], tensor_map["y"]
+            hard_swish = tflite_model.Operator(
+                builtin_options=HardSwish(),
+                opcode_index=self._builder.op_code_index_for_op_type(BuiltinOperator.HARD_SWISH),
+            )
+            hard_swish.tmp_inputs = [x]
+            hard_swish.tmp_outputs = [y]
+
+            to_add[pattern_ops[0]] = hard_swish
+
+            to_remove.extend(pattern_ops)
+
+        ops = self._builder.get_operators()
+        for k, v in to_add.items():
+            idx = ops.index(k)
+            ops.insert(idx, v)
+
+        for op in to_remove:
+            ops.remove(op)
+
+        return len(to_remove) != 0
+
+
+    def _combine_fully_quantized_variant(self) -> bool:
+        """Fuse some operators in the following pattern. The ops `Mul`, `Add` `Minimum` and `Relu` compute the
+         `HardSigmoid` operation, as there is no `HardSigmoid` operator in TFLite.
+
+        The following pattern arises from using the `onnx2quant` on a model with `HardSwish`. The quantizer always
+         runs a pre-processing step which splits the ONNX `HardSwish` into `HardSigmoid` and `Mul`. It seems like it
+         cannot be turned off. Therefore, we cannot add QDQ quantization of `HardSwish`. `HardSigmoid`
+         gets converted to multiple TFLite operators and is also quantized, but we can still convert whole
+         subgraph into single quantized `HardSwish` operator.
+
+                             │  int8    `x`
+                       ┌─────┴─────┐ 
+                    ┌──▼──┐        │
+              1/6 ──► Mul │        │
+                    └──┬──┘        │
+                    ┌──▼──┐        │
+              1/2 ──► Add │        │
+                    └──┬──┘        │
+                  ┌────▼────┐      │
+              1 ──► Minimum │      │                           │  int8    `x`
+                  └────┬────┘      │                     ┌─────▼─────┐
+                    ┌──▼───┐       │       ─────►        │ HardSwish │
+                    │ Relu │       │                     └─────┬─────┘
+                    └──┬───┘       │                           │  int8    `y`
+                       └───┐   ┌───┘
+                          ┌▼───▼┐
+                          │ Mul │
+                          └──┬──┘
+                             │  int8    `y`
+        """
+        matcher = PatternMatcher(
+            self._builder,
+            [
+                Op(["Mul"], ["x", "alpha"], ["mul1_o"]),
+                OneOf([Op(["Add"], ["mul1_o", "beta"], ["add_o"]), Op(["Add"], ["beta", "mul1_o"], ["add_o"])]),
+                OneOf(
+                    [
+                        Op(["Minimum"], ["add_o", "one"], ["min_o"]),
+                        Op(["Minimum"], ["one", "add_o"], ["min_o"]),
+                    ]
+                ),
+                Op(["Relu"], ["min_o"], ["relu_o"]),
+                OneOf([Op(["Mul"], ["x", "relu_o"], ["y"]), Op(["Mul"], ["relu_o", "x"], ["y"])]),
+            ],
+            [
+                TensorsHaveOneConsumer(["mul1_o", "add_o", "min_o", "relu_o",]),
+                TensorHasQuantizedStaticValue("alpha", value=1. / 6),
+                TensorHasQuantizedStaticValue("beta", value=0.5),
+                TensorHasQuantizedStaticValue("one", value=1),
+                TensorsArePerTensorQuantized(["x", "y", "alpha", "beta", "one"]),
+                TensorsHaveType(["x", "y"], TensorType.INT8),
             ],
         )
 

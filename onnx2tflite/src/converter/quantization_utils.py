@@ -80,6 +80,23 @@ def is_per_channel_quantized(scale, zero_point) -> bool:
     return is_quantization_valid(scale, zero_point) and not is_per_tensor_quantized(scale, zero_point)
 
 
+def compute_scale_zero_point(tensor_type: TensorType, r_min: float, r_max: float) -> tuple[float, int]:
+    """Compute the per-tensor scale/zero-point representing the '[r_min, r_max]' float range for 'tensor_type'.
+
+    :param tensor_type: TFLite tensor type. One of [TensorType.INT8, TensorType.UINT8].
+    :param r_min: Minimum value of the represented float range.
+    :param r_max: Maximum value of the represented float range.
+    :return: Tuple with scale (float) and zero_point (int).
+    """
+    q_type = TensorProto.INT8 if tensor_type == TensorType.INT8 else TensorProto.UINT8
+    q_min, q_max = quant_utils.get_qmin_qmax_for_qType(q_type, reduce_range=False, symmetric=False)
+    zero_point, scale = quant_utils.compute_scale_zp(
+        np.array(r_min, np.float32), np.array(r_max, np.float32), q_min, q_max, symmetric=False
+    )
+
+    return float(scale), int(zero_point)
+
+
 def get_symmetric_zero_point_for_type(tensor_type: TensorType) -> int:
     match tensor_type:
         case TensorType.INT8:

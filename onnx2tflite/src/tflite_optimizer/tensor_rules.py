@@ -168,6 +168,66 @@ class TensorHasStaticValue(TensorRule):
 
 
 @dataclass
+class TensorHasQuantizedStaticValue(TensorRule):
+    # Rule assures that the tensor is quantized and its dequantized static value array is equal to the provided
+    #  `value`. The tensor's quantized data is dequantized using its own `scale` and `zero_point` and then compared
+    #  against the provided `value`.
+
+    tensor: str
+    value: int | float | list[int] | list[float]
+
+    def __call__(
+        self,
+        tensor_map: NameToTensorMap,
+        input_to_ops: InputTensorToOpsMap,
+        output_to_op: OutputTensorToOpMap,
+        builder: "model_builder.ModelBuilder",
+    ) -> bool:
+        match tensor_map[self.tensor]:
+            case tflite_model.Tensor():
+                return self._check_tensor(tensor_map[self.tensor])
+            case list():
+                return all(self._check_tensor(t) for t in tensor_map[self.tensor])
+            case _:
+                raise ValueError
+
+    def _check_tensor(self, tensor: tflite_model.Tensor) -> bool:
+        data = tensor.tmp_buffer.data
+        if data is None:
+            return False
+
+        if tensor.quantization is None:
+            return False
+
+        quantization = tensor.quantization
+        if quantization.scale is None or quantization.zero_point is None:
+            return False
+
+        scale = np.asarray(quantization.scale.vector)
+        zero_point = np.asarray(quantization.zero_point.vector)
+
+        dequantized_value = (np.asarray(data).flatten().astype(np.float64) - zero_point) * scale
+
+        required_value = self._value_as_np()
+        if len(dequantized_value) != len(required_value):
+            return False
+
+        return np.allclose(dequantized_value, required_value)
+
+    def _value_as_np(self) -> np.ndarray:
+        match type(self.value):
+            case builtins.int | builtins.float:
+                return np.asarray([self.value], np.float64)
+            case builtins.list:
+                return np.asarray(self.value, np.float64)
+            case _:
+                raise ValueError
+
+    def is_applicable(self, tensor_map: NameToTensorMap) -> bool:
+        return self.tensor in tensor_map
+
+
+@dataclass
 class TensorHasNConsumers(TensorRule):
     tensor: str
     n: int

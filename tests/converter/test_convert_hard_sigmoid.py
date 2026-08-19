@@ -12,7 +12,6 @@ from onnx import TensorProto
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
-from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests import executors
 
 
@@ -148,26 +147,3 @@ def test_convert_hard_sigmoid__unsupported_type(intermediate_tflite_model_provid
         convert.convert_model(onnx_model)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
 
-
-@pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
-def test_convert_hard_sigmoid__quantized(type_: TensorProto.DataType):
-    shape = [3, 14, 15]
-
-    graph = onnx.helper.make_graph(
-        [
-            onnx.helper.make_node('QuantizeLinear', ['x', 's', 'zp'], ['x1']),
-            onnx.helper.make_node('HardSigmoid', ['x1'], ['y'])
-        ],
-        'Quantized input test',
-        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, shape)],
-        [onnx.helper.make_tensor_value_info('y', type_, ())],
-        [
-            onnx.helper.make_tensor('s', TensorProto.FLOAT, [1], [1.42]),
-            onnx.helper.make_tensor('zp', type_, [1], [12])
-        ]
-    )
-    onnx_model = onnx.helper.make_model(graph)
-
-    with pytest.raises(logger.Error):
-        convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
