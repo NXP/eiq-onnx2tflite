@@ -358,3 +358,45 @@ def test_convert_transpose__unsupported_type():
         convert.convert_model(onnx_model)
     assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
     assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+
+
+def test_convert_conv_transpose__shared_static_weight():
+    input_shape = [1, 4, 5, 5]
+    output_channels = 2  # Different from input channels and kernel size, so a corrupted weight shape was created before the fix.
+    kernel_shape = [3, 3]
+    weight_shape = [input_shape[1], output_channels] + kernel_shape
+    bias_shape = [output_channels]
+
+    weights = np.random.random(np.prod(weight_shape)).reshape(weight_shape).astype(np.float32)
+    bias = np.random.random(bias_shape).astype(np.float32)
+
+    graph = onnx.helper.make_graph(
+        [
+            # First 'ConvTranspose' has a bias. It converts first, while the shared weight is still in its ONNX shape.
+            onnx.helper.make_node("ConvTranspose", ["x1", "w", "bias"], ["y1"]),
+            # Second 'ConvTranspose' shares the same weight but has no bias.
+            onnx.helper.make_node("ConvTranspose", ["x2", "w"], ["y2"]),
+        ],
+        "shared static weight ConvTranspose test",
+        [
+            onnx.helper.make_tensor_value_info("x1", TensorProto.FLOAT, input_shape),
+            onnx.helper.make_tensor_value_info("x2", TensorProto.FLOAT, input_shape),
+        ],
+        [
+            onnx.helper.make_tensor_value_info("y1", TensorProto.FLOAT, ()),
+            onnx.helper.make_tensor_value_info("y2", TensorProto.FLOAT, ()),
+        ],
+        [
+            onnx.helper.make_tensor("w", TensorProto.FLOAT, weight_shape, weights.flatten()),
+            onnx.helper.make_tensor("bias", TensorProto.FLOAT, bias_shape, bias),
+        ],
+    )
+
+    onnx_model = onnx.helper.make_model(graph)
+
+    input_data = {
+        0: np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32),
+        1: (np.arange(np.prod(input_shape)) + 1).reshape(input_shape).astype(np.float32),
+    }
+
+    executors.convert_run_compare(onnx_model, input_data)
