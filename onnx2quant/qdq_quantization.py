@@ -101,6 +101,7 @@ class QDQClustersRecognizer:
         "Greater",
         "GreaterOrEqual",
         "GRU",
+        "HardSigmoid",
         "HardSwish",
         "LeakyRelu",
         "Less",
@@ -874,7 +875,7 @@ class QDQQuantizer:
         "Greater",
         "GreaterOrEqual",
         "GRU",
-        # "HardSigmoid",  # Represented by multiple operators. Quantization can introduce large errors.
+        "HardSigmoid",
         "HardSwish",
         # "Identity",  # Represented by single tensor in TFLite.
         # "InstanceNormalization",  # Represented by multiple operators. Quantization can introduce large errors.
@@ -1006,6 +1007,7 @@ class QDQQuantizer:
         QDQRegistry["Greater"] = QDQOperatorBase
         QDQRegistry["GreaterOrEqual"] = QDQOperatorBase
         QDQRegistry["GRU"] = QDQGRU
+        QDQRegistry["HardSigmoid"] = QDQOperatorBase
         QDQRegistry["HardSwish"] = QDQOperatorBase
         QDQRegistry["InstanceNormalization"] = QDQNormalization
         QDQRegistry["LayerNormalization"] = QDQNormalization
