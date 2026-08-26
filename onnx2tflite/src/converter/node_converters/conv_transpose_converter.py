@@ -11,7 +11,7 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import logger
-from onnx2tflite.src.converter.conversion import common, translator
+from onnx2tflite.src.converter.conversion import common
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import convert_padding
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -112,7 +112,8 @@ class ConvTransposeConverter(NodeConverter):
         # Weight tensor format in TFLite: [M/group, kH, kW, C]
         # (C = input channels, M = feature maps (output channels), kW = kernel width, kH = kernel height)
         if tensor_has_data(weight_tensor):
-            translator.permute_static_tensor(weight_tensor, [1, 2, 3, 0])
+            weight_tensor = self.builder.create_transposed_tensor(weight_tensor, [1, 2, 3, 0])
+            t_op.tmp_inputs[1] = weight_tensor
         else:
             ops.add_post(self.builder.create_transpose_operator_before(t_op, 1, [1, 2, 3, 0]))
         weight_tensor.tensor_format = TensorFormat.TRANSPOSE_CONV_2D_WEIGHT_FORMAT
