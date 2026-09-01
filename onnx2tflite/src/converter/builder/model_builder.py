@@ -608,10 +608,10 @@ class ModelBuilder:
         return True
 
     def turn_operator_to_identity(self, t_op: tflite_model.Operator) -> None:
-        """Turn the operator 't_op' to a Transpose operator, which does nothing.
+        """Turn the operator 't_op' to a Reshape operator, which does nothing.
             't_op' MUST have exactly 1 input tensor.
 
-        :param t_op: TFLite operator to turn into Transpose.
+        :param t_op: TFLite operator to turn into Reshape.
         """
         if len(t_op.tmp_inputs) != 1:
             logger.e(logger.Code.INTERNAL_ERROR, "turn_operator_to_identity(): Operator doesn't have 1 input!")
@@ -619,34 +619,18 @@ class ModelBuilder:
         if len(t_op.tmp_outputs) != 1:
             logger.e(logger.Code.INTERNAL_ERROR, "turn_operator_to_identity(): Operator doesn't have 1 output!")
 
-        if t_op.tmp_inputs[0].rank <= 6:
-            # Create regular `Transpose`.
-            t_op.builtin_options = transpose_options.Transpose()
-        else:
-            # 6D and bigger require the Flex delegate `Transpose`.
-            if t_op.tmp_inputs[0].quantization is not None:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                    "which doesn't support quantization.",
-                )
+        # Reshape to the input's own static shape. This is a no-op.
+        new_shape = list(t_op.tmp_inputs[0].shape.vector)
 
-            if not self.conversion_config.allow_select_ops:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                    "which requires the use of Flex delegate. " + logger.Message.ALLOW_SELECT_OPS,
-                )
+        t_op.builtin_options = reshape_options.Reshape(new_shape)
 
-            t_op.custom_options = FlexTranspose()
-
-        rank = t_op.tmp_inputs[0].rank
-        identity = np.asarray(range(rank), np.int32)
-        identity_tensor = self.create_tensor_for_data(identity, "identity")
-        t_op.tmp_inputs.append(identity_tensor)
+        shape = np.asarray(new_shape, np.int32)
+        shape_tensor = self.create_tensor_for_data(shape, "identity")
+        t_op.tmp_inputs.append(shape_tensor)
 
     def _validate_new_tensor_name(self, name: str) -> str:
         """Take tensor name 'name' and make it unique in the model. Returns a unique tensor name."""
+
         # Try adding numbers to the 'name' until it is unique
         suffix = 0
         new_name = name

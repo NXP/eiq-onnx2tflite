@@ -28,12 +28,13 @@ class IdentityConverter(NodeConverter):
 
             If the input tensor is known, try to exclude the operator from the final model, and just assign the static
              data to the output tensor.
-            If that is not possible, represent the identity via a `Transpose` operator with an identity permutation.
-            The `Transpose` may potentially be removed or fused with another `Transpose` operator later, in the
-             optimization stage.
+            If that is not possible, represent the identity via a `Reshape` operator that reshapes to the input's own
+             shape. The `Reshape` may potentially be removed or fused with another operator later, in the optimization
+             stage.
 
         :param _: ONNX NodeProto representing the `Identity` operator.
         :param t_op: TFLite operator with inputs and outputs corresponding to the ONNX operator.
+
         :return: A list of TFLite operators to add to the model.
         """
         x = t_op.tmp_inputs[0]
@@ -51,7 +52,8 @@ class IdentityConverter(NodeConverter):
 
             return []
 
-        # The operator cannot be omitted. Turn it into a `Transpose` that does nothing.
+        # The operator cannot be omitted. Turn it into a `Reshape` that does nothing.
+
         self.builder.turn_operator_to_identity(t_op)
 
         self.assert_type_allowed(x.type)
