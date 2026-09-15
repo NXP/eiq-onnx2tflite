@@ -10,7 +10,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.Padding import Padding
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
@@ -28,6 +27,8 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options as tfl_average_pool_2d_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyMethodMayBeStatic
@@ -45,17 +46,11 @@ class QLinearAveragePoolConverter(NodeConverter):
             # TODO Calculate the output shape, to see if this attribute even makes a difference.
             # TODO Prepending a 'Pad' operator should work, but only if 'count_include_pad' is 1.
             if q_ap_attributes.count_include_pad == 1:
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 is not yet supported.")
 
             else:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 and "
-                    "'count_include_pad' = 0 is not possible.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 and "
+                    "'count_include_pad' = 0 is not possible.")
 
     def _handle_padding(
         self,
@@ -89,11 +84,8 @@ class QLinearAveragePoolConverter(NodeConverter):
             # Need to prepend a 'Pad' operator, which adds 0s. But these will be included in the computation!
             if q_ap_attributes.count_include_pad == 0:
                 # The 0s must NOT be included in the computation of the average value.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX QLinearAveragePool with 'count_include_pad' = 0 and a specific combination"
-                    " of input shape, 'kernel_shape', 'strides' and padding is not possible!",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearAveragePool with 'count_include_pad' = 0 and a specific combination"
+                    " of input shape, 'kernel_shape', 'strides' and padding is not possible!")
 
             # Pad with '0' for the input type and quantization. Earlier check ensures per-tensor quantization.
             zero = self._get_zero_for_quantization(input_zero_point[0], input_type)
@@ -104,10 +96,7 @@ class QLinearAveragePoolConverter(NodeConverter):
             if q_ap_attributes.count_include_pad == 1:
                 # TODO ONNX includes the 0s. We can prepend a 'Pad' operator to add the padding explicitly and use
                 #  'VALID'. Seems like an extremely rare case, so not sure if it is worth putting time into right now.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX QLinearAveragePool with 'count_include_pad' == 1 is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearAveragePool with 'count_include_pad' == 1 is not yet supported.")
 
     def _get_zero_for_quantization(self, zp: int, data_type: TensorType) -> np.ndarray:
         """Get a value for 0 given the quantization parameters and type.
@@ -117,10 +106,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         :return: A numpy array holding one 'zero' value.
         """
         if type(zp) is not int:
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                "convert_q_linear_average_pool._get_zero_for_quantization_parameters(): Zero point must be a scalar.",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "convert_q_linear_average_pool._get_zero_for_quantization_parameters(): Zero point must be a scalar.")
 
         np_type = translator.tf_lite_type_to_numpy(data_type)
         return np.array([zp], np_type)
@@ -140,10 +126,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         """
         if not t_op.tmp_inputs[0].shape.is_well_defined():
             # Dynamic shapes make it difficult to use the Reshape operators.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of 1D ONNX QLinearAveragePool with a dynamic shape is not yet supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of 1D ONNX QLinearAveragePool with a dynamic shape is not yet supported.")
 
         # -- Calculate the shapes for equivalent 2D AveragePool --
         reshape1_output_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_inputs[0].shape.vector)
@@ -248,10 +231,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         # Check for dynamic quantization parameters.
         for param_tensor in [x_scale_tensor, x_zp_tensor, y_scale_tensor, y_zp_tensor]:
             if param_tensor is not None and not tensor_has_data(param_tensor):
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX QLinearAveragePool with dynamic quantization parameters is not possible.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearAveragePool with dynamic quantization parameters is not possible.")
 
         numpy_zp_type = tf_lite_type_to_numpy(x.type)
 
@@ -263,10 +243,7 @@ class QLinearAveragePoolConverter(NodeConverter):
 
         if is_per_channel_quantized(x_scale, x_zp):
             # TFLite quantized AveragePool doesn't support per-channel quantization.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX QLinearAveragePool with per-channel quantization is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearAveragePool with per-channel quantization is not possible.")
 
         # Assign the quantization parameters to the tensors.
         set_quantization_parameters_to_tensor(x, x_scale, x_zp)
@@ -281,10 +258,7 @@ class QLinearAveragePoolConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if not (4 <= len(t_op.tmp_inputs) <= 5):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"ONNX QLinearAveragePool has {len(t_op.tmp_inputs)} inputs, where 4 or 5 was expected.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX QLinearAveragePool has {len(t_op.tmp_inputs)} inputs, where 4 or 5 was expected.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -293,17 +267,11 @@ class QLinearAveragePoolConverter(NodeConverter):
 
         # Input and output types must be the same
         if not (x.type == y.type):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                "ONNX QLinearAveragePool has input and output tensors with different data type!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX QLinearAveragePool has input and output tensors with different data type!")
 
         # ONNX only supports UINT8 and INT8. (onnxruntime/contrib_ops/cpu/quantization/qlinear_pool.cc#L507-L513)
         if x.type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"ONNX QLinearAveragePool only supports INT8 and UINT8 data types. Got '{name_for_type(x.type)}'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX QLinearAveragePool only supports INT8 and UINT8 data types. Got '{name_for_type(x.type)}'.")
 
         self._assign_q_params_to_tensors(t_op)
 
@@ -318,15 +286,9 @@ class QLinearAveragePoolConverter(NodeConverter):
         if kernel_rank - num_ones <= 2:
             # TODO Enough dimensions are '1', so the input can be reshaped to 4D and a AveragePool2D can be applied.
             #  Not sure if this is a realistic scenario and worth putting time into.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                f"Conversion of ONNX QLinearAveragePool with kernel shape "
-                f"'{q_ap_attributes.kernel_shape}' is not yet implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX QLinearAveragePool with kernel shape "
+                f"'{q_ap_attributes.kernel_shape}' is not yet implemented.")
 
         else:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX QLinearAveragePool with kernel shape `{q_ap_attributes.kernel_shape}` is "
-                "not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearAveragePool with kernel shape `{q_ap_attributes.kernel_shape}` is "
+                "not possible!")

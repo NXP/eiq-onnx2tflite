@@ -7,12 +7,13 @@
 
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.logical_or_options import LogicalOr
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class OrConverter(NodeConverter):
@@ -26,10 +27,7 @@ class OrConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Or` operator to TFLite `LogicalOr`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `Or` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Or` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]

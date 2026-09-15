@@ -10,10 +10,11 @@ import onnx.helper
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("_type", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
@@ -41,10 +42,10 @@ def test_convert_conv_transpose__quantized(_type: TensorProto.DataType):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
-    assert 'ConvTranspose' in logger.conversion_log.get_node_error_message(1)
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL
+    assert 'ConvTranspose' in str(exc_info.value)
 
 
 def test_convert_conv_transpose__unsupported_type():
@@ -68,10 +69,10 @@ def test_convert_conv_transpose__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("input_shape", [[1, 2, 3, 3], [1, 3, 4, 3]], ids=lambda x: f"input_shape={x}")
@@ -254,12 +255,12 @@ def test_convert_2d_conv_transpose__with_group():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    log = logger.conversion_log
-    assert log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert "ConvTranspose with 'group' other than '1' cannot be converted to TFLite." in log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert "ConvTranspose with 'group' other than '1' cannot be converted to TFLite." in str(exc_info.value)
+
 
 
 def test_convert_2d_conv_transpose__with_dilations():
@@ -278,12 +279,12 @@ def test_convert_2d_conv_transpose__with_dilations():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    log = logger.conversion_log
-    assert log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert "ConvTranspose with 'dilations' other than '1' cannot be converted" in log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert "ConvTranspose with 'dilations' other than '1' cannot be converted" in str(exc_info.value)
+
 
 
 def test_convert_1d_conv_transpose():
@@ -302,9 +303,9 @@ def test_convert_1d_conv_transpose():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    log = logger.conversion_log
-    assert log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert "Conversion of ONNX ConvTranspose with a 1D kernel is not implemented." in log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert "Conversion of ONNX ConvTranspose with a 1D kernel is not implemented." in str(exc_info.value)
+

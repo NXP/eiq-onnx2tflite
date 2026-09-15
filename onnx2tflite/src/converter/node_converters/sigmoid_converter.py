@@ -9,12 +9,16 @@ import math
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class SigmoidConverter(NodeConverter):
@@ -38,11 +42,11 @@ class SigmoidConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Sigmoid has different input and output type.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Sigmoid has different input and output type.")
 
         if t_op.is_qdq_quantized():
             if not math.isclose(y.quantization.scale.vector[0], 1 / 256.0):
-                logger.w(
+                logger.warning(
                     f"Re-quantizing output tensor '{y.name}' of Sigmoid op to satisfy TFLite's q-param requirements."
                 )
                 # Quantization not done with internal quantizer => re-quantize output

@@ -7,7 +7,9 @@
 from abc import ABC, abstractmethod
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger, model_inspector
+from onnx2tflite.src import errors, model_inspector
+from onnx2tflite.src.errors import ConversionError
+
 from onnx2tflite.src.conversion_context import ConversionContext
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.onnx_parser import onnx_model
@@ -64,20 +66,11 @@ class NodeConverter(ABC):
         at the top of the class. Child classes must define these lists in order to use this method.
         """
         if _type not in (self.onnx_supported_types or ALL_TYPES):
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX operator `{self.node}` has type `{name_for_type(_type)}`, "
-                "which is not supported by the ONNX documentation.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX operator `{self.node}` has type `{name_for_type(_type)}`, "
+                "which is not supported by the ONNX documentation.")
 
         if _type not in (self.tflite_supported_types or ALL_TYPES):
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of the ONNX operator `{self.node}` with type `{name_for_type(_type)}`, is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of the ONNX operator `{self.node}` with type `{name_for_type(_type)}`, is not possible.")
 
         if _type not in (self.verified_types or ALL_TYPES):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                f"Conversion of the ONNX operator `{self.node}` with type `{name_for_type(_type)}`, is not supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of the ONNX operator `{self.node}` with type `{name_for_type(_type)}`, is not supported.")

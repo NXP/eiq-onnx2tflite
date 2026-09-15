@@ -6,12 +6,13 @@
 #
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import equal_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS, name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class EqualConverter(NodeConverter):
@@ -25,16 +26,13 @@ class EqualConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Equal' operator to TFLite 'Equal'."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Equal' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Equal' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX 'Equal' has mismatched input data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 'Equal' has mismatched input data types!")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
@@ -42,10 +40,7 @@ class EqualConverter(NodeConverter):
         if x.type in {TensorType.INT8, TensorType.UINT8}:
             # ONNXRT: Not supported by ONNX/ORT.
             if x.quantization is None:
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    f"Conversion of ONNX `Equal` with input type `{name_for_type(x.type)}` is not supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX `Equal` with input type `{name_for_type(x.type)}` is not supported.")
             else:
                 # The input is quantized. ONNX Runtime doesn't support int8/uint8 regardless of quantization.
                 # Using the QDQ quantizer will result in an intentionally invalid ONNX model, which can be converted to

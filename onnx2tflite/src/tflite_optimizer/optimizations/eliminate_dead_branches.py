@@ -5,9 +5,11 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EliminateDeadBranches(BaseOptimization):
@@ -67,6 +69,6 @@ class EliminateDeadBranches(BaseOptimization):
                 del tensors[i]
 
         if removed_ops_count != 0:
-            logger.i(f"Dead branch elimination optimization removed {removed_ops_count} unused ops from the graph.")
+            logger.info(f"Dead branch elimination optimization removed {removed_ops_count} unused ops from the graph.")
 
         return removed_ops_count != 0

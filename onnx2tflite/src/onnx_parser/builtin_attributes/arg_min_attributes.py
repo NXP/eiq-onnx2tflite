@@ -5,8 +5,10 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ArgMin(meta.ONNXOperatorAttributes):
@@ -29,4 +31,4 @@ class ArgMin(meta.ONNXOperatorAttributes):
                 case "select_last_index":
                     self.select_last_index = attr.i
                 case _:
-                    logger.w(f"ONNX `ArgMin` attribute '{attr.name}' is not supported!")
+                    logger.warning(f"ONNX `ArgMin` attribute '{attr.name}' is not supported!")

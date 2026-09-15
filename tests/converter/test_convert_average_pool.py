@@ -12,10 +12,11 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def test_convert_average_pool__quantized():
@@ -39,9 +40,9 @@ def test_convert_average_pool__quantized():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_average_pool__unsupported_type():
@@ -57,10 +58,10 @@ def test_convert_average_pool__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)
 
 
 def test_convert_average_pool__not_implemented_type():
@@ -76,10 +77,10 @@ def test_convert_average_pool__not_implemented_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert 'INT8' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert 'INT8' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("kernel_shape, auto_pad, pads, strides", [
@@ -221,9 +222,9 @@ def test_convert_2d_average_pool_with_unusable_explicit_padding(kernel_shape: Li
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize("kernel_shape, auto_pad, pads, strides", [
@@ -287,19 +288,19 @@ def test_convert_2d_average_pool_with_count_include_pad__failing(
 @pytest.mark.parametrize(
     "input_shape, error_code",
     [
-        pytest.param([2, 4, 6, 8, 10], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 5D"),
-        pytest.param([2, 4, 6, 8, 10, 12], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (1)"),
-        pytest.param([2, 4, 6, 1, 10, 12], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (2)"),
+        pytest.param([2, 4, 6, 8, 10], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 5D"),
+        pytest.param([2, 4, 6, 8, 10, 12], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (1)"),
+        pytest.param([2, 4, 6, 1, 10, 12], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (2)"),
 
-        pytest.param([2, 4, 1, 8, 10], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (1)"),
-        pytest.param([2, 4, 6, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (2)"),
-        pytest.param([2, 4, 1, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (3)"),
+        pytest.param([2, 4, 1, 8, 10], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (1)"),
+        pytest.param([2, 4, 6, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (2)"),
+        pytest.param([2, 4, 1, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (3)"),
 
-        pytest.param([2, 4, 6, 8, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (1)"),
-        pytest.param([2, 4, 1, 1, 1, 12], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (2)"),
-        pytest.param([2, 4, 1, 1, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (3)"),
+        pytest.param([2, 4, 6, 8, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (1)"),
+        pytest.param([2, 4, 1, 1, 1, 12], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (2)"),
+        pytest.param([2, 4, 1, 1, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (3)"),
     ])
-def test_convert_average_pool_with_large_rank(input_shape: List[int], error_code: logger.Code):
+def test_convert_average_pool_with_large_rank(input_shape: List[int], error_code: errors.Code):
     kernel_shape = input_shape[2:]
 
     graph = onnx.helper.make_graph(
@@ -311,9 +312,9 @@ def test_convert_average_pool_with_large_rank(input_shape: List[int], error_code
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == error_code
+    assert exc_info.value.code == error_code
 
 
 def test_convert_average_pool_with_dilations():
@@ -331,9 +332,9 @@ def test_convert_average_pool_with_dilations():
 
     # onnx.checker.check_model(onnx_model)  # onnx checker doesn't allow dilations for AveragePool for some reason.
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_1d_average_pool_with_dynamic_shape():
@@ -350,9 +351,9 @@ def test_convert_1d_average_pool_with_dynamic_shape():
 
     config = ConversionConfig()
     config.skip_shape_inference = True
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_1d_average_pool_with_symbolic_shape():

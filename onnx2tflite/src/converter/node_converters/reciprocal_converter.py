@@ -8,13 +8,14 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.div_options import Div
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ReciprocalConverter(NodeConverter):
@@ -28,7 +29,7 @@ class ReciprocalConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Reciprocal` to TFLite `Div` with an extra tensor."""
         if not (len(t_op.tmp_inputs) == len(t_op.tmp_outputs) == 1):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Reciprocal` has unexpected number of IO tensors.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Reciprocal` has unexpected number of IO tensors.")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)

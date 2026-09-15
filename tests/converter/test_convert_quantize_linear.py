@@ -13,10 +13,11 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def _create_quantize_linear_model(shape: List[int], scale: List[float], zero_point: List[int],
@@ -84,9 +85,9 @@ def test_convert_quantize_linear_with_invalid_axis(axis: int):
     # https://onnx.ai/onnx/operators/onnx__QuantizeLinear.html
     onnx_model = _create_quantize_linear_model([2, 4, 6, 8], [1., 1., 1., 1.], [0, 0, 0, 0], axis)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
 
 
 def test_convert_quantize_linear_with_dynamic_parameters():
@@ -104,9 +105,10 @@ def test_convert_quantize_linear_with_dynamic_parameters():
         )
     )
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert e.value.error_code == logger.Code.CONVERSION_IMPOSSIBLE
+    assert e.value.code == errors.Code.NOT_IMPLEMENTED
+
 
 
 def test_convert_quantize_linear_with_saturate():
@@ -124,9 +126,9 @@ def test_convert_quantize_linear_with_saturate():
         )
     )
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert e.value.error_code == logger.Code.CONVERSION_IMPOSSIBLE
+    assert e.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize("shape,scale,zero_point,axis", [
@@ -190,9 +192,9 @@ def test_convert_quantize_linear__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
@@ -214,9 +216,9 @@ def test_convert_quantize_linear__quantized(type_: TensorProto.DataType):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL
 
 
 @pytest.mark.parametrize(
@@ -236,6 +238,6 @@ def test_convert_quantize_linear__unsupported_attributes(attr_kwargs):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED

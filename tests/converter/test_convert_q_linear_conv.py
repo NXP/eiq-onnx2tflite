@@ -13,11 +13,12 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.tflite_generator.builtin_options import concatenation_options, conv_2d_options, \
     depthwise_conv_2d_options, split_options
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def _create_q_linear_conv_model(
@@ -440,9 +441,9 @@ def test_convert_2d_q_linear_conv_unsupported_nonzero_zero_point():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize("strides,auto_pad,pads,weights_scale,weights_zero_point", [

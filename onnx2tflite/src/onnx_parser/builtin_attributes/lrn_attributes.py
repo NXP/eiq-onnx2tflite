@@ -16,8 +16,12 @@ from collections.abc import Iterable
 import numpy as np
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class LRN(meta.ONNXOperatorAttributes):
@@ -45,10 +49,8 @@ class LRN(meta.ONNXOperatorAttributes):
             elif attr.name == "size":
                 self.size = attr.i
             else:
-                logger.w(f"ONNX LRN attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX LRN attribute '{attr.name}' is not supported!")
 
         # Attribute 'size' is required
         if not hasattr(self, "size"):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'LRN' is missing the required 'size' attribute!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'LRN' is missing the required 'size' attribute!")

@@ -9,8 +9,12 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class QLinearConcat(meta.ONNXOperatorAttributes):
@@ -27,7 +31,7 @@ class QLinearConcat(meta.ONNXOperatorAttributes):
             if attr.name == "axis":
                 self.axis = attr.i
             else:
-                logger.w(f"ONNX QLinearConcat attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX QLinearConcat attribute '{attr.name}' is not supported!")
 
         if self.axis is None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearConcat has no 'axis' attribute!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearConcat has no 'axis' attribute!")

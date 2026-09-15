@@ -9,8 +9,12 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class MaxPool(meta.ONNXOperatorAttributes):
@@ -51,8 +55,8 @@ class MaxPool(meta.ONNXOperatorAttributes):
             elif attr.name == "strides":
                 self.strides = meta.ONNXIntListAttribute(attr)
             else:
-                logger.w(f"ONNX MaxPool attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX MaxPool attribute '{attr.name}' is not supported!")
 
         if self.kernel_shape is None:
             # 'kernel_shape' is a required attribute
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX MaxPool has no 'kernel_shape' attribute!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX MaxPool has no 'kernel_shape' attribute!")

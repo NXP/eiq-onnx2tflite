@@ -11,7 +11,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
@@ -26,6 +25,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import gemm_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_options, fully_connected_options, mul_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class GemmConverter(NodeConverter):
@@ -44,10 +48,7 @@ class GemmConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if not (2 <= len(t_op.tmp_inputs) <= 3):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"ONNX Gemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 2 - 3.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX Gemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 2 - 3.")
 
         ops = OpsList(middle_op=t_op)
 
@@ -55,7 +56,7 @@ class GemmConverter(NodeConverter):
         b = t_op.tmp_inputs[1]
 
         if a.type != b.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Gemm has mismatched input types.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Gemm has mismatched input types.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(a.type)
@@ -108,7 +109,7 @@ class GemmConverter(NodeConverter):
             if alpha < 0:
                 # Rare scenario -> For negative alpha, a Mul op must be added, or dequantize the static data,
                 # multiply by alpha and quantize it back.
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Quantized Gemm with negative alpha is currently not supported.")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Quantized Gemm with negative alpha is currently not supported.")
 
             if tensor_has_data(a):
                 a.quantization.scale = tflite_model.Scale([val * alpha for val in a.quantization.scale.vector])
@@ -201,10 +202,7 @@ class GemmConverter(NodeConverter):
         if c.quantization is not None:
             # If bias is quantized it must be static
             if not tensor_has_data(c):
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Bias tensor of quantized Gemm operator is not static. Behavior of QDQ Quantizer has changed.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Bias tensor of quantized Gemm operator is not static. Behavior of QDQ Quantizer has changed.")
 
             # TFLite expects scale of bias to be scale = a_scale * b_scale. ONNX quantizer computes it
             # as scale=a_scale * b_scale * beta. Re-quantize bias tensor if alpha wasn't 1.0 and thus
@@ -217,7 +215,7 @@ class GemmConverter(NodeConverter):
             bias_scale_list, bias_zp_list = quantization_params_to_lists(bias_scale, bias_zp)
 
             if not np.allclose(bias_scale.astype(np.float32), np.array(c.quantization.scale.vector, dtype=np.float32)):
-                logger.w(
+                logger.warning(
                     "Re-quantizing bias tensor of Gemm operator to match TFLite's scale requirements. "
                     "This can introduce small inaccuracies."
                 )
@@ -250,11 +248,8 @@ class GemmConverter(NodeConverter):
             #     another error.
             # Combination of errors mentioned above leads to large degradation in accuracy.
             # Bias in shape different from [N] or [1, N] is also rare, so we let user improve the model.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "ONNX operator Gemm (QDQ quantized) has bias input ('C') with shape that is not "
-                "supported by TFLite. Make sure bias tensor has shape [N] or [1, N].",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX operator Gemm (QDQ quantized) has bias input ('C') with shape that is not "
+                "supported by TFLite. Make sure bias tensor has shape [N] or [1, N].")
 
         ops.add_post(add_op)
 
@@ -262,9 +257,7 @@ class GemmConverter(NodeConverter):
         t = t_op.tmp_inputs[input_idx]
 
         if t.rank != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR, f"ONNX Gemm has a main intput with {t.rank} dimensions instead of 2."
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX Gemm has a main intput with {t.rank} dimensions instead of 2.")
 
         if tensor_has_data(t):
             # Transpose statically.

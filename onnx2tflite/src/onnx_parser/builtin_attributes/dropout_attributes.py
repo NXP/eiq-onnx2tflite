@@ -10,8 +10,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Dropout(meta.ONNXOperatorAttributes):
@@ -36,4 +38,4 @@ class Dropout(meta.ONNXOperatorAttributes):
             elif attr.name == "is_test":
                 self.is_test = attr.i
             else:
-                logger.w(f"ONNX Dropout attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Dropout attribute '{attr.name}' is not supported!")

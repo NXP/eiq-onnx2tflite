@@ -11,10 +11,11 @@ import pytest
 from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -78,10 +79,10 @@ def test_convert_depth_to_space__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert 'INT32' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert 'INT32' in str(exc_info.value)
 
 
 def test_convert_depth_to_space__format_handling(intermediate_tflite_model_provider):
@@ -125,6 +126,6 @@ def test_convert_depth_to_space__quantized(type_: TensorProto.DataType):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED

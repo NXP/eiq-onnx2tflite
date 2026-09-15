@@ -8,8 +8,9 @@
 from __future__ import annotations
 
 from enum import Enum
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
-from onnx2tflite.src import logger
 
 
 class TensorFormat(Enum):
@@ -44,4 +45,4 @@ class TensorFormat(Enum):
         if self == TensorFormat.CHANNELS_LAST:
             return TensorFormat.CHANNELS_FIRST
 
-        logger.e(logger.Code.INTERNAL_ERROR, f"TensorFormat.to_onnx(): Unexpected format `{self}`.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"TensorFormat.to_onnx(): Unexpected format `{self}`.")

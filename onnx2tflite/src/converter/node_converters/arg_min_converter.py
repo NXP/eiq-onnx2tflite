@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -20,6 +19,8 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import arg_min_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS, name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ArgMinConverter(NodeConverter):
@@ -35,10 +36,7 @@ class ArgMinConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `ArgMin` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `ArgMin` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -48,18 +46,12 @@ class ArgMinConverter(NodeConverter):
 
         if y.type != TensorType.INT64:
             # ONNX only allows `int64` output.
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `ArgMin` has output type `{name_for_type(y.type)}` instead of `INT64`.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `ArgMin` has output type `{name_for_type(y.type)}` instead of `INT64`.")
 
         attrs = cast(arg_min_attributes.ArgMin, node.attributes)
 
         if attrs.select_last_index != 0:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX `ArgMin` with `select_last_index={attrs.select_last_index}` is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX `ArgMin` with `select_last_index={attrs.select_last_index}` is not possible.")
 
         if attrs.keepdims == 1:
             # TFLite always removes the reduced dimension. When `keepdims == 1`, ONNX leaves the dimension with size 1.

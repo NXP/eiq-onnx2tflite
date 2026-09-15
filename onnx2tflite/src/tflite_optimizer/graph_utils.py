@@ -6,9 +6,10 @@
 #
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 InputTensorToOpsMap = dict[str, list[tflite_model.Operator]]
 OutputTensorToOpMap = dict[str, tflite_model.Operator]
@@ -94,7 +95,7 @@ op_type_to_builtin_operator_map = {
 def builtin_operator_for_op_type(op_type: str) -> BuiltinOperator | int:
     builtin_op = op_type_to_builtin_operator_map.get(op_type)
     if builtin_op is None:
-        logger.e(logger.Code.INTERNAL_ERROR, f"PatternMatcher doesn't support `{op_type}` yet.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"PatternMatcher doesn't support `{op_type}` yet.")
 
     return builtin_op
 

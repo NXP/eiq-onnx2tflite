@@ -11,7 +11,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.instance_normalization_attributes import InstanceNormalization
@@ -22,6 +21,8 @@ from onnx2tflite.src.tflite_generator.builtin_options.mul_options import Mul
 from onnx2tflite.src.tflite_generator.builtin_options.squared_difference_options import SquaredDifference
 from onnx2tflite.src.tflite_generator.builtin_options.sub_options import Sub
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class InstanceNormalizationConverter(NodeConverter):
@@ -70,10 +71,7 @@ class InstanceNormalizationConverter(NodeConverter):
                                     Y
         """
         if len(t_op.tmp_inputs) != 3:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `InstanceNormalization` has {len(t_op.tmp_inputs)} inputs instead of 3.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `InstanceNormalization` has {len(t_op.tmp_inputs)} inputs instead of 3.")
 
         x = t_op.tmp_inputs[0]
         scale = t_op.tmp_inputs[1]
@@ -82,17 +80,14 @@ class InstanceNormalizationConverter(NodeConverter):
 
         if x.shape.len() < 3:
             # The input must have at least 3 dimensions.
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `InstanceNormalization` has main input with {x.shape.len()}"
-                " dimensions. At least 3 are expected.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `InstanceNormalization` has main input with {x.shape.len()}"
+                " dimensions. At least 3 are expected.")
 
         # The ONNX `InstanceNormalization` uses `channels_first` tensors. This should be recognized by the converter in
         #  the `tensor_format_inference.py`.
         # Since the `TensorConverter` would have already converted the format to `channels_last` before this point, we
         #  have to check for `channels_last` here.
-        logger.internal_assert(
+        errors.internal_assert(
             x.tensor_format.is_channels_last(),
             "InstanceNormalization should use `channels_first` in the `tensor_format_inference.py`",
         )

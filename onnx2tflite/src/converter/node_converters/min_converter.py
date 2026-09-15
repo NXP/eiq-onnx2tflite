@@ -7,7 +7,6 @@
 
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import re_quantize_static_tensor
@@ -16,6 +15,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.minimum_options import Minimum
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class MinConverter(NodeConverter):
@@ -51,7 +55,7 @@ class MinConverter(NodeConverter):
             x2 = t_op.tmp_inputs[1]
             y = t_op.tmp_outputs[0]
             if not (x1.type == x2.type == y.type):
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Min` uses multiple data types.")
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Min` uses multiple data types.")
 
             if not t_op.is_qdq_quantized():
                 self.assert_type_allowed(y.type)
@@ -62,7 +66,7 @@ class MinConverter(NodeConverter):
                 # Re-quantize input tensors if they don't match with output quantization.
                 for idx, input_tensor in enumerate(t_op.tmp_inputs):
                     if input_tensor.quantization != y.quantization:
-                        logger.w(
+                        logger.warning(
                             f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's "
                             f"q-params of Minimum op."
                         )
@@ -80,8 +84,6 @@ class MinConverter(NodeConverter):
             # TFLite `Minimum` only supports 2 inputs.
             # Add a cascade of `Minimum` operators, which gradually compute the result.
             #  The number of added operators would be linear to the number of inputs.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Min` with more than 2 inputs is not yet implemented."
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Min` with more than 2 inputs is not yet implemented.")
 
         return ops.flatten()

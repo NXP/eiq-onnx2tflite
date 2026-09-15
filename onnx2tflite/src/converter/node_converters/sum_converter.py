@@ -9,7 +9,6 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import uses_multiple_input_types, uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -17,6 +16,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_n_options, add_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class SumConverter(NodeConverter):
@@ -32,7 +36,7 @@ class SumConverter(NodeConverter):
         num_inputs = len(t_op.tmp_inputs)
 
         if num_inputs == 0:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX 'Sum' has no inputs!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 'Sum' has no inputs!")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)
@@ -40,7 +44,7 @@ class SumConverter(NodeConverter):
         if num_inputs == 1:
             if self.builder.operator_can_be_skipped(t_op, self.inspector):
                 # Skip the operator.
-                logger.i("convert_sum.py: ONNX 'Sum' has only 1 input. The operator is skipped.")
+                logger.info("convert_sum.py: ONNX 'Sum' has only 1 input. The operator is skipped.")
                 self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
                 return []
 
@@ -54,7 +58,7 @@ class SumConverter(NodeConverter):
 
         if uses_multiple_input_types(t_op):
             # Inputs have different data types
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX Operator 'Sum' has inputs with different data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX Operator 'Sum' has inputs with different data types!")
 
         additional_ops = []
 
@@ -71,10 +75,7 @@ class SumConverter(NodeConverter):
 
             if uses_shape_broadcasting(t_op):
                 # TFLite 'AddN' doesn't support shape broadcasting at all. Need to implement explicit support.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "ONNX Operator 'Sum' with more than 2 inputs uses shape broadcasting. This requires explicit "
-                    "support by the converter, which has not yet been implemented!",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX Operator 'Sum' with more than 2 inputs uses shape broadcasting. This requires explicit "
+                    "support by the converter, which has not yet been implemented!")
 
         return additional_ops + [t_op]

@@ -6,7 +6,6 @@
 #
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
@@ -14,6 +13,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import pow_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class PowConverter(NodeConverter):
@@ -27,7 +28,7 @@ class PowConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Pow` to TFLite `Pow`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Pow` has invalid number of inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Pow` has invalid number of inputs.")
 
         base = t_op.tmp_inputs[0]
         power = t_op.tmp_inputs[1]
@@ -35,20 +36,15 @@ class PowConverter(NodeConverter):
         # TFLite requires power and base to have the same type.
         if base.type != power.type:
             # If this is required, prepend a `Cast` operator. Not sure if it is a common use case.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Pow` with non-matching input types is not supported."
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Pow` with non-matching input types is not supported.")
 
         self.assert_type_allowed(base.type)
 
         if power.type == TensorType.INT32 and not tensor_has_data(power):
             # TFLite only supports positive powers when the `power` tensor is `int32`.
             # If needed, introduce a flag to guarantee positive power values.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because "
-                "the power values at runtime could be negative, which is not supported by TFLite.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Pow` with type `int32` and dynamic `power` input is not supported because "
+                "the power values at runtime could be negative, which is not supported by TFLite.")
 
         ops = OpsList(middle_op=t_op)
 

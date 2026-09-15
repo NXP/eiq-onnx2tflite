@@ -11,7 +11,6 @@ import numpy as np
 import onnx
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
@@ -20,6 +19,11 @@ from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import multinomial_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class MultinomialConverter(NodeConverter):
@@ -35,10 +39,7 @@ class MultinomialConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `Multinomial` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Multinomial` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)
@@ -48,10 +49,7 @@ class MultinomialConverter(NodeConverter):
         if attrs.dtype not in [onnx.TensorProto.INT32, onnx.TensorProto.INT64]:
             # ONNX documentation allows only these 2 output types. Both are also supported by TFLite.
             # https://github.com/tensorflow/tensorflow/blob/v2.16.2/tensorflow/lite/kernels/random_ops.cc#L303-L319
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `Multinomial` has unexpected value of `dtype` attribute ({name_for_onnx_type(attrs.dtype)}).",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Multinomial` has unexpected value of `dtype` attribute ({name_for_onnx_type(attrs.dtype)}).")
 
         if attrs.seed is None:
             # ONNX would auto-generate a seed in this case. TFLite requires a seed, so we must generate a random one.
@@ -66,7 +64,7 @@ class MultinomialConverter(NodeConverter):
             # The best we can do is to use a deterministic bijection to map the `float32` seeds to corresponding `int32`
             #  seeds. So if multiple `Multinomial` operators are used in the same ONNX model with the same seeds, they
             #  will also have the same seeds in the TFLite model.
-            logger.w(
+            logger.warning(
                 "ONNX `Multinomial` has a specified `seed` attribute. The converted TFLite `Multinomial` will also"
                 " use a seed, but the operator will generate different random values."
             )

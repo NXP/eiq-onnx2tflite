@@ -13,10 +13,11 @@ import pytest
 from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def _get_q_gemm_model(nodes: list[onnx.NodeProto], data_type, a_shape, b_shape, c_shape, a_s, a_zp, b_s, b_zp,
@@ -172,9 +173,9 @@ def test_convert_int_8_q_gemm_with_non_fusible_c():
                               domain='com.microsoft', transB=True)
     ], data_type, a_shape, b_shape, c_shape, a_s, a_zp, b_s, b_zp, y_s, y_zp, c_data)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_uint_8_q_gemm_with_non_fusible_c():
@@ -192,9 +193,9 @@ def test_convert_uint_8_q_gemm_with_non_fusible_c():
                               domain='com.microsoft', transB=True)
     ], data_type, a_shape, b_shape, c_shape, a_s, a_zp, b_s, b_zp, y_s, y_zp, c_data)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize(
@@ -261,9 +262,9 @@ def test_convert_q_gemm__per_channel__unsupported_zero_points():
                               domain='com.microsoft', transA=trans_a, transB=trans_b)
     ], data_type, a_shape, b_shape, c_shape, a_s, a_zp, b_s, b_zp, y_s, y_zp)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_q_gemm__per_channel__unsupported_trans_b():
@@ -278,9 +279,9 @@ def test_convert_q_gemm__per_channel__unsupported_trans_b():
                               domain='com.microsoft', transA=trans_a, transB=trans_b)
     ], data_type, a_shape, b_shape, c_shape, a_s, a_zp, b_s, b_zp, y_s, y_zp)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_q_gemm__per_channel__unsupported_type():
@@ -295,9 +296,9 @@ def test_convert_q_gemm__per_channel__unsupported_type():
                               domain='com.microsoft', transA=trans_a, transB=trans_b)
     ], data_type, a_shape, b_shape, c_shape, a_s, a_zp, b_s, b_zp, y_s, y_zp)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize('alpha', [2.0, 20.0, 0.1])
@@ -426,9 +427,9 @@ def test_convert_q_gemm_with_mismatched_types():
     )
     onnx_model.opset_import.append(onnx.helper.make_opsetid('com.microsoft', 1))  # Add the opset with QGemm
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
 
 
 def test_convert_q_gemm_with_float_output():
@@ -462,6 +463,6 @@ def test_convert_q_gemm_with_float_output():
     )
     onnx_model.opset_import.append(onnx.helper.make_opsetid('com.microsoft', 1))  # Add the opset with QGemm
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED

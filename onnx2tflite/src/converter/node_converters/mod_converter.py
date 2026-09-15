@@ -8,7 +8,6 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
@@ -16,6 +15,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import mod_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.floor_mod_options import FloorMod
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ModConverter(NodeConverter):
@@ -29,7 +30,7 @@ class ModConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Mod` operator into TFLite `FloorMod`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX `Mod` has {len(t_op.tmp_inputs)} inputs instead of 2.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Mod` has {len(t_op.tmp_inputs)} inputs instead of 2.")
 
         attrs = cast(mod_attributes.Mod, node.attributes)
 
@@ -40,11 +41,11 @@ class ModConverter(NodeConverter):
             #   -10      9    |   -1               8
             #    10     -9    |    1              -8
             # Conversion may be possible via multiple operators. (doesn't seem like a common use case)
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Mod` with `fmod=1` is not supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Mod` with `fmod=1` is not supported.")
 
         type_ = t_op.tmp_inputs[0].type
         if type_ in FLOATS and attrs.fmod != 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Mod` uses a float type with `fmod=0`.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `Mod` uses a float type with `fmod=0`.")
         self.assert_type_allowed(type_)
 
         t_op.builtin_options = FloorMod()

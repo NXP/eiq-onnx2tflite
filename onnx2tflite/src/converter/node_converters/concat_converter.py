@@ -9,7 +9,6 @@ from typing import cast
 
 import onnx2tflite.src.tflite_generator.builtin_options.concatenation_options as tfl_concatenation_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -23,6 +22,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import concat_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ConcatConverter(NodeConverter):
@@ -44,10 +48,7 @@ class ConcatConverter(NodeConverter):
         rank = len(t_op.tmp_inputs[0].shape.vector)
 
         if axis < -rank or axis > rank - 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
 
         if axis < 0:  # convert negative index to positive
             axis += rank
@@ -61,7 +62,7 @@ class ConcatConverter(NodeConverter):
             # 1. First tensor is non-quantized and static + second tensor is quantized
             # 2. Range of first tensor is smaller than range of others -> which one to choose?
             if y.quantization is None:
-                logger.w(
+                logger.warning(
                     f"Propagating q-params from tensor '{t_op.tmp_inputs[0].name}' to output tensor of Concat op. "
                     "This can decrease accuracy of the model."
                 )
@@ -77,7 +78,7 @@ class ConcatConverter(NodeConverter):
                     if input_tensor.quantization is None:
                         # Tensor wasn't quantized because it is constant (our QDQ quantizer was used) -> quantize the
                         #  data.
-                        logger.w(
+                        logger.warning(
                             f"Quantizing tensor '{input_tensor.name}' using q-params of Concat's op output tensor."
                         )
                         input_tensor = quantize_static_float_tensor(self.builder, input_tensor, y.type, scale, zp)
@@ -85,7 +86,7 @@ class ConcatConverter(NodeConverter):
 
                     elif input_tensor.quantization != y.quantization and input_tensor.type == TensorType.INT8:
                         # Tensor's q-params doesn't match with output ones and type is INT8 -> re-quantize data
-                        logger.w(
+                        logger.warning(
                             f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of "
                             "Concat op."
                         )
@@ -94,7 +95,7 @@ class ConcatConverter(NodeConverter):
                 # TFLite support re-quantization for UINT8, so apply only to INT8
                 elif input_tensor.quantization != y.quantization and input_tensor.type == TensorType.INT8:
                     ops.add_pre(self.builder.create_quantize_operator_before(t_op, idx, y.type, scale, zp))
-                    logger.w(
+                    logger.warning(
                         f"Re-quantizing tensor '{input_tensor.name}' to match output tensor's q-params of Concat op."
                     )
 

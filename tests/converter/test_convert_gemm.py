@@ -13,11 +13,12 @@ import onnx.shape_inference
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("a_shape, b_shape, c_shape, alpha, beta", [
@@ -253,9 +254,9 @@ def test_gemm_invalid_types(input_type: int):
     )
 
     onnx.checker.check_model(model)
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_gemm_zero_scalars():

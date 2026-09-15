@@ -10,13 +10,14 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.mul_options as tfl_mul_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class MulConverter(NodeConverter):
@@ -44,15 +45,12 @@ class MulConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX 'Mul' operator to TFLite."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Mul' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Mul' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         x, y = t_op.tmp_inputs
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX 'Mul' has mismatched input data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 'Mul' has mismatched input data types!")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)

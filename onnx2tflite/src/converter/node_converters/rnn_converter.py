@@ -10,7 +10,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared.recurrent_utils import (
@@ -27,6 +26,11 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
     unidirectional_sequence_rnn_options,
 )
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class RNNConverter(NodeConverter):
@@ -58,9 +62,7 @@ class RNNConverter(NodeConverter):
             t_op.builtin_options.fused_activation_function = ActivationFunctionType.TANH
         else:
             if len(o_rnn.activations) != 1:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX forward RNN has invalid 'activations' attribute."
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX forward RNN has invalid 'activations' attribute.")
             t_op.builtin_options.fused_activation_function = get_activation_function_for_name(o_rnn.activations[0])
 
         x = t_op.tmp_inputs[0]
@@ -75,7 +77,7 @@ class RNNConverter(NodeConverter):
         hidden_size = y.shape.get(-1)
         num_directions = y.shape.get(1)
 
-        logger.internal_assert(num_directions == 1, "Forward RNN: 'num_directions' != 1.")
+        errors.internal_assert(num_directions == 1, "Forward RNN: 'num_directions' != 1.")
 
         # Make sure the 'sequence_lens' operand is convertible.
         check_sequence_lens(t_op, seq_length)
@@ -85,14 +87,14 @@ class RNNConverter(NodeConverter):
             w.shape = tflite_model.Shape(w.shape.vector[1:])
             w.tmp_buffer.data.squeeze(0)
         else:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
 
         if tensor_has_data(r):
             # ONNX has an extra leading 1 in the shape -> remove it.
             r.shape = tflite_model.Shape(r.shape.vector[1:])
             r.tmp_buffer.data.squeeze(0)
         else:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
 
         if b := try_get_input(t_op, 3):
             # The bias in ONNX has shape [num_directions (1), 2 * hidden_size]. TFLite requires [hidden_size].
@@ -105,7 +107,7 @@ class RNNConverter(NodeConverter):
                 b.shape = tflite_model.Shape(list(bias_data.shape))
 
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
             b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"), can_reuse=True)
@@ -140,7 +142,7 @@ class RNNConverter(NodeConverter):
         """
         # Convert to TFLite 'BidirectionalSequenceRNN'. Set 'merge_outputs = False' and use only the 2nd output tensor.
         # TODO Be careful when adding support for the second ONNX RNN output!
-        logger.internal_assert(len(t_op.tmp_outputs) == 1, "Reverse RNN with multiple outputs is not properly handled!")
+        errors.internal_assert(len(t_op.tmp_outputs) == 1, "Reverse RNN with multiple outputs is not properly handled!")
         t_op.builtin_options = bidirectional_sequence_rnn_options.BidirectionalSequenceRNN(
             time_major=(o_rnn.layout == 0), merge_outputs=False
         )
@@ -150,9 +152,7 @@ class RNNConverter(NodeConverter):
             t_op.builtin_options.fused_activation_function = ActivationFunctionType.TANH
         else:
             if len(o_rnn.activations) != 1:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX reverse RNN has invalid 'activations' attribute."
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX reverse RNN has invalid 'activations' attribute.")
             t_op.builtin_options.fused_activation_function = get_activation_function_for_name(o_rnn.activations[0])
 
         x = t_op.tmp_inputs[0]
@@ -167,7 +167,7 @@ class RNNConverter(NodeConverter):
         hidden_size = y.shape.get(-1)
         num_directions = y.shape.get(1)
 
-        logger.internal_assert(num_directions == 1, "Reverse RNN: 'num_directions' != 1.")
+        errors.internal_assert(num_directions == 1, "Reverse RNN: 'num_directions' != 1.")
 
         # Make sure the 'sequence_lens' operand is convertible.
         check_sequence_lens(t_op, seq_length)
@@ -177,14 +177,14 @@ class RNNConverter(NodeConverter):
             w.shape = tflite_model.Shape(w.shape.vector[1:])
             w.tmp_buffer.data.squeeze(0)
         else:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
 
         if tensor_has_data(r):
             # ONNX has an extra leading 1 in the shape -> remove it.
             r.shape = tflite_model.Shape(r.shape.vector[1:])
             r.tmp_buffer.data.squeeze(0)
         else:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
 
         if b := try_get_input(t_op, 3):
             # The bias in ONNX has shape [num_directions (1), 2 * hidden_size]. TFLite requires [hidden_size].
@@ -197,7 +197,7 @@ class RNNConverter(NodeConverter):
                 b.shape = tflite_model.Shape(list(bias_data.shape))
 
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
             b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"), can_reuse=True)
@@ -267,16 +267,10 @@ class RNNConverter(NodeConverter):
             t_op.builtin_options.fused_activation_function = ActivationFunctionType.TANH
         else:
             if len(o_rnn.activations) != 2:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                    "ONNX bidirectional RNN has invalid 'activations' attribute.",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX bidirectional RNN has invalid 'activations' attribute.")
 
             if o_rnn.activations[0] != o_rnn.activations[1]:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    f"Conversion ONNX bidirectional RNN with 'activations' = {o_rnn.activations} is not possible.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion ONNX bidirectional RNN with 'activations' = {o_rnn.activations} is not possible.")
 
             t_op.builtin_options.fused_activation_function = get_activation_function_for_name(o_rnn.activations[0])
 
@@ -292,7 +286,7 @@ class RNNConverter(NodeConverter):
         hidden_size = y.shape.get(-1)
         num_directions = y.shape.get(1)
 
-        logger.internal_assert(num_directions == 2, "Bidirectional RNN: 'num_directions' != 2.")
+        errors.internal_assert(num_directions == 2, "Bidirectional RNN: 'num_directions' != 2.")
 
         # Make sure the 'sequence_lens' operand is convertible.
         check_sequence_lens(t_op, seq_length)
@@ -304,7 +298,7 @@ class RNNConverter(NodeConverter):
             fw_w = self.builder.create_tensor_for_data(fw_w_data.squeeze(0), "fw_w_")
             bw_w = self.builder.create_tensor_for_data(bw_w_data.squeeze(0), "bw_w_")
         else:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic W is not yet supported.")
 
         if tensor_has_data(r):
             # ONNX 'W' has the shape [num_directions (2), hidden_size, hidden_size]. TFLite uses 2 separate tensors of
@@ -313,7 +307,7 @@ class RNNConverter(NodeConverter):
             fw_r = self.builder.create_tensor_for_data(fw_r_data.squeeze(0), "fw_r_")
             bw_r = self.builder.create_tensor_for_data(bw_r_data.squeeze(0), "bw_r_")
         else:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic R is not yet supported.")
 
         if b := try_get_input(t_op, 3):
             # The bias in ONNX has shape [num_directions (2), 2 * hidden_size]. TFLite requires 2 biases of shape
@@ -335,7 +329,7 @@ class RNNConverter(NodeConverter):
                 bw_b = self.builder.create_tensor_for_data(bw_b_data, "bw_b_")
 
             else:
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with a dynamic B is not yet supported.")
 
         else:
             fw_b = self.builder.create_zeros_tensor([hidden_size], "B", np.dtype("float32"), can_reuse=True)
@@ -404,7 +398,7 @@ class RNNConverter(NodeConverter):
             else:
                 initial_h_data = self.context.onnx_inspector.try_get_inferred_tensor_data(initial_h.name)
                 if initial_h_data is not None:
-                    logger.i(
+                    logger.info(
                         f"Using inferred tensor data to assume that the RNN 'initial_h' input tensor named "
                         f"'{initial_h.name}' will always contain only '0' values during runtime. If this is not "
                         f"the case, converted TFLite model may produce incorrect results."
@@ -415,9 +409,7 @@ class RNNConverter(NodeConverter):
                 #  'hidden_state' input tensor, which could be initially set to 'initial_h', but it is a
                 #  'variable' tensor and TFLite doesn't support variable tensors with initial static data right now.
                 # Therefore, I believe conversion is not possible.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX RNN with 'initial_h' input is not possible."
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX RNN with 'initial_h' input is not possible.")
 
         if len(t_op.tmp_outputs) != 1:
             # TODO 'Y_h' output might be possible to compute by appending a 'Gather' operator.
@@ -425,10 +417,7 @@ class RNNConverter(NodeConverter):
             # If the extra outputs are not used, conversion can proceed.
             for output_tensor in t_op.tmp_outputs[1:]:
                 if self.inspector.get_number_of_onnx_consumers_safe(output_tensor.name) != 0:
-                    logger.e(
-                        logger.Code.NOT_IMPLEMENTED,
-                        "Conversion of ONNX RNN with more than 1 output is not yet supported.",
-                    )
+                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX RNN with more than 1 output is not yet supported.")
 
             # Remove the unused outputs.
             t_op.tmp_outputs[1:] = []
@@ -436,15 +425,10 @@ class RNNConverter(NodeConverter):
         if o_rnn.layout != 0:
             # ORT doesn't support this.
             # https://github.com/microsoft/onnxruntime/blob/435e19953ea54115124fd637a67a87681a7fc8eb/onnxruntime/core/providers/cpu/rnn/rnn.h#L45
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"Conversion of ONNX RNN with layout = '{o_rnn.layout}' is not supported.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"Conversion of ONNX RNN with layout = '{o_rnn.layout}' is not supported.")
 
         if o_rnn.clip is not None:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX RNN with a 'clip' attribute is not possible."
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX RNN with a 'clip' attribute is not possible.")
 
         ensure_correct_tensor_formatting(t_op, self.builder, ops)
 
@@ -457,7 +441,4 @@ class RNNConverter(NodeConverter):
         if o_rnn.direction == "reverse":
             return self._convert_reverse_rnn(o_rnn, t_op, ops)
 
-        logger.e(
-            logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-            f"ONNX RNN has unexpected value of the direction attribute ('{o_rnn.direction}').",
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX RNN has unexpected value of the direction attribute ('{o_rnn.direction}').")

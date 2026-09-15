@@ -11,7 +11,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared.recurrent_utils import (
@@ -28,6 +27,11 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
     unidirectional_sequence_lstm_options,
 )
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 # Dictionary mapping names of activation functions to corresponding TFLite ActivationFunctionType enum values.
 act_fun_for_name = {"Tanh": ActivationFunctionType.TANH, "Relu": ActivationFunctionType.RELU}
@@ -39,9 +43,7 @@ def _get_activation_function_for_name(name: str) -> ActivationFunctionType:
         return act_fun
 
     # Couldn't find a corresponding activation function
-    logger.e(
-        logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX LSTM with activation function '{name}' is not possible."
-    )
+    raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX LSTM with activation function '{name}' is not possible.")
 
 
 def _validate_activations(activations: list[str] | None, bidirectional: bool = False) -> list[str]:
@@ -64,36 +66,24 @@ def _validate_activations(activations: list[str] | None, bidirectional: bool = F
         return ["Sigmoid", "Tanh", "Tanh"] * 2 if bidirectional else ["Sigmoid", "Tanh", "Tanh"]
 
     if len(activations) != activations_len:
-        logger.e(
-            logger.Code.INVALID_ONNX_MODEL,
-            f"ONNX LSTM 'activations' attribute has '{len(activations)}' elements instead of {activations_len}.",
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX LSTM 'activations' attribute has '{len(activations)}' elements instead of {activations_len}.")
 
     f_is_sigmoid = activations[0] == "Sigmoid"
     if bidirectional:
         f_is_sigmoid = f_is_sigmoid and activations[3] == "Sigmoid"
     if not f_is_sigmoid:
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            "Conversion of ONNX LSTM is only possible when the activation function 'f' is a Sigmoid function.",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM is only possible when the activation function 'f' is a Sigmoid function.")
 
     g_and_h_are_the_same = activations[1] == activations[2]
     if bidirectional:
         g_and_h_are_the_same = g_and_h_are_the_same and activations[4] == activations[5] == activations[1]
     if not g_and_h_are_the_same:
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            "Conversion of ONNX LSTM with different activations functions 'h' and 'g' is not possible.",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with different activations functions 'h' and 'g' is not possible.")
 
     g_h_supported = activations[1] in act_fun_for_name
     if not g_h_supported:
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            f"Conversion of ONNX LSTM with '{activations[1]}' as the  'h' "
-            f"and 'g' activations functions is not possible.",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX LSTM with '{activations[1]}' as the  'h' "
+            f"and 'g' activations functions is not possible.")
 
     return activations
 
@@ -116,7 +106,7 @@ def _get_clip_values(onnx_clip_attribute: float | None) -> tuple[float, float]:
     if onnx_clip_attribute is not None and onnx_clip_attribute != float("inf"):
         # Possibly we could allow the clip to be > 100 or something, if the user just put a large number, instead of
         #  omitting the attribute.
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with a 'clip' attribute is not possible.")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with a 'clip' attribute is not possible.")
 
     return float("inf"), float("inf")  # No clipping.
 
@@ -142,10 +132,7 @@ class LSTMConverter(NodeConverter):
         if peephole := try_get_input(t_op, 7):
             if not tensor_has_data(peephole):
                 # Add a Split operator. (not sure if this would ever happen)
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.")
 
             peephole_to_input_data, peephole_to_output_data, peephole_to_forget_data = np.split(
                 peephole.tmp_buffer.data.squeeze(0), 3
@@ -182,10 +169,7 @@ class LSTMConverter(NodeConverter):
 
             if not tensor_has_data(input_bias):
                 # Prepend 'Split', 'Add' and 'Split' operators. (not sure if this would ever happen)
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.")
 
             w_b, r_b = np.split(np.squeeze(input_bias.tmp_buffer.data, 0), 2)
             bias = w_b + r_b
@@ -232,7 +216,7 @@ class LSTMConverter(NodeConverter):
 
         if not all_tensors_are_static(w, r):
             # Add a 'Split' operator. (not sure if this would ever happen)
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with dynamic weights is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with dynamic weights is not yet supported.")
 
         # Determine the constants from tensor shapes.
         seq_length = x.shape.get(0)
@@ -241,7 +225,7 @@ class LSTMConverter(NodeConverter):
         hidden_size = y.shape.get(-1)
         num_directions = y.shape.get(1)
 
-        logger.internal_assert(num_directions == 1, "Forward LSTM: 'num_directions' != 1.")
+        errors.internal_assert(num_directions == 1, "Forward LSTM: 'num_directions' != 1.")
 
         check_sequence_lens(t_op, seq_length)
 
@@ -333,7 +317,7 @@ class LSTMConverter(NodeConverter):
 
         if not all_tensors_are_static(w, r):
             # Add a 'Split' operator. (not sure if this would ever happen)
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with dynamic weights is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with dynamic weights is not yet supported.")
 
         # Determine the constants from tensor shapes.
         seq_length = x.shape.get(0)
@@ -342,7 +326,7 @@ class LSTMConverter(NodeConverter):
         hidden_size = y.shape.get(-1)
         num_directions = y.shape.get(1)
 
-        logger.internal_assert(num_directions == 2, "Bidirectional LSTM: 'num_directions' != 2.")
+        errors.internal_assert(num_directions == 2, "Bidirectional LSTM: 'num_directions' != 2.")
 
         check_sequence_lens(t_op, seq_length)
 
@@ -363,10 +347,7 @@ class LSTMConverter(NodeConverter):
         # Peephole connections.
         if peephole := try_get_input(t_op, 7):
             if not tensor_has_data(peephole):
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with a dynamic operand 'P' is not yet supported.")
 
             fw_peephole, bw_peephole = np.split(peephole.tmp_buffer.data, 2)
             fw_p_2_i_data, fw_p_2_o_data, fw_p_2_f_data = np.split(fw_peephole.squeeze(), 3)
@@ -392,10 +373,7 @@ class LSTMConverter(NodeConverter):
 
             if not tensor_has_data(input_bias):
                 # Prepend 'Split', 'Add' and 'Split' operators. (not sure if this would ever happen)
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with a dynamic 'B' input tensor is not yet supported.")
 
             # 'B' has shape [2, 8 * hidden_size]
             fw_b, bw_b = np.split(input_bias.tmp_buffer.data, 2)
@@ -560,7 +538,7 @@ class LSTMConverter(NodeConverter):
 
         if not all_tensors_are_static(w, r):
             # Add a 'Split' operator. (not sure if this would ever happen)
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with dynamic weights is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with dynamic weights is not yet supported.")
 
         # Determine the constants from tensor shapes.
         seq_length = x.shape.get(0)
@@ -569,7 +547,7 @@ class LSTMConverter(NodeConverter):
         hidden_size = y.shape.get(-1)
         num_directions = y.shape.get(1)
 
-        logger.internal_assert(num_directions == 1, "Reverse LSTM: 'num_directions' != 1.")
+        errors.internal_assert(num_directions == 1, "Reverse LSTM: 'num_directions' != 1.")
 
         check_sequence_lens(t_op, seq_length)
 
@@ -698,9 +676,7 @@ class LSTMConverter(NodeConverter):
             #  the input activations are computed 'i', and then instead of computing the forget activations, '1.0 - i'
             #  is used.
             # So I don't think conversion is possible.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'input_forget' != 0 is not possible."
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'input_forget' != 0 is not possible.")
 
         if initial_h := try_get_input(t_op, 5):
             if tensor_has_data(initial_h):
@@ -709,7 +685,7 @@ class LSTMConverter(NodeConverter):
             else:
                 initial_h_data = self.context.onnx_inspector.try_get_inferred_tensor_data(initial_h.name)
                 if initial_h_data is not None:
-                    logger.i(
+                    logger.info(
                         f"Using inferred tensor data to assume that the LSTM 'initial_h' input tensor named "
                         f"'{initial_h.name}' will always contain only '0' values during runtime. If this is not "
                         f"the case, converted TFLite model may produce incorrect results."
@@ -720,9 +696,7 @@ class LSTMConverter(NodeConverter):
                 #  'input_activation_state' input tensor, which could be initially set to 'initial_h', but it is a
                 #  'variable' tensor and TFLite doesn't support variable tensors with initial static data right now.
                 # Therefore, I believe conversion is not possible.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'initial_h' input is not possible."
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'initial_h' input is not possible.")
 
         if initial_c := try_get_input(t_op, 6):
             if tensor_has_data(initial_c):
@@ -731,7 +705,7 @@ class LSTMConverter(NodeConverter):
             else:
                 initial_c_data = self.context.onnx_inspector.try_get_inferred_tensor_data(initial_c.name)
                 if initial_c_data is not None:
-                    logger.i(
+                    logger.info(
                         f"Using inferred tensor data to assume that the LSTM 'initial_c' input tensor named "
                         f"'{initial_c.name}' will always contain only '0' values during runtime. If this is not "
                         f"the case, converted TFLite model may produce incorrect results."
@@ -739,9 +713,7 @@ class LSTMConverter(NodeConverter):
 
             if initial_c_data is None or any(val != 0.0 for val in np.asarray(initial_c_data).flatten()):
                 # See the comment above, for 'initial_h'. This time the TFLite 'input_cell_state' operand is relevant.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'initial_c' input is not possible."
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX LSTM with 'initial_c' input is not possible.")
 
         if len(t_op.tmp_outputs) != 1:
             # TODO At least 'Y_h' output might be possible to compute by appending a 'Gather' operator.
@@ -749,20 +721,14 @@ class LSTMConverter(NodeConverter):
             # If the extra outputs are not used, conversion can proceed.
             for output_tensor in t_op.tmp_outputs[1:]:
                 if self.inspector.get_number_of_onnx_consumers_safe(output_tensor.name) != 0:
-                    logger.e(
-                        logger.Code.NOT_IMPLEMENTED,
-                        "Conversion of ONNX LSTM with more than 1 output is not yet supported.",
-                    )
+                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX LSTM with more than 1 output is not yet supported.")
 
             # Remove the unused outputs.
             t_op.tmp_outputs[1:] = []
 
         if o_lstm.layout != 0:
             # ORT doesn't support this.
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"Conversion of ONNX LSTM with layout = '{o_lstm.layout}' is not supported.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"Conversion of ONNX LSTM with layout = '{o_lstm.layout}' is not supported.")
 
         ensure_correct_tensor_formatting(t_op, self.builder, ops)
 
@@ -775,7 +741,4 @@ class LSTMConverter(NodeConverter):
         if o_lstm.direction == "reverse":
             return self._convert_reverse_lstm(o_lstm, t_op, ops)
 
-        logger.e(
-            logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-            f"ONNX LSTM has unexpected value of the direction attribute ('{o_lstm.direction}').",
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX LSTM has unexpected value of the direction attribute ('{o_lstm.direction}').")

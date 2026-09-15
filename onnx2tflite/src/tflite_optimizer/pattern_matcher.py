@@ -11,7 +11,6 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import cast
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_optimizer.graph_utils import (
@@ -24,6 +23,8 @@ from onnx2tflite.src.tflite_optimizer.graph_utils import (
 )
 from onnx2tflite.src.tflite_optimizer.operator_rules import OpRule
 from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorRule
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class OperatorBlock(ABC):
@@ -45,12 +46,12 @@ class OpLikeBlock(OperatorBlock):
         """
         # `...` can only be used at the start or end of the inputs/outputs.
         if len(self.inputs_as_list()) > 2:
-            logger.internal_assert(
+            errors.internal_assert(
                 ... not in self.inputs_as_list()[1:-1],
                 "PatternMatcher: The `...` can only be used at the start and/or end of the inputs.",
             )
         if len(self.outputs_as_list()) > 2:
-            logger.internal_assert(
+            errors.internal_assert(
                 ... not in self.outputs_as_list()[1:-1],
                 "PatternMatcher: The `...` can only be used at the start and/or end of the outputs.",
             )
@@ -176,7 +177,7 @@ class Op(OpLikeBlock):
                 real_in = real_op.tmp_inputs[real_input_index]
                 if inpt in tensor_map:
                     # Tensor has already been mapped.
-                    logger.internal_assert(
+                    errors.internal_assert(
                         type(tensor_map[inpt]) is tflite_model.Tensor,
                         f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.",
                     )
@@ -305,7 +306,7 @@ class MultipleSameOps(OpLikeBlock):
 
     def validate(self) -> None:
         super().validate()
-        logger.internal_assert(
+        errors.internal_assert(
             self.ops is not None, "PatternMatcher: `MultipleSameOps` doesn't support `ops=None` yet."
         )
 
@@ -383,7 +384,7 @@ class MultipleSameOps(OpLikeBlock):
                     real_in = real_op.tmp_inputs[real_input_index]
                     if inpt in tensor_map:
                         # Tensor has already been mapped.
-                        logger.internal_assert(
+                        errors.internal_assert(
                             type(tensor_map[inpt]) is tflite_model.Tensor,
                             f"PatternMatcher: consuming a set of tensors `{inpt}` is not supported right now.",
                         )
@@ -454,11 +455,8 @@ class MultipleSameOps(OpLikeBlock):
                     real_out = real_op.tmp_outputs[real_output_index]
                     if output in tensor_map:
                         # Tensor has already been mapped. This isn't supported right now.
-                        logger.e(
-                            logger.Code.INTERNAL_ERROR,
-                            "PatternMatcher: MultipleSameOps is producing an already "
-                            f"defined tensor `{output}`, which is not yet supported.",
-                        )
+                        raise ConversionError(errors.Code.INTERNAL_ERROR, "PatternMatcher: MultipleSameOps is producing an already "
+                            f"defined tensor `{output}`, which is not yet supported.")
 
                     # Map the matched tensor.
                     set_of_tensors_map[output].append(real_out)
@@ -525,10 +523,10 @@ class PatternMatcher:
         If it isn't, exit with error and a corresponding message.
         """
         if len(self.pattern) == 0:
-            logger.e(logger.Code.INTERNAL_ERROR, "PatternMatcher: empty pattern.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "PatternMatcher: empty pattern.")
 
         if type(self.pattern[0]) is not Op:
-            logger.e(logger.Code.INTERNAL_ERROR, "PatternMatcher: invalid pattern. The first block must be an `Op`.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "PatternMatcher: invalid pattern. The first block must be an `Op`.")
 
         for block in self.pattern:
             block.validate()
@@ -576,11 +574,8 @@ class PatternMatcher:
         """
         if all(tensor not in tensor_map for tensor in op.io_as_list()):
             # The operator is not connected to the already matched part of the pattern. This is not supported.
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                f"PatternMatcher: Op on index {len(real_pattern)} is not connected "
-                "to the preceding operators in the pattern.",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"PatternMatcher: Op on index {len(real_pattern)} is not connected "
+                "to the preceding operators in the pattern.")
 
         # The Op is somehow connected to the matched part.
 
@@ -593,7 +588,7 @@ class PatternMatcher:
 
             # Found connecting input.
             connecting_input = tensor_map_copy[inpt]
-            logger.internal_assert(
+            errors.internal_assert(
                 type(connecting_input) is tflite_model.Tensor,
                 f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.",
             )
@@ -652,11 +647,8 @@ class PatternMatcher:
         """
         if all(tensor not in tensor_map for tensor in multiple_same_ops.io_as_list()):
             # The `MultipleSameOps` is not connected to the already matched part of the pattern. This is not supported.
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                f"PatternMatcher: MultipleSameOps on index {len(real_pattern)} is not "
-                "connected to any preceding Ops in the pattern.",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"PatternMatcher: MultipleSameOps on index {len(real_pattern)} is not "
+                "connected to any preceding Ops in the pattern.")
 
         # ---- The MultipleSameOps is somehow connected to the matched part. ----
 
@@ -670,7 +662,7 @@ class PatternMatcher:
             # Found connecting input.
             connecting_input = tensor_map_copy[inpt]
             following_ops = input_to_ops.get(connecting_input.name, [])
-            logger.internal_assert(
+            errors.internal_assert(
                 type(connecting_input) is tflite_model.Tensor,
                 f"PatternMatcher: consuming a set of tensors `{inpt}` is not yet supported.",
             )
@@ -768,10 +760,7 @@ class PatternMatcher:
                     return False
 
             case _:
-                logger.e(
-                    logger.Code.INTERNAL_ERROR,
-                    f"PatternMatcher: pattern contains unexpected block `{self.pattern[pattern_idx]}`.",
-                )
+                raise ConversionError(errors.Code.INTERNAL_ERROR, f"PatternMatcher: pattern contains unexpected block `{self.pattern[pattern_idx]}`.")
 
         # Matched a block. Recursively match the rest of the pattern.
         return self._match_rest_of_pattern(real_pattern, tensor_map, input_to_ops, output_to_op, pattern_idx)

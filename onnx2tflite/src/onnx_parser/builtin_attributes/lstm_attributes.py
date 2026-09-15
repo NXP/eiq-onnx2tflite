@@ -8,8 +8,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LSTM(meta.ONNXOperatorAttributes):
@@ -54,4 +56,4 @@ class LSTM(meta.ONNXOperatorAttributes):
             elif attr.name == "layout":
                 self.layout = attr.i
             else:
-                logger.w(f"ONNX LSTM attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX LSTM attribute '{attr.name}' is not supported!")

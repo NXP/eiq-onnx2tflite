@@ -9,8 +9,9 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def test_too_low_opset():
@@ -27,13 +28,13 @@ def test_too_low_opset():
         opset_imports=[onnx.helper.make_opsetid(domain="", version=6)]  # Opset 6.
     )
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    log = logger.conversion_log.get_logs()['operator_conversion'][0]
-    assert log['error_code'] == logger.Code.NOT_IMPLEMENTED
-    assert 'opset < 7 is not supported' in log['message']
-    assert '--skip-opset-version-check' in log['message']
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert 'opset < 7 is not supported' in str(exc_info.value)
+    assert '--skip-opset-version-check' in str(exc_info.value)
+
 
 
 def test_too_high_opset():
@@ -50,10 +51,10 @@ def test_too_high_opset():
         opset_imports=[onnx.helper.make_opsetid(domain="", version=26)]  # Opset 26.
     )
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    log = logger.conversion_log.get_logs()['operator_conversion'][0]
-    assert log['error_code'] == logger.Code.NOT_IMPLEMENTED
-    assert 'opset > 25 is not guaranteed' in log['message']
-    assert '--skip-opset-version-check' in log['message']
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert 'opset > 25 is not guaranteed' in str(exc_info.value)
+    assert '--skip-opset-version-check' in str(exc_info.value)
+

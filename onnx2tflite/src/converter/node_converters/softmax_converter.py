@@ -11,7 +11,6 @@ import math
 import onnx2tflite.src.onnx_parser.builtin_attributes.log_softmax_attributes as onnx_log_softmax_attributes
 import onnx2tflite.src.onnx_parser.builtin_attributes.softmax_attributes as onnx_softmax_attributes
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -22,6 +21,11 @@ from onnx2tflite.src.tflite_generator.builtin_options import log_softmax_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.builtin_options import softmax_options as tfl_softmax_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection PyMethodMayBeStatic
@@ -45,10 +49,7 @@ class SoftmaxConverter(NodeConverter):
 
     def _normalize_axis(self, axis: int, rank: int) -> int:
         if axis < -rank or axis > rank - 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
 
         # convert negative index to positive
         if axis < 0:
@@ -204,7 +205,7 @@ class SoftmaxConverter(NodeConverter):
             output_zp = y.quantization.zero_point.vector[0]
 
             if not math.isclose(output_scale, scale[0]) or not math.isclose(output_zp, zp[0]):
-                logger.w(
+                logger.warning(
                     f"Re-quantizing output tensor '{y.name}' of LogSoftmax op to satisfy TFLite's "
                     "q-param requirements. This can decrease accuracy of the model."
                 )
@@ -224,7 +225,7 @@ class SoftmaxConverter(NodeConverter):
             output_zp = y.quantization.zero_point.vector[0]
 
             if not math.isclose(output_scale, scale[0]) or not math.isclose(output_zp, zp[0]):
-                logger.w(
+                logger.warning(
                     f"Re-quantizing output tensor '{y.name}' of Softmax op to satisfy TFLite's "
                     "q-param requirements. This can decrease accuracy of the model."
                 )

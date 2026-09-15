@@ -11,11 +11,12 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def _make_operands(input_shape):
@@ -63,9 +64,9 @@ def test_convert_batch_normalization__quantized(_type: TensorProto.DataType):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL
 
 
 @pytest.mark.parametrize(
@@ -107,9 +108,9 @@ def test_convert_batch_normalization_with_invalid_inputs():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
 
 
 def test_convert_batch_normalization_with_invalid_outputs():
@@ -126,9 +127,9 @@ def test_convert_batch_normalization_with_invalid_outputs():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
 
 
 @pytest.mark.parametrize(

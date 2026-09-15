@@ -7,8 +7,10 @@
 
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Multinomial(meta.ONNXOperatorAttributes):
@@ -31,4 +33,4 @@ class Multinomial(meta.ONNXOperatorAttributes):
                 case "seed":
                     self.seed = attr.f
                 case _:
-                    logger.w(f"ONNX `Multinomial` attribute '{attr.name}' is not supported!")
+                    logger.warning(f"ONNX `Multinomial` attribute '{attr.name}' is not supported!")

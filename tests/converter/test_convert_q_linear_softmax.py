@@ -12,10 +12,11 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-import onnx2tflite.src.logger as logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("input_shape,axis", [
@@ -186,9 +187,9 @@ def test_convert_q_linear_softmax_over_dim_val_1(opset: int):
     model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add the opset with QLinearSoftmax
     onnx.checker.check_model(model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
 
 
 @pytest.mark.parametrize("opset", [11, 13], ids=(lambda x: f"opset={x}"))

@@ -11,9 +11,13 @@ import numpy as np
 import onnx
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
 from onnx2tflite.src.onnx_parser.onnx_model import RepeatedNodeProto
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ONNXModelInspector:
@@ -64,7 +68,7 @@ class ONNXModelInspector:
         :return: Number of nodes using the tensor.
         """
         if self._tensor_consumers_count is None:
-            logger.e(logger.Code.INTERNAL_ERROR, "ONNXModelInspector: _tensor_consumers_count was not initialized!")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "ONNXModelInspector: _tensor_consumers_count was not initialized!")
 
         return self._tensor_consumers_count.get(tensor_name, 0)
 
@@ -182,7 +186,7 @@ class ONNXModelInspector:
             return tensor.data_type
         if isinstance(tensor, onnx_model.ValueInfoProto):
             return tensor.type.tensor_type.elem_type
-        logger.e(logger.Code.INTERNAL_ERROR, "Unexpected type of tensor specification")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Unexpected type of tensor specification")
 
     def _get_tensor_data(self, tensor_name: str) -> np.ndarray | None:
         for tensor in self.model.graph.initializers:
@@ -212,7 +216,7 @@ class ONNXModelInspector:
         if len(matching_initializers) == 1:
             return matching_initializers[0]
         if len(matching_initializers) > 1:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f'Found multiple initializers for tensor "{tensor_name}".')
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f'Found multiple initializers for tensor "{tensor_name}".')
 
         matching_value_infos = (
             [i for i in self.model.graph.inputs if i.name == tensor_name]
@@ -223,13 +227,10 @@ class ONNXModelInspector:
         if len(matching_value_infos) == 1:
             return matching_value_infos[0]
         if len(matching_value_infos) > 1:
-            logger.w(f'Found multiple value infos for tensor "{tensor_name}". Returning first one.')
+            logger.warning(f'Found multiple value infos for tensor "{tensor_name}". Returning first one.')
             return matching_value_infos[0]
 
-        logger.e(
-            logger.Code.INVALID_ONNX_MODEL,
-            f'Tensor with name: "{tensor_name}" not found! Did you run model shape inference?',
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f'Tensor with name: "{tensor_name}" not found! Did you run model shape inference?')
 
     def get_all_tensors(self) -> dict[str, onnx_tensor.TensorProto]:
         """Get all tensors in model as a dictionary mapping tensor name to 'TensorProto' object.

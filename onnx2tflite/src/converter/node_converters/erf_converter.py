@@ -6,12 +6,13 @@
 #
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.custom_options.flex_erf_options import Erf
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
 
 
 class ErfConverter(NodeConverter):
@@ -23,10 +24,7 @@ class ErfConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Erf` to TFLite `FlexErf`, which requires the Flex delegate and is part of `SELECT_TF_OPS`."""
         if not self.context.conversion_config.allow_select_ops:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX `Erf` without SELECT_TF_OPS is not possible. " + logger.Message.ALLOW_SELECT_OPS,
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Erf` without SELECT_TF_OPS is not possible. " + messages.Message.ALLOW_SELECT_OPS)
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 

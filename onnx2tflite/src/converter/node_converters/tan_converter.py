@@ -8,12 +8,13 @@
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import div_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class TanConverter(NodeConverter):
@@ -28,9 +29,7 @@ class TanConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Tan` operator into TFLite `Sin`, `Cos` and `Div`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL, f"ONNX `Tan` has unexpected number of inputs ({len(t_op.tmp_inputs)})."
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Tan` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)

@@ -15,9 +15,13 @@ import itertools
 
 import numpy as np
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class TensorFormatInference:
@@ -165,12 +169,9 @@ class TensorFormatInference:
                 self._infer_format_based_on_io_ranks(node)
 
             else:
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    f"tensor_converter.identify_tensor_formats(): Operator "
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"tensor_converter.identify_tensor_formats(): Operator "
                     f"'{node.op_type}' can change tensor format, but the format "
-                    f"inference is not implemented!",
-                )
+                    f"inference is not implemented!")
 
         else:
             # The node works independently of tensor formats.
@@ -273,11 +274,8 @@ class TensorFormatInference:
 
         if (main_input_rank is None) or (main_output_rank is None):
             # In most cases, this would still be fine. But we cannot identify the cases, when it wouldn't.
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"The shapes of tensors '{node.inputs[0]}' and '{node.outputs[0]}' around a '{node.op_type}' "
-                f"operator are not in the model. They are required for accurate conversion!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"The shapes of tensors '{node.inputs[0]}' and '{node.outputs[0]}' around a '{node.op_type}' "
+                f"operator are not in the model. They are required for accurate conversion!")
 
         elif main_output_rank == main_input_rank:
             # Operator maintains the number of dimensions -> try to propagate the format.
@@ -435,4 +433,4 @@ class TensorFormatInference:
                 tensors_without_inferred_format.add(tensor.name)
 
         if len(tensors_without_inferred_format) != 0:
-            logger.w(f"Tensors without inferred format: {', '.join(tensors_without_inferred_format)}.")
+            logger.warning(f"Tensors without inferred format: {', '.join(tensors_without_inferred_format)}.")

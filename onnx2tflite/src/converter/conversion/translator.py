@@ -22,11 +22,15 @@ import onnx
 
 import onnx2tflite.lib.tflite.Padding as tflPadding
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_tensor
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import TensorFlowDataType
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 def permute_static_tensor(tensor: tflite_model.Tensor, perm: list[int]) -> None:
@@ -35,13 +39,13 @@ def permute_static_tensor(tensor: tflite_model.Tensor, perm: list[int]) -> None:
     :param tensor: Static TFLite tensor to permute.
     :param perm: Permutation to apply to the tensor.
     """
-    logger.internal_assert(tensor.tmp_buffer is not None, "permute_static_tensor: tensor is not static.")
+    errors.internal_assert(tensor.tmp_buffer is not None, "permute_static_tensor: tensor is not static.")
 
     data = tensor.tmp_buffer.data
     data = np.transpose(data, perm)
 
     shape = apply_permutation_to(tensor.shape.vector.copy(), perm)
-    logger.internal_assert(shape == list(data.shape), "permute_static_tensor: shapes do not match.")
+    errors.internal_assert(shape == list(data.shape), "permute_static_tensor: shapes do not match.")
 
     tensor.tmp_buffer.data = data
     tensor.shape = tflite_model.Shape(shape)
@@ -54,9 +58,7 @@ def get_tflite_tensor_shape_with_explicit_padding(
     applied to it.
     """
     if (len(tflite_shape) != len(explicit_padding)) or any([len(sub_list) != 2 for sub_list in explicit_padding]):
-        logger.e(
-            logger.Code.INTERNAL_ERROR, f"Cannot apply padding '{explicit_padding}' to TFLite shape '{tflite_shape}'!"
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"Cannot apply padding '{explicit_padding}' to TFLite shape '{tflite_shape}'!")
 
     total_padding = [start + end for start, end in explicit_padding]  # Total padding for each dimension
 
@@ -72,10 +74,7 @@ def get_tflite_tensor_shape_with_explicit_padding(
 
         else:
             # Cannot add padding to a variable dimension.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Adding explicit padding to a variable sized tensor is not supported!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Adding explicit padding to a variable sized tensor is not supported!")
 
     return padded_shape
 
@@ -88,7 +87,7 @@ def convert_tensor_format_to_tflite(tensor_format: TensorFormat) -> TensorFormat
         return TensorFormat.CHANNELS_LAST
 
     if tensor_format not in (TensorFormat.FORMATLESS, TensorFormat.NONE):
-        logger.d(f"translator.convert_tensor_format(): Got unexpected format '{tensor_format}'.")
+        logger.debug(f"translator.convert_tensor_format(): Got unexpected format '{tensor_format}'.")
 
     return tensor_format
 
@@ -290,11 +289,8 @@ def _is_same_padding(
     :param o_dilations: ONNX 'dilations' attribute. Can be omitted.
     """
     if len(tflite_input_shape) == 0 or len(tflite_output_shape) == 0:
-        logger.e(
-            logger.Code.INVALID_TENSOR_SHAPE,
-            f"Cannot verify that padding '{o_pads}' can be represented as 'SAME' for input shape "
-            f"'{tflite_input_shape}' and output shape '{tflite_output_shape}'.",
-        )
+        raise ConversionError(errors.Code.INVALID_TENSOR_SHAPE, f"Cannot verify that padding '{o_pads}' can be represented as 'SAME' for input shape "
+            f"'{tflite_input_shape}' and output shape '{tflite_output_shape}'.")
 
     # Calculate if the output shape corresponds to Same padding setting in TFLite
     tflite_spatial_input_shape = tflite_input_shape[1:-1]
@@ -332,7 +328,7 @@ def permutations_are_inverse(permutation1: Sequence[int], permutation2: Sequence
 
     """
     if len(permutation1) != len(permutation2):
-        logger.e(logger.Code.INTERNAL_ERROR, "translator.permutations_are_inverse(): permutations have different size!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "translator.permutations_are_inverse(): permutations have different size!")
 
     for i, perm2 in enumerate(permutation2):
         if i != permutation1[perm2]:
@@ -349,7 +345,7 @@ def combine_permutations(permutation1: Sequence[int], permutation2: Sequence[int
     :return: The combined permutation.
     """
     if len(permutation1) != len(permutation2):
-        logger.e(logger.Code.INTERNAL_ERROR, "translator.combine_permutations(): permutations have different size!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "translator.combine_permutations(): permutations have different size!")
 
     return [permutation1[perm2] for perm2 in permutation2]
 
@@ -459,7 +455,7 @@ def convert_padding(
         ):
             return tflPadding.Padding.SAME, None
 
-        logger.d(
+        logger.debug(
             "'SAME_LOWER' auto_pad cannot be exactly represented in TFLite as padding 'SAME' or 'VALID'. "
             "Inserting an extra 'Pad' operator."
         )
@@ -483,7 +479,7 @@ def convert_padding(
     # 'pads' cannot be converted directly. Return 'VALID' and the required explicit padding and caller must
     # implement conversion by adding a 'Pad' operator.
 
-    logger.d(
+    logger.debug(
         "Explicit ONNX 'pads' cannot be represented directly as 'SAME' or 'VALID'. Inserting an extra 'Pad' operator."
     )
 
@@ -504,11 +500,8 @@ def convert_tensor_data(o_tensor: onnx_tensor.TensorProto) -> np.ndarray:
     # Product of all dimensions multiplied together (total size)
     size = math.prod(o_tensor.dims)
     if size != len(o_tensor.data.flatten()):
-        logger.e(
-            logger.Code.INVALID_TENSOR_SHAPE,
-            f"Numpy array for tensor of shape '{o_tensor.dims}' should have "
-            f"'{size}' elements, but has '{len(o_tensor.data)}'!",
-        )
+        raise ConversionError(errors.Code.INVALID_TENSOR_SHAPE, f"Numpy array for tensor of shape '{o_tensor.dims}' should have "
+            f"'{size}' elements, but has '{len(o_tensor.data)}'!")
 
     # Assign 'data' its current shape
     o_tensor.data.shape = o_tensor.dims
@@ -519,10 +512,7 @@ def convert_tensor_data(o_tensor: onnx_tensor.TensorProto) -> np.ndarray:
     # Check if it worked
     nhwc_shape = dims_to_channels_last(o_tensor.dims)
     if not collections_equal(data.shape, nhwc_shape):
-        logger.e(
-            logger.Code.INVALID_TENSOR_SHAPE,
-            f"Failed to convert data from shape '{o_tensor.dims}'! Got '{data.shape}', expected '{nhwc_shape}'.",
-        )
+        raise ConversionError(errors.Code.INVALID_TENSOR_SHAPE, f"Failed to convert data from shape '{o_tensor.dims}'! Got '{data.shape}', expected '{nhwc_shape}'.")
 
     return data
 
@@ -535,10 +525,7 @@ def convert_data_to_channels_first(array: np.ndarray) -> np.ndarray:
     :return: The transformed data.
     """
     if len(array.shape) < 3:
-        logger.e(
-            logger.Code.INTERNAL_ERROR,
-            f"translator.convert_data_to_channels_first(): 'array' only has '{len(array.shape)}' dimensions!",
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"translator.convert_data_to_channels_first(): 'array' only has '{len(array.shape)}' dimensions!")
 
     return np.moveaxis(array, -1, 1)  # Move last axis (C), to index 1
 
@@ -551,10 +538,7 @@ def convert_data_to_channels_last(array: np.ndarray) -> np.ndarray:
     :return: The transformed data.
     """
     if len(array.shape) < 3:
-        logger.e(
-            logger.Code.INTERNAL_ERROR,
-            f"translator.convert_data_to_channels_last(): 'array' only has '{len(array.shape)}' dimensions!",
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"translator.convert_data_to_channels_last(): 'array' only has '{len(array.shape)}' dimensions!")
 
     return np.moveaxis(array, 1, -1)  # Move the second axis (C), to the end
 
@@ -640,10 +624,7 @@ def create_axis_to_last_perm(axis, num_dims) -> np.ndarray:
     if axis == num_dims - 1:
         return dims
     if axis >= num_dims or axis < 0:
-        logger.e(
-            logger.Code.INTERNAL_ERROR,
-            f"translator.create_axis_to_last_perm({axis},{num_dims}). Inputs don't make sense!",
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"translator.create_axis_to_last_perm({axis},{num_dims}). Inputs don't make sense!")
 
     # Remember axis dimension
     axis_dim = dims[axis]
@@ -665,10 +646,7 @@ def apply_permutation_to(target: list[Any], permutation: Collection[int]) -> lis
     :return: Permuted list.
     """
     if len(target) != len(permutation):
-        logger.e(
-            logger.Code.INTERNAL_ERROR,
-            "translator.apply_permutation_to(): 'target' and 'permutation' have different length!",
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "translator.apply_permutation_to(): 'target' and 'permutation' have different length!")
 
     return [target[perm] for perm in permutation]
 
@@ -682,7 +660,7 @@ def create_inverse_permutation(permutation: list[int]) -> list[int]:
     """
     if set(permutation) != set(range(len(permutation))):
         # Irreversible permutation. For example [0, 1, 2, 2] (information is lost by applying permutation).
-        logger.e(logger.Code.INTERNAL_ERROR, "translator.create_inverse_permutation(): permutation is not reversible!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "translator.create_inverse_permutation(): permutation is not reversible!")
 
     return [permutation.index(perm) for perm in range(len(permutation))]
 
@@ -695,7 +673,7 @@ def get_max_value_for_type(dtype: np.dtype) -> any:
     if dtype.kind == "f":
         return np.finfo(dtype).max
 
-    logger.e(logger.Code.INTERNAL_ERROR, f"translator.get_max_value_for_type(): unexpected type {dtype.name}.")
+    raise ConversionError(errors.Code.INTERNAL_ERROR, f"translator.get_max_value_for_type(): unexpected type {dtype.name}.")
 
 
 def get_min_value_for_type(dtype: np.dtype) -> any:
@@ -706,13 +684,13 @@ def get_min_value_for_type(dtype: np.dtype) -> any:
     if dtype.kind == "f":
         return np.finfo(dtype).min
 
-    logger.e(logger.Code.INTERNAL_ERROR, f"translator.get_min_value_for_type(): unexpected type {dtype.name}.")
+    raise ConversionError(errors.Code.INTERNAL_ERROR, f"translator.get_min_value_for_type(): unexpected type {dtype.name}.")
 
 
 def convert_data_type(o_type: onnx.TensorProto.DataType) -> TensorType | int:
     """Convert ONNX DataType to TFLite TensorType"""
     if o_type == onnx.TensorProto.UNDEFINED:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'UNDEFINED' to TFLite.")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'UNDEFINED' to TFLite.")
 
     elif o_type == onnx.TensorProto.FLOAT:
         return TensorType.FLOAT32
@@ -760,7 +738,7 @@ def convert_data_type(o_type: onnx.TensorProto.DataType) -> TensorType | int:
         return TensorType.COMPLEX128
 
     elif o_type == onnx.TensorProto.BFLOAT16:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'BFLOAT16' to TFLite.")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'BFLOAT16' to TFLite.")
 
 
 def numpy_type_to_tf_lite(numpy_type: np.dtype) -> TensorType | int:
@@ -816,7 +794,7 @@ def numpy_type_to_tf_lite(numpy_type: np.dtype) -> TensorType | int:
     if numpy_type == np.complex128:
         return TensorType.COMPLEX128
 
-    logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Cannot convert numpy data type '{numpy_type}' to TFLite.")
+    raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Cannot convert numpy data type '{numpy_type}' to TFLite.")
 
 
 def tf_lite_type_to_numpy(tfl_type: TensorType | int) -> np.ScalarType:
@@ -866,7 +844,7 @@ def tf_lite_type_to_numpy(tfl_type: TensorType | int) -> np.ScalarType:
     if tfl_type == TensorType.COMPLEX128:
         return np.dtype(np.complex128)
 
-    logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"Cannot convert TFLite type '{tfl_type}' to numpy dtype.")
+    raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Cannot convert TFLite type '{tfl_type}' to numpy dtype.")
 
 
 def tflite_type_to_tensor_flow_data_type(tfl_type: TensorType) -> TensorFlowDataType:
@@ -874,7 +852,7 @@ def tflite_type_to_tensor_flow_data_type(tfl_type: TensorType) -> TensorFlowData
     match tfl_type:
         case TensorType.FLOAT16:
             # There seems to be no counterpart in the TF DataType.
-            logger.e(logger.Code.INTERNAL_ERROR, "tflite_type_to_tensor_flow_data_type(): float16.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "tflite_type_to_tensor_flow_data_type(): float16.")
         case TensorType.FLOAT32:
             return TensorFlowDataType.DT_FLOAT.value
         case TensorType.FLOAT64:
@@ -918,9 +896,7 @@ def tflite_type_to_tensor_flow_data_type(tfl_type: TensorType) -> TensorFlowData
 
         case _:
             # All TFLite types are covered. Must be an invalid type.
-            logger.e(
-                logger.Code.INTERNAL_ERROR, f"tflite_type_to_tensor_flow_data_type(): invalid TFLite type `{tfl_type}`."
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"tflite_type_to_tensor_flow_data_type(): invalid TFLite type `{tfl_type}`.")
 
 
 def infer_kernel_shape(weight_tensor: tflite_model.Tensor) -> list[int]:

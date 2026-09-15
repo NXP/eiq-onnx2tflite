@@ -5,8 +5,10 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ScatterND(meta.ONNXOperatorAttributes):
@@ -20,4 +22,4 @@ class ScatterND(meta.ONNXOperatorAttributes):
             if attr.name == "reduction":
                 self.reduction = attr.s.decode("utf-8")
             else:
-                logger.w(f"ONNX `ScatterND` attribute '{attr.name}' is not supported.")
+                logger.warning(f"ONNX `ScatterND` attribute '{attr.name}' is not supported.")

@@ -10,10 +10,14 @@
 Module contains high level functions to convert ONNX tensors to TFLite.
 """
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
 from onnx2tflite.src.tflite_generator import tflite_model
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class TensorConverter:
@@ -34,9 +38,7 @@ class TensorConverter:
         """
         for o_tensor in o_tensors:
             if o_tensor.type.tensor_type is None:
-                logger.e(
-                    logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for ValueInfo yet!"
-                )
+                raise ConversionError(errors.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for ValueInfo yet!")
 
             if self._builder.tensor_exists(o_tensor.name):
                 # Tensor was already created using a different function
@@ -61,16 +63,14 @@ class TensorConverter:
         Designed for the 'output' field of the ONNX 'Graph'.
         """
         if self._builder.buffers_size() != 0:
-            logger.d("'Builder.buildOutputTensors()' should be called before any other Tensor building function!")
+            logger.debug("'Builder.buildOutputTensors()' should be called before any other Tensor building function!")
 
         outputs = tflite_model.SubGraphOutputs()
         output_map = {}
 
         for o_output in o_outputs:
             if o_output.type.tensor_type is None:
-                logger.e(
-                    logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for Outputs yet!"
-                )
+                raise ConversionError(errors.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for Outputs yet!")
 
             if o_output.name in output_map:
                 tensor = output_map[o_output.name]
@@ -93,9 +93,7 @@ class TensorConverter:
 
         for o_input in o_inputs:
             if o_input.type.tensor_type is None:
-                logger.e(
-                    logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for Inputs yet!"
-                )
+                raise ConversionError(errors.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported for Inputs yet!")
 
             if o_input.name in input_map:
                 tensor = input_map[o_input.name]

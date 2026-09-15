@@ -8,8 +8,11 @@
 import onnx
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
+import logging
+from onnx2tflite.src import errors, messages
+
+logger = logging.getLogger(__name__)
 
 
 class ReplaceDivWithQuantizableMul(PreprocessingStep):
@@ -64,8 +67,8 @@ class ReplaceDivWithQuantizableMul(PreprocessingStep):
         onnx.checker.check_model(self.model)
 
         if num_affected_nodes != 0:
-            logger.w(
+            logger.warning(
                 "Replacing `Div` with `Mul` to improve quantization and inference speed. This may result in a "
                 "less accurate model. If you want to avoid this, run the quantization again with the flag "
-                f"{logger.Style.cyan + self.disabling_flag() + logger.Style.end}."
+                f"{messages.Style.cyan + self.disabling_flag() + messages.Style.end}."
             )

@@ -13,11 +13,12 @@ from onnx import TensorProto
 from onnxruntime.capi.onnxruntime_pybind11_state import InvalidGraph
 from onnxruntime.capi.onnxruntime_pybind11_state import NotImplemented
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type, name_for_onnx_type
 from tests import executors
 from tests.executors import OnnxExecutor
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -104,9 +105,9 @@ def test_convert_equal_with_types_unsupported_by_onnx_try_convert(main_shape: Li
     onnx_model.opset_import[0].version = 17
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert e.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize(
@@ -130,9 +131,9 @@ def test_convert_equal_with_types_unsupported_by_tflite(main_shape: List[int], d
     onnx_model = onnx.helper.make_model(graph)
     onnx_model.opset_import[0].version = 17
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert e.value.error_code == logger.Code.CONVERSION_IMPOSSIBLE
+    assert e.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize(

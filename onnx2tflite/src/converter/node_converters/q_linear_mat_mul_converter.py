@@ -13,7 +13,6 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.meta.types as tfl_types
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -27,6 +26,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import batch_mat_mul_options, fully_connected_options
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyMethodMayBeStatic
@@ -104,41 +105,29 @@ class QLinearMatMulConverter(NodeConverter):
             pass
         elif max_rank != 2:
             # Only 2D QLinearMatMul can be converted because of FullyConnected limitation.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"ONNX QLinearMatMul with '{max_rank}' dimensions and "
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"ONNX QLinearMatMul with '{max_rank}' dimensions and "
                 f"per-channel quantization cannot be converted to TFLite! "
-                f"Only 2D QLinearMatMul is supported.",
-            )
+                f"Only 2D QLinearMatMul is supported.")
 
         if any(t.tensor_format.is_channels_last() for t in [a, b]):
             # This should be an extremely rare case since the inputs are almost always 2D (formatless).
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX `QLinearMatMul` or quantized `MatMul` with per-channel quantization and "
-                "channels first input is not yet supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `QLinearMatMul` or quantized `MatMul` with per-channel quantization and "
+                "channels first input is not yet supported.")
 
         # FullyConnected silently only supports 0 zero points for int8 per-channel quantization
         if not self._per_channel_zero_points_are_supported(b.type, b_zp):
             data_type_name = tfl_types.name_for_type(b.type)
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"ONNX QLinearMatMul with second input zero point "
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"ONNX QLinearMatMul with second input zero point "
                 f"'{b_zp}' and type '{data_type_name}' cannot be "
-                f"converted to TFLite!",
-            )
+                f"converted to TFLite!")
 
         # ONNXRT: Despite the documentation, ONNX Runtime only allows per-channel quantization for the last dimension.
         # In TFLite, per-channel quantization is only supported for 2D tensors, so the last dimension has index 1.
         b_quantized_dimension = 1
         size_of_quantized_dimension = b.shape.get(b_quantized_dimension)
         if size_of_quantized_dimension != 1 and size_of_quantized_dimension != b_scale.size:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                "ONNX 2D QLinearMatMul uses per-channel quantization, but the size of "
-                "the quantization parameters doesn't match dimension 1. This is unexpected.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 2D QLinearMatMul uses per-channel quantization, but the size of "
+                "the quantization parameters doesn't match dimension 1. This is unexpected.")
 
         # Add the quantization parameters to the tensors
         if a.quantization is None:
@@ -176,11 +165,8 @@ class QLinearMatMulConverter(NodeConverter):
             if b.type == TensorType.UINT8:
                 # b must be re-quantized dynamically, but the TFLite Quantize operator silently doesn't support
                 # UINT8 to INT8 per-channel re-quantization
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of QLinearMatMul with a dynamic second input "
-                    "with per-channel quantization is not possible!",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of QLinearMatMul with a dynamic second input "
+                    "with per-channel quantization is not possible!")
 
             # A Transpose operator must be added
             transpose = self.context.tflite_builder.create_transpose_operator_before(t_op, 1, [1, 0])
@@ -365,21 +351,16 @@ class QLinearMatMulConverter(NodeConverter):
 
         # Quantization parameters must be static
         if self._at_least_1_is_none(a_scale, a_zp, b_scale, b_zp, y_scale, y_zp):
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX QLinearMatMul with dynamic quantization parameters is not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearMatMul with dynamic quantization parameters is not possible!")
 
         # ONNX only supports 8bit inputs and output
         if self._is_unsupported_type(a.type) or self._is_unsupported_type(b.type) or self._is_unsupported_type(y.type):
-            logger.e(logger.Code.INVALID_TYPE, "ONNX QLinearMatMul only supports INT8 and UINT8 datatypes!")
+            raise ConversionError(errors.Code.INVALID_TYPE, "ONNX QLinearMatMul only supports INT8 and UINT8 datatypes!")
 
         # 1D MatMul
         if a.rank == b.rank == 1:
             # TODO Surround by Reshape ops if this use case is realistic
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearMatMul with 1D inputs is not yet implemented."
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearMatMul with 1D inputs is not yet implemented.")
 
         # ONNXRT: ONNX Runtime only supports per-channel quantization for b
         # (onnxruntime/core/providers/cpu/quantization/quantize_linear_matmul.cc Line ~55)
@@ -388,4 +369,4 @@ class QLinearMatMulConverter(NodeConverter):
         if b_scale.size > 1:
             # Per channel quantization
             return self._convert_per_channel_q_linear_mat_mul(node, t_op)
-        logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX QLinearMatMul has no quantization parameters!")
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX QLinearMatMul has no quantization parameters!")

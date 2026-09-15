@@ -12,14 +12,13 @@ from onnx import TensorProto
 from onnx2quant.qdq_quantization import RandomDataCalibrationDataReader, QDQQuantizer
 from onnx2quant.quantization_config import QuantizationConfig
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from tests import executors
 from tests.executors import OnnxExecutor, TFLiteExecutor
 from onnx2tflite.src.tflite_optimizer.optimizer import Optimization
+from onnx2tflite.src import errors
 
-logger.MIN_OUTPUT_IMPORTANCE = logger.MessageImportance.DEBUG
 
 
 def test_replace_average_pool_with_sum__float32(intermediate_tflite_model_provider):

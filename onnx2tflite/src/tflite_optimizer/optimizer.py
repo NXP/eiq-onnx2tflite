@@ -9,7 +9,6 @@
 from collections.abc import Callable
 from enum import Enum
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul_to_hard_swish import (
@@ -52,9 +51,16 @@ from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_bu
 from onnx2tflite.src.tflite_optimizer.optimizations.replace_average_pool_before_fully_connected_with_sum import (
     ReplaceAveragePoolBeforeFullyConnectedWithSum,
 )
+import logging
+
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_optimizer.optimizations.replace_input_invariant_transpose_to_reshape import (
     ReplaceInputInvariantTransposeWithReshape,
 )
+
+logger = logging.getLogger(__name__)
+
 
 
 class Optimization(Enum):
@@ -156,7 +162,7 @@ class Optimizer:
         The optimizations will be applied multiple times in a loop, until the model is fully optimized.
         """
         if optimization_whitelist is not None and optimization_blacklist is not None:
-            logger.e(logger.Code.INVALID_OPTIMIZATION, "Optimization whitelist and blacklist cannot both be specified.")
+            raise ConversionError(errors.Code.INVALID_OPTIMIZATION, "Optimization whitelist and blacklist cannot both be specified.")
 
         if optimization_whitelist is not None:
             optimizations = optimization_whitelist
@@ -169,7 +175,7 @@ class Optimizer:
                 try:
                     optimizations.remove(o)
                 except ValueError:
-                    logger.w(f"Optimization blacklist contains invalid optimization '{o}'.")
+                    logger.warning(f"Optimization blacklist contains invalid optimization '{o}'.")
 
         # Execute the optimizations until the model is fully optimized.
         for _ in range(self.optimization_application_limit):
@@ -177,14 +183,11 @@ class Optimizer:
 
             for optimization in optimizations:
                 if optimization not in self.optimization_map:
-                    logger.e(
-                        logger.Code.INVALID_OPTIMIZATION,
-                        f"The converter doesn't recognise the '{optimization}' optimization.",
-                    )
+                    raise ConversionError(errors.Code.INVALID_OPTIMIZATION, f"The converter doesn't recognise the '{optimization}' optimization.")
 
                 # Call the optimization
                 made_changes = self.optimization_map[optimization]()
-                logger.internal_assert(type(made_changes) is bool, f"Optimization `{optimization}` didn't return bool.")
+                errors.internal_assert(type(made_changes) is bool, f"Optimization `{optimization}` didn't return bool.")
                 run_again |= made_changes
 
             if not run_again:

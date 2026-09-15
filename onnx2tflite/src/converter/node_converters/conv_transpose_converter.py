@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import convert_padding
@@ -22,6 +21,8 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_conv_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 ConvAttributes = conv_transpose_attributes.ConvTranspose
 
@@ -52,16 +53,10 @@ class ConvTransposeConverter(NodeConverter):
     ) -> list[tflite_model.Operator]:
 
         if o_conv_attributes.dilations is not None and any(dilation != 1 for dilation in o_conv_attributes.dilations):
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "ONNX ConvTranspose with 'dilations' other than '1' cannot be converted to TFLite.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX ConvTranspose with 'dilations' other than '1' cannot be converted to TFLite.")
 
         if o_conv_attributes.group is not None and o_conv_attributes.group != 1:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "ONNX ConvTranspose with 'group' other than '1' cannot be converted to TFLite.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX ConvTranspose with 'group' other than '1' cannot be converted to TFLite.")
 
         # Prepare the input and output tensors. To replace them, assign to t_op.tmp_inputs/tmp_outputs directly.
         input_tensor = t_op.tmp_inputs[0]
@@ -70,11 +65,8 @@ class ConvTransposeConverter(NodeConverter):
         bias_tensor = try_get_input(t_op, 2)
 
         if weight_tensor.tensor_format.is_channels_last():
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX 'ConvTranspose' with dynamic weight originating in Conv/Pool-like layer "
-                "is currently not implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'ConvTranspose' with dynamic weight originating in Conv/Pool-like layer "
+                "is currently not implemented.")
 
         # Compute padding from output to input, because TransposeConv is up-sampling
         padding, explicit_padding = convert_padding(
@@ -98,11 +90,8 @@ class ConvTransposeConverter(NodeConverter):
         if bias_tensor is not None:
             bias_shape = bias_tensor.shape.vector
             if len(bias_shape) > 1 or bias_shape[0] != weight_tensor.shape.vector[1]:
-                logger.e(
-                    logger.Code.INVALID_ONNX_MODEL,
-                    "Bias tensor is not 1D or its length doesn't equal to "
-                    "the length of feature maps (weights_tensor.shape[1] or 'M').",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Bias tensor is not 1D or its length doesn't equal to "
+                    "the length of feature maps (weights_tensor.shape[1] or 'M').")
 
             t_op.tmp_inputs.append(bias_tensor)
 
@@ -140,44 +129,32 @@ class ConvTransposeConverter(NodeConverter):
         if o_conv_attributes.kernel_shape is None:
             o_conv_attributes.kernel_shape = derived_kernel_shape
         elif o_conv_attributes.kernel_shape != derived_kernel_shape:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
 
     def convert(self, conv_node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         o_conv_attributes = cast(ConvAttributes, conv_node.attributes)
 
         if not (2 <= len(t_op.tmp_inputs) <= 3):
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX ConvTranspose has invalid number of inputs. Got '{len(t_op.tmp_inputs)}', expected 2 or 3.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX ConvTranspose has invalid number of inputs. Got '{len(t_op.tmp_inputs)}', expected 2 or 3.")
 
         if t_op.is_quantized_without_qdq():
             # This isn't supported by ONNX. Keep this check just in case.
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `ConvTranspose` with a quantized input is not supported.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `ConvTranspose` with a quantized input is not supported.")
 
         x = t_op.tmp_inputs[0]
         if x.quantization is None:
             self.assert_type_allowed(x.type)
 
         elif x.type not in [TensorType.INT8]:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX `ConvTranspose` with quantized input of "
-                f"type {name_for_type(x.type)} is not supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `ConvTranspose` with quantized input of "
+                f"type {name_for_type(x.type)} is not supported.")
 
         self._verify_kernel_shape_attribute(o_conv_attributes, t_op)
         kernel_rank = len(o_conv_attributes.kernel_shape)
 
         if kernel_rank == 1 or kernel_rank == 3:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not implemented.")
         elif kernel_rank == 2:
             return self._convert_2d_conv(o_conv_attributes, t_op)
         else:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not possible!")

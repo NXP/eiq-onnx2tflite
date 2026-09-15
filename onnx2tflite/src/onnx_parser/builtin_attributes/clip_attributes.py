@@ -8,8 +8,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Clip(meta.ONNXOperatorAttributes):
@@ -32,4 +34,4 @@ class Clip(meta.ONNXOperatorAttributes):
             elif attr.name == "min":
                 self.min = attr.f
             else:
-                logger.w(f"ONNX Clip attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Clip attribute '{attr.name}' is not supported!")

@@ -14,7 +14,6 @@ from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.converter.builder.model_builder import ModelBuilder
@@ -23,8 +22,11 @@ from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.tflite_optimizer.operator_rules import HasFusedActivationFunction, NoFusedActivationFunction
 from onnx2tflite.src.tflite_optimizer.optimizer import Optimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import MultipleSameOps, OneOf, Op, PatternMatcher
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorConsumedOnlyBy, TensorHasData, TensorHasOneConsumer, \
     TensorHasType, TensorIsQuantized
+
 
 _ARTIFACTS_DIR = pathlib.Path(__file__).parent.parent.joinpath("artifacts")
 
@@ -229,14 +231,14 @@ def test_sequence_of_two_ops__ellipsis__end__representing_no_tensors(_builder_fo
 
 
 def test_sequence_of_two_ops__ellipsis__middle(_builder_for_alexnet_model):
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         PatternMatcher(
             _builder_for_alexnet_model,
             [
                 Op(['Reshape'], ['x'], ['y']),
                 Op(['FullyConnected'], ['y', ..., 'b'], ['z'])
             ])
-    assert e.value.error_code == logger.Code.INTERNAL_ERROR
+    assert e.value.code == errors.Code.INTERNAL_ERROR
     assert '`...` can only be used' in e.value.msg
 
 
@@ -486,13 +488,13 @@ def test_multiple_same_ops__tensor_rules(_builder_for_custom_model):
 
 
 def test_invalid_pattern__op_not_first(_builder_for_custom_model):
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         PatternMatcher(
             _builder_for_custom_model,
             [
                 MultipleSameOps(['Add'], ['x', ...], ['y'])
             ])
-    assert e.value.error_code == logger.Code.INTERNAL_ERROR
+    assert e.value.code == errors.Code.INTERNAL_ERROR
     assert 'The first block must be an `Op`' in e.value.msg
 
 
@@ -504,11 +506,11 @@ def test_invalid_pattern__consuming_tensor_set(_builder_for_custom_model):
             MultipleSameOps(['Add'], ['x', ...], ['y']),
             Op(['Mul'], ['y'])
         ])
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         for _, _, _, _ in matcher.match_patterns():
             pass
 
-    assert e.value.error_code == logger.Code.INTERNAL_ERROR
+    assert e.value.code == errors.Code.INTERNAL_ERROR
     assert 'consuming a set of tensors `y` is not yet supported.' in e.value.msg
 
 
@@ -697,14 +699,14 @@ def test_op__mathing_inputs_from_the_back__second_to_last_input(_builder_for_ale
 
 
 def test_multiple_same_ops__none_ops(_builder_for_custom_model):
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         PatternMatcher(
             _builder_for_custom_model,
             [
                 Op(['Mul'], outputs=['x']),
                 MultipleSameOps(None, ['x', ...], [..., 'y']),
             ])
-    assert e.value.error_code == logger.Code.INTERNAL_ERROR
+    assert e.value.code == errors.Code.INTERNAL_ERROR
     assert "`MultipleSameOps` doesn't support `ops=None`" in e.value.msg
 
 

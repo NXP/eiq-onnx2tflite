@@ -8,7 +8,6 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared import reduce_utils
@@ -21,6 +20,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_prod_attributes impor
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import reduce_prod_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ReduceProdConverter(NodeConverter):
@@ -69,7 +70,7 @@ class ReduceProdConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX ReduceProd operator to TFLite ReduceProd."""
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceProd` has unexpected number of inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceProd` has unexpected number of inputs.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)

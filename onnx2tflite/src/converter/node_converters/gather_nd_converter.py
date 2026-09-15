@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -22,6 +21,11 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import gather_nd_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
+import logging
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class GatherNDConverter(NodeConverter):
@@ -35,10 +39,7 @@ class GatherNDConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `GatherND` operator to TFLite `GatherND`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `GatherND` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `GatherND` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         x = t_op.tmp_inputs[0]
         indices = t_op.tmp_inputs[1]
@@ -84,22 +85,16 @@ class GatherNDConverter(NodeConverter):
             if tensor_has_data(indices):
                 # The indices would have to be recomputed to support this. The first `batch_dims` dimensions are
                 #  "ignored" and the indexing is effectively done not to `x`, by to `x[batch_dims:]`.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX `GatherND` with `batch_dims != 0` is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `GatherND` with `batch_dims != 0` is not yet supported.")
             else:
                 # The preprocessing would probably be too difficult (if possible at all) to implement using TFLite
                 #  operators at runtime.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX `GatherND` with `batch_dims != 0` is not supported.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `GatherND` with `batch_dims != 0` is not supported.")
 
         if tensor_has_data(indices):
             indices_data = indices.tmp_buffer.data
         elif (indices_data := self.inspector.try_get_inferred_tensor_data(indices.name)) is not None:
-            logger.i(f"Using inferred data for the ONNX `GatherND` input `indices` named `{indices.name}`.")
+            logger.info(f"Using inferred data for the ONNX `GatherND` input `indices` named `{indices.name}`.")
 
         # TFLite only supports non-negative indices. Make sure this requirement is satisfied.
         if indices_data is not None:
@@ -108,10 +103,7 @@ class GatherNDConverter(NodeConverter):
                 indices_data = indices_data.reshape([-1, innermost_dim])  # Flatten all dimensions except the last one.
                 if len(indices_data.shape) != 2:
                     # This shouldn't happen.
-                    logger.e(
-                        logger.Code.NOT_IMPLEMENTED,
-                        "Conversion of ONNX `GatherND` with negative `indices` is not yet supported.",
-                    )
+                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `GatherND` with negative `indices` is not yet supported.")
 
                 # `indices_data` is now a 2D matrix where the rows are vectors of indices to `x`.
                 #  Iterate over the vectors and for each vector, normalize the index to range [0, dim_size - 1].
@@ -122,7 +114,7 @@ class GatherNDConverter(NodeConverter):
                         if elt < 0:
                             elt += x.shape[i]
                             if elt < 0:
-                                logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `GatherND` has invalid `indices`.")
+                                raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `GatherND` has invalid `indices`.")
 
                         new_vector.append(elt)
 
@@ -138,11 +130,8 @@ class GatherNDConverter(NodeConverter):
             pass
 
         else:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX `GatherND` with dynamic `indices` is not possible because they may contain"
-                " negative values, which is not supported by TFLite. " + logger.Message.GUARANTEE_NON_NEGATIVE_INDICES,
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `GatherND` with dynamic `indices` is not possible because they may contain"
+                " negative values, which is not supported by TFLite. " + messages.Message.GUARANTEE_NON_NEGATIVE_INDICES)
 
         t_op.builtin_options = gather_nd_options.GatherND()
 

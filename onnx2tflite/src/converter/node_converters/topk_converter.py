@@ -9,7 +9,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -18,6 +17,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import topk_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import topk_v2_options
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class TopKConverter(NodeConverter):
@@ -38,10 +39,7 @@ class TopKConverter(NodeConverter):
     # noinspection PyMethodMayBeStatic
     def _normalize_axis(self, axis: int, rank: int) -> int:
         if axis < -rank or axis > rank - 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
 
         # convert negative index to positive
         if axis < 0:
@@ -51,10 +49,7 @@ class TopKConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'TopK' operator to TFLite 'TopK_V2'."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'TopK' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'TopK' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         x = t_op.tmp_inputs[0]
         k = t_op.tmp_inputs[1]
@@ -64,19 +59,16 @@ class TopKConverter(NodeConverter):
             self.assert_type_allowed(x.type)
 
         if not tensor_has_data(k):
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of 'TopK' with dynamic 'k' tensor in not possible.")
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of 'TopK' with dynamic 'k' tensor in not possible.")
 
         attrs = cast(topk_attributes.TopK, node.attributes)
 
         if attrs.sorted == 0:
-            logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of 'TopK' with 'sorted=0' is not possible.")
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of 'TopK' with 'sorted=0' is not possible.")
 
         if attrs.largest == 0:
             # Case with 'sorted=1' and 'largest=0' can be implemented with additional Gather.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of 'TopK' with 'largest=0' and 'sorted=1' is not yet implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of 'TopK' with 'largest=0' and 'sorted=1' is not yet implemented.")
 
         k.tmp_buffer.data = k.tmp_buffer.data.astype(np.int32)
         k.type = TensorType.INT32

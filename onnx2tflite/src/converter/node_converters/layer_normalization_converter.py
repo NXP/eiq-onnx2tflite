@@ -10,7 +10,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input, uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -25,6 +24,11 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
     sub_options,
 )
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection PyMethodMayBeStatic
@@ -46,12 +50,9 @@ class LayerNormalizationConverter(NodeConverter):
         rank = input_tensor.rank
 
         if not (-rank <= axis <= rank):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX LayerNormalization attribute 'axis' has value "
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX LayerNormalization attribute 'axis' has value "
                 f"'{axis}', which is outside of the allowed range "
-                f"['{-rank}', '{rank}']!",
-            )
+                f"['{-rank}', '{rank}']!")
 
         if axis < 0:
             axis += rank
@@ -79,11 +80,8 @@ class LayerNormalizationConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if len(t_op.tmp_inputs) not in {2, 3}:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'LayerNormalization' has unexpected number of inputs! "
-                f"Got '{len(t_op.tmp_inputs)}', expected '2' or '3'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'LayerNormalization' has unexpected number of inputs! "
+                f"Got '{len(t_op.tmp_inputs)}', expected '2' or '3'.")
 
         # Assign the operands
         x = t_op.tmp_inputs[0]
@@ -155,11 +153,8 @@ class LayerNormalizationConverter(NodeConverter):
         mul_2_op.tmp_outputs = [normalized_scaled]
 
         if x.tensor_format.is_channels_last() and uses_shape_broadcasting(mul_2_op):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX 'LayerNormalization' with channels first tensors "
-                "and shape broadcasting is not yet supported!",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'LayerNormalization' with channels first tensors "
+                "and shape broadcasting is not yet supported!")
 
         ops_to_add = [mean_1_op, sub_op, square_op, mean_2_op, add_1_op, rsqrt_op, mul_1_op, mul_2_op]
 
@@ -171,18 +166,15 @@ class LayerNormalizationConverter(NodeConverter):
             ops_to_add.append(add_2_op)
 
             if x.tensor_format.is_channels_last() and uses_shape_broadcasting(add_2_op):
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX 'LayerNormalization' with channels first "
-                    "tensors and shape broadcasting is not yet supported!",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'LayerNormalization' with channels first "
+                    "tensors and shape broadcasting is not yet supported!")
         else:
             # Make sure the last operator produces the original output tensor, that other operators are connected to.
             mul_2_op.tmp_outputs = [y]
 
         # Because the LayerNormalization has to be represented using so many operators, there is sometimes a relatively
         #  large error. Notify the user of this.
-        logger.i(
+        logger.info(
             f"ONNX `LayerNormalization` is converted into {len(ops_to_add)} operators, which can sometimes "
             "introduce a numerical error."
         )

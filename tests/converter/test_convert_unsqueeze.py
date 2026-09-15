@@ -13,13 +13,14 @@ import onnx.shape_inference
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_options
 from onnx2tflite.src.tflite_optimizer.optimizer import Optimization
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("input_shape,axes", [
@@ -340,7 +341,7 @@ def test_convert_unsqueeze__invalid_type():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert 'UINT16' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert 'UINT16' in str(exc_info.value)

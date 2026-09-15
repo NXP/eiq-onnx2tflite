@@ -9,7 +9,6 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
@@ -17,6 +16,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import div_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
 
 
 class DivConverter(NodeConverter):
@@ -50,30 +51,24 @@ class DivConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Div' operator to TFLite 'Div'."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, f"ONNX operator 'Div' has '{len(t_op.tmp_inputs)}' inputs!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX operator 'Div' has '{len(t_op.tmp_inputs)}' inputs!")
 
         input_a = t_op.tmp_inputs[0]
         input_b = t_op.tmp_inputs[1]
 
         if input_a.type != input_b.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'Div' has inputs with different data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'Div' has inputs with different data types!")
 
         ops = OpsList(middle_op=t_op)
         ops.add_pre(self.builder.ensure_correct_broadcasting(t_op, t_op.tmp_outputs[0]))
 
         if t_op.is_quantized_without_qdq():
             # ONNXRT: INT8 and UINT8 are not supported by ONNX Runtime, so conversion cannot be verified.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                f"Conversion of ONNX `Div` with quantized inputs of type {input_a.type} is not supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX `Div` with quantized inputs of type {input_a.type} is not supported.")
 
         if input_a.type == TensorType.INT64:
             if not self.context.conversion_config.cast_int64_to_int32:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR,
-                    "TFLite operator 'Div' doesn't support type INT64. " + logger.Message.CAST_INT64_TO_INT32,
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "TFLite operator 'Div' doesn't support type INT64. " + messages.Message.CAST_INT64_TO_INT32)
             else:
                 self._cast_from_int64_to_int32(ops, t_op)
 

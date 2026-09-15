@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -19,6 +18,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import shape_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import gather_options, shape_options, slice_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ShapeConverter(NodeConverter):
@@ -86,10 +87,7 @@ class ShapeConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Shape' operator to TFLite."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Shape' operator has unexpected number of inputs! Got'{len(t_op.tmp_inputs)}', expected '1'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Shape' operator has unexpected number of inputs! Got'{len(t_op.tmp_inputs)}', expected '1'.")
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 
@@ -119,10 +117,7 @@ class ShapeConverter(NodeConverter):
         start = self._validate_index(start, 0, input_rank)
         end = self._validate_index(end, input_rank, input_rank)
         if end < start:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX 'Shape' operator has 'end' < 'start' ('{end}' < '{start}')!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX 'Shape' operator has 'end' < 'start' ('{end}' < '{start}')!")
 
         # Create the TFLite 'begin' tensor
         begin_tensor = self.builder.create_tensor_for_data(

@@ -9,11 +9,12 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -147,10 +148,10 @@ def test_convert_reduce_mean__v18_dynamic_axes():
         [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_logs()['shape_inference'][0]['error_code'] == logger.Code.SHAPE_INFERENCE_ERROR
+    assert exc_info.value.code == errors.Code.SHAPE_INFERENCE_ERROR
 
 
 @pytest.mark.parametrize(
@@ -423,9 +424,9 @@ def test_convert_reduce_mean__noop_with_empty_axes(intermediate_tflite_model_pro
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
 
 
 def test_convert_reduce_mean__keepdims_true():
@@ -495,10 +496,10 @@ def test_convert_reduce_mean__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
@@ -522,6 +523,6 @@ def test_convert_reduce_mean__quantized(type_: TensorProto.DataType):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_MODEL
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL

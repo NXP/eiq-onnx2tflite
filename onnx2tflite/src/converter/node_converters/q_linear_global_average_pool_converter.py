@@ -9,12 +9,13 @@ import numpy as np
 
 import onnx2tflite.lib.tflite.Padding as tflPadding
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options, reshape_options
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class QLinearGlobalAveragePoolConverter(NodeConverter):
@@ -45,18 +46,12 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
 
         # Input and output types must be the same
         if input_tensor.type != output_tensor.type:
-            logger.e(
-                logger.Code.INVALID_TYPE,
-                f"ONNX QLinearGlobalAveragePool input and output tensors must have the "
-                f"same data type! '{input_tensor.type}' != '{output_tensor.type}'.",
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, f"ONNX QLinearGlobalAveragePool input and output tensors must have the "
+                f"same data type! '{input_tensor.type}' != '{output_tensor.type}'.")
 
         # ONNX only supports INT8 and UINT8
         if input_tensor.type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(
-                logger.Code.INVALID_TYPE,
-                f"ONNX QLinearGlobalAveragePool supports only INT8 and UINT8 data types. Got '{input_tensor.type}'.",
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, f"ONNX QLinearGlobalAveragePool supports only INT8 and UINT8 data types. Got '{input_tensor.type}'.")
 
         input_height = input_tensor.shape.get(1)
         input_width = input_tensor.shape.get(2)
@@ -135,9 +130,7 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
         """
         input_rank = t_op.tmp_inputs[0].rank
         if input_rank < 5:
-            logger.e(
-                logger.Code.INTERNAL_ERROR, f"Input tensor has only '{input_rank}' dimensions! Expected at least 5."
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Input tensor has only '{input_rank}' dimensions! Expected at least 5.")
 
         original_input_tensor = t_op.tmp_inputs[0]
         original_output_tensor = t_op.tmp_outputs[0]
@@ -171,7 +164,7 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
         """
         input_rank = t_op.tmp_inputs[0].rank
         if input_rank != 3:
-            logger.e(logger.Code.INTERNAL_ERROR, f"Input tensor has '{input_rank}' dimensions! Expected 3.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Input tensor has '{input_rank}' dimensions! Expected 3.")
 
         original_input_tensor = t_op.tmp_inputs[0]
         original_output_tensor = t_op.tmp_outputs[0]
@@ -215,7 +208,4 @@ class QLinearGlobalAveragePoolConverter(NodeConverter):
             # kernel with at least 3 dimensions
             return self._convert_more_than_2d_q_linear_global_average_pool(t_op)
 
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            f"Conversion of ONNX QLinearGlobalAveragePool with '{rank}' dimensions is not possible!",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearGlobalAveragePool with '{rank}' dimensions is not possible!")

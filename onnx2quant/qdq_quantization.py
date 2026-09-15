@@ -28,15 +28,21 @@ from onnxruntime.quantization.registry import QDQRegistry
 
 from onnx2quant.preprocessor import Preprocessor
 from onnx2quant.quantization_config import QuantizationConfig
-from onnx2tflite.src import logger
-from onnx2tflite.src.logger import loggingContext
+import logging
+
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
 from onnx2tflite.src.model_inspector import ONNXModelInspector
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 
+logger = logging.getLogger(__name__)
+
 
 def _get_tensor_rank(tensor_name: str, model: onnx.ModelProto) -> int | None:
+
     for t in model.graph().initializer:
         if tensor_name == t.name:
             return len(t.dims)
@@ -214,7 +220,7 @@ class QDQClustersRecognizer:
 
     def _validate_conv_transpose(self, node: onnx_model.NodeProto) -> bool:
         if not self._surrounding_q_ops_have_same_quant_type(node):
-            logger.w(
+            logger.warning(
                 f"QDQ quantized ONNX operator '{node.op_type}' has it's inputs quantized with different "
                 f"types, for example UINT8 activations and INT8 weights. Such operator will not be "
                 f"converted into quantized TFLite variant. Make sure that model uses same quantization "
@@ -380,7 +386,7 @@ class QDQClustersRecognizer:
             return None
 
         if self.model_inspector.has_int8_and_uint8_q_ops():
-            logger.w(
+            logger.warning(
                 "Model contains (De)QuantizeLinear nodes with both UINT8 and INT8 types. Model was probably "
                 "quantized twice or different types were used for quantization of different ops. Conversion "
                 "of such models can produce non-optimal results (unnecessary 'Quantize' ops in the model). "
@@ -404,7 +410,7 @@ class QDQClustersRecognizer:
 
         qdq_clusters_count = len(recognized_ops.qdq_cluster_quantization_ops)
         if qdq_clusters_count > 0:
-            logger.w(
+            logger.warning(
                 f"Some ops in model will be converted to tensor-based quantization representation. "
                 f"Number of ops: {qdq_clusters_count}."
             )
@@ -513,7 +519,7 @@ class QDQOperator(QDQOperatorBase):
             if not hasattr(opset, "domain") or opset.domain == "":
                 return opset.version
 
-        logger.e(logger.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
 
     def _per_channel_allowed(self) -> bool:
         return self.quantizer.is_per_channel()
@@ -575,20 +581,20 @@ class QDQGRU(QDQOperator):
         r = node.input[2]
 
         if not self.quantizer.is_input_a_initializer(w):
-            logger.w(f"GRU node '{node.name}' not quantized because input tensor 'w' is not initializer.")
+            logger.warning(f"GRU node '{node.name}' not quantized because input tensor 'w' is not initializer.")
             return
 
         if not self.quantizer.is_input_a_initializer(r):
-            logger.w(f"GRU node '{node.name}' not quantized because input tensor 'r' is not initializer.")
+            logger.warning(f"GRU node '{node.name}' not quantized because input tensor 'r' is not initializer.")
             return
 
         if len(node.input) > 5 and not self.quantizer.is_input_a_initializer(node.input[5]):
-            logger.w(f"GRU node '{node.name}' not quantized because input tensor 'initial_h' is not initializer.")
+            logger.warning(f"GRU node '{node.name}' not quantized because input tensor 'initial_h' is not initializer.")
             return
 
         y_h_consumed = node.output[1] in self.quantizer.model.input_name_to_nodes()
         if y_h_consumed or self.quantizer.model.is_graph_output(node.output[1]):
-            logger.w(f"GRU node '{node.name}' not quantized because 'y_h' consumed by other op or is model output.")
+            logger.warning(f"GRU node '{node.name}' not quantized because 'y_h' consumed by other op or is model output.")
             return
 
         if not self.quantizer.is_tensor_quantized(x):
@@ -633,7 +639,7 @@ class QDQMatMul(QDQOperator):
 
             else:
                 # Cannot quantize per-channel due to too low opset version.
-                logger.w(
+                logger.warning(
                     "Couldn't quantize `MatMul` per channel because the model has opset "
                     f"{self.get_model_opset()}, and 13 is the minimum required."
                 )
@@ -651,7 +657,7 @@ class QDQNormalization(QDQOperator):
 
         per_channel = self.quantizer.per_channel
         if per_channel:
-            logger.w(
+            logger.warning(
                 f"`{self.node.op_type}` will not be per-channel quantized, because it then couldn't be converted "
                 "to TFLite."
             )
@@ -965,7 +971,7 @@ class QDQQuantizer:
         weight_name = node.input[1]
         if weight_name not in initializer_names:
             overrides[weight_name] = [{"symmetric": True}]
-            logger.w(
+            logger.warning(
                 f"Conv node '{node.name}' has a dynamic (non-initializer) weight input "
                 f"'{weight_name}'. Forcing symmetric quantization for the weight tensor to "
                 "satisfy TFLite requirements. Slight accuracy degradation compared to "
@@ -1038,7 +1044,7 @@ class QDQQuantizer:
             if not hasattr(opset, "domain") or opset.domain == "":
                 return opset.version
 
-        logger.e(logger.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Model doesn't specify default opset version.")
 
     # noinspection PyPep8Naming,PyMethodMayBeStatic
     def _model_has_QDQ_nodes(self, model) -> bool:  # noqa: N802
@@ -1060,7 +1066,7 @@ class QDQQuantizer:
 
         unsupported = [op for op in op_types_to_quantize if op not in self.default_op_types_to_quantize]
         if unsupported:
-            logger.w(
+            logger.warning(
                 f"Op types {unsupported} are not supported for QDQ quantization and will be ignored. "
                 f"Supported op types: {self.default_op_types_to_quantize}."
             )
@@ -1075,15 +1081,10 @@ class QDQQuantizer:
         saved_model_name="quantized_model.onnx",
     ) -> onnx.ModelProto:
         if self._model_has_QDQ_nodes(model_proto):
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                "Model is already quantized. Quantization of such model can lead to infinite loop. Skipping.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Model is already quantized. Quantization of such model can lead to infinite loop. Skipping.")
 
-        with (
-            tempfile.TemporaryDirectory(prefix="onnx2tflite_") as tmp_dir,
-            loggingContext(logger.BasicLoggingContext.QDQ_QUANTIZER),
-        ):
+        with tempfile.TemporaryDirectory(prefix="onnx2tflite_") as tmp_dir:
+
             input_model_path = os.path.join(tmp_dir, "input_model.onnx")
             if save_model:
                 output_model_path = saved_model_name
@@ -1100,13 +1101,10 @@ class QDQQuantizer:
             Preprocessor(inferred_model_proto, quantization_config).preprocess()
 
             if self._get_model_opset(inferred_model_proto) < 11 and not quantization_config.allow_opset_10_and_lower:
-                logger.e(
-                    logger.Code.INVALID_ONNX_MODEL,
-                    "Quantization of models with opset version smaller than 11 can produce "
+                raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Quantization of models with opset version smaller than 11 can produce "
                     "invalid models. This applies especially to models with operators: Clip, "
                     "Dropout, BatchNormalization and Split. Use parameter 'allow_opset_10_and_lower' "
-                    "to disable this check.",
-                )
+                    "to disable this check.")
 
             # Get rid of preprocessing warning
             add_pre_process_metadata(inferred_model_proto)
@@ -1139,15 +1137,15 @@ class QDQQuantizer:
 
                 removed_ops = unoptimized_model_nodes_count - len(inferred_model_proto.graph.node)
                 if removed_ops > 0:
-                    logger.i(f"ORT model optimization step removed {removed_ops} ops.")
+                    logger.info(f"ORT model optimization step removed {removed_ops} ops.")
                 elif removed_ops == 0:
-                    logger.i("ORT model optimization step hasn't removed any nodes.")
+                    logger.info("ORT model optimization step hasn't removed any nodes.")
                 else:
-                    logger.w(f"ORT model optimization step added {abs(removed_ops)} ops.")
+                    logger.warning(f"ORT model optimization step added {abs(removed_ops)} ops.")
             except BaseException as e:  # noqa: BLE001
                 # Optimization failed - continue with non-optimized model
-                logger.w(f"Optimization step failed with: {type(e).__name__}. Skipping.")
-                logger.d(f"Optimization step failure reason: {traceback.format_exc()}")
+                logger.warning(f"Optimization step failed with: {type(e).__name__}. Skipping.")
+                logger.debug(f"Optimization step failure reason: {traceback.format_exc()}")
 
             extra_options: dict[str, Any] = {
                 "DedicatedQDQPair": True,

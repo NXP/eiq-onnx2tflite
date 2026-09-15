@@ -9,8 +9,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Mod(meta.ONNXOperatorAttributes):
@@ -27,4 +29,4 @@ class Mod(meta.ONNXOperatorAttributes):
             if attr.name == "fmod":
                 self.fmod = attr.i
             else:
-                logger.w(f"ONNX `Mod` attribute `{attr.name}` is not supported!")
+                logger.warning(f"ONNX `Mod` attribute `{attr.name}` is not supported!")

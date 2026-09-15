@@ -11,10 +11,11 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("shape", [[5, 2, 6, 3], [5, 2, 6], [10, 4], [10]], ids=(lambda x: f"shape={len(x)}D"))
@@ -224,7 +225,7 @@ def test_convert_where__invalid_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)

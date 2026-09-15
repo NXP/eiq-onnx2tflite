@@ -9,7 +9,6 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -19,6 +18,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import tile_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, name_for_type
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class TileConverter(NodeConverter):
@@ -44,18 +48,12 @@ class TileConverter(NodeConverter):
         self.assert_type_allowed(x.type)
 
         if repeats.type != TensorType.INT64:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `Tile` has unexpected `repeats` type {name_for_type(repeats.type)}.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Tile` has unexpected `repeats` type {name_for_type(repeats.type)}.")
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Tile` operator to TFLite `Tile`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `Tile` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Tile` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         self._check_input_types(t_op)
 
@@ -89,7 +87,7 @@ class TileConverter(NodeConverter):
         elif t_op.is_qdq_quantized() and x.quantization != y.quantization:
             # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
             # We need to re-quantize output because Tile expects shared q-params for input and output.
-            logger.w(
+            logger.warning(
                 "Requantizing the output of Tile operator. Quantizing with onnx2quant quantizer "
                 "can potentially avoid this."
             )

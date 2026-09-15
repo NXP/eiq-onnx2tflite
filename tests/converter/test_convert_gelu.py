@@ -10,9 +10,10 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -71,10 +72,10 @@ def test_convert_gelu__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT16' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT16' in str(exc_info.value)
 
 
 def test_convert_gelu__invalid_approximate():
@@ -87,6 +88,6 @@ def test_convert_gelu__invalid_approximate():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE

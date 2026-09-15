@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import quantization_utils
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
@@ -21,6 +20,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import quantize_linear_attri
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import quantize_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 QuantizeLinearAttrs = quantize_linear_attributes.QuantizeLinear
 
@@ -38,7 +39,7 @@ class QuantizeLinearConverter(NodeConverter):
         self, ql_attributes: QuantizeLinearAttrs, t_op: tflite_model.Operator
     ) -> tuple[np.ndarray, np.ndarray, int]:
         if len(t_op.tmp_inputs) not in {2, 3}:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, f"ONNX QuantizeLinear has '{len(t_op.tmp_inputs)}' inputs!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX QuantizeLinear has '{len(t_op.tmp_inputs)}' inputs!")
 
         rank = t_op.tmp_inputs[0].rank
         scale = t_op.tmp_inputs[1].tmp_buffer.data
@@ -50,13 +51,10 @@ class QuantizeLinearConverter(NodeConverter):
             zp = np.zeros(scale.shape, np.uint8)  # Default according to the documentation
 
         if scale is None or zp is None:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX 'QuantizeLinear' with dynamic quantization parameters is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX 'QuantizeLinear' with dynamic quantization parameters is not possible.")
 
         if not quantization_utils.is_quantization_valid(scale, zp):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `QuantizeLinear` has invalid quantization parameters.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `QuantizeLinear` has invalid quantization parameters.")
 
         # Set up the quantized dimension (axis in ONNX file).
         # The axis is ignored for per-tensor quantization [https://onnx.ai/onnx/operators/onnx__QuantizeLinear.html]
@@ -70,11 +68,8 @@ class QuantizeLinearConverter(NodeConverter):
                 quantized_dimension += rank
 
             if not (0 <= quantized_dimension < rank):
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                    f"ONNX QuantizeLinear has invalid 'axis'. '{ql_attributes.axis}' "
-                    f"must be in range [-{rank}, {rank - 1}]!",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX QuantizeLinear has invalid 'axis'. '{ql_attributes.axis}' "
+                    f"must be in range [-{rank}, {rank - 1}]!")
 
             if t_op.tmp_inputs[0].tensor_format.is_channels_last():
                 # Convert the quantized dimension index from ONNX to TFLite format
@@ -98,12 +93,9 @@ class QuantizeLinearConverter(NodeConverter):
         :return: Empty list of new operators added to the graph.
         """
         if len(t_op.tmp_outputs) != 1:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "'QuantizeLinear' operators that are part of QDQ cluster can "
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "'QuantizeLinear' operators that are part of QDQ cluster can "
                 "currently have only one output. Use extra option 'DedicatedQDQPair'"
-                " when quantizing the model with ONNX quantizer.",
-            )
+                " when quantizing the model with ONNX quantizer.")
 
         ql_attributes = cast(QuantizeLinearAttrs, node.attributes)
 
@@ -130,38 +122,23 @@ class QuantizeLinearConverter(NodeConverter):
 
         output_type = t_op.tmp_outputs[0].type
         if output_type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX QuantizeLinear with output type "
-                f"'{name_for_type(output_type)}' is not yet supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QuantizeLinear with output type "
+                f"'{name_for_type(output_type)}' is not yet supported.")
 
         ql_attributes = cast(QuantizeLinearAttrs, node.attributes)
 
         if ql_attributes.block_size != 0:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Attribute 'block_size' of ONNX operator 'QuantizeLinear' is not supported yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Attribute 'block_size' of ONNX operator 'QuantizeLinear' is not supported yet.")
 
         if ql_attributes.output_dtype != 0:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Attribute 'output_dtype' of ONNX operator 'QuantizeLinear' is not supported yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Attribute 'output_dtype' of ONNX operator 'QuantizeLinear' is not supported yet.")
 
         if ql_attributes.precision != 0:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Attribute 'precision' of ONNX operator 'QuantizeLinear' is not supported yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Attribute 'precision' of ONNX operator 'QuantizeLinear' is not supported yet.")
 
         if ql_attributes.saturate != 1:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX operator 'QuantizeLinear' with attribute "
-                f"'saturate' = '{ql_attributes.saturate}' is not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX operator 'QuantizeLinear' with attribute "
+                f"'saturate' = '{ql_attributes.saturate}' is not possible!")
 
         scale, zero_point, quantized_dimension = self._extract_quant_params(ql_attributes, t_op)
 

@@ -15,7 +15,6 @@ from tensorflow.lite.python.interpreter import OpResolverType
 from onnx2quant.qdq_quantization import InputSpec, QDQQuantizer, RandomDataCalibrationDataReader
 from onnx2quant.quantization_config import QuantizationConfig
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import QDQAwareConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
@@ -23,6 +22,8 @@ from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 from onnx2tflite.src.tflite_generator.builtin_options import batch_mat_mul_options, dequantize_options, \
     fully_connected_options, quantize_options, transpose_options
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("input_1_shape, input_2_shape, output_shape", [
@@ -360,9 +361,9 @@ def test_convert_matmul_qdq__per_channel_quant__unsupported(quant_type: TensorPr
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(3) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_matmul__qdq__per_channel(intermediate_tflite_model_provider):

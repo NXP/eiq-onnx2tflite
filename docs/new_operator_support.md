@@ -4,7 +4,8 @@ This guide defines a non-exhaustive list of topics that should be considered whe
 operator into the ONNX to TFLite converter.
 
 Whenever we're not able to convert the operator into its TFLite representation, we have to end conversion gracefully
-via ``logger.e()`` to avoid errors during the inference time.
+by raising a ``ConversionError`` (from ``onnx2tflite.src.errors``) with the appropriate ``Code`` to avoid errors
+during the inference time.
 
 ### Operator conversion integration
 

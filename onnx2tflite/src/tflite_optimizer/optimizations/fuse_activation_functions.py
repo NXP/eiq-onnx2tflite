@@ -7,13 +7,13 @@
 
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_optimizer.graph_utils import operator_is_type
 from onnx2tflite.src.tflite_optimizer.operator_rules import NoFusedActivationFunction
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
 from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorHasOneConsumer
+from onnx2tflite.src import errors
 
 
 class FuseActivationFunctions(BaseOptimization):
@@ -187,7 +187,7 @@ class FuseActivationFunctions(BaseOptimization):
         to_remove = []
         for [leading_op, act_fun_op], tensor_map, _, _ in matcher.match_patterns():
             builtin_leading_op = leading_op.builtin_options.operator_type
-            logger.internal_assert(
+            errors.internal_assert(
                 builtin_leading_op in self.supported_activations_for_op,
                 f"FuseActivationFunctions: supported activations for operator `{builtin_leading_op}`are not known.",
             )

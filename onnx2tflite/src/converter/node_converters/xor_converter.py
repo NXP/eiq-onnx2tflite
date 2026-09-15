@@ -7,12 +7,13 @@
 
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.not_equal_options import NotEqual
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class XorConverter(NodeConverter):
@@ -34,17 +35,14 @@ class XorConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `Xor` operator to TFLite `NotEqual`."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `Xor` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `Xor` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         x1 = t_op.tmp_inputs[0]
         x2 = t_op.tmp_inputs[1]
         y = t_op.tmp_outputs[0]
 
         if x1.type != x2.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Xor` has inputs with different types.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `Xor` has inputs with different types.")
 
         self.assert_type_allowed(x1.type)
 

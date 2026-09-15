@@ -6,13 +6,14 @@
 #
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, exactly_one_is_none
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.greater_equal_options import GreaterEqual
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class GreaterOrEqualConverter(NodeConverter):
@@ -28,18 +29,16 @@ class GreaterOrEqualConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `GreaterOrEqual` has invalid number of inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `GreaterOrEqual` has invalid number of inputs.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
 
         if x.type != y.type:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR, "ONNX `GreaterOrEqual` has input tensors with different data types."
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `GreaterOrEqual` has input tensors with different data types.")
 
         if exactly_one_is_none(x.quantization, y.quantization):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `GreaterOrEqual` has only 1 input quantized.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `GreaterOrEqual` has only 1 input quantized.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)

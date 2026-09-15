@@ -6,10 +6,11 @@
 #
 import numpy as np
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
+import logging
+
 from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     TensorDimensionsMatch,
     TensorHasRank,
@@ -19,6 +20,9 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     TensorsHaveData,
     TensorsHaveOneConsumer,
 )
+
+logger = logging.getLogger(__name__)
+
 
 
 class PermuteFullyConnectedWeightsAfterReshape(BaseOptimization):
@@ -96,7 +100,7 @@ class PermuteFullyConnectedWeightsAfterReshape(BaseOptimization):
             fc.tmp_inputs[1] = new_weights
 
             # Remove the `Transpose`.
-            logger.i(
+            logger.info(
                 f"Permuting the `weights`({w.name}) of a FullyConnected operator and removing an artificial "
                 "Transpose operator."
             )

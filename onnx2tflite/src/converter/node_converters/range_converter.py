@@ -8,12 +8,16 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import range_options
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class RangeConverter(NodeConverter):
@@ -37,7 +41,7 @@ class RangeConverter(NodeConverter):
                 return tensor.tmp_buffer.data
 
             if data := self.inspector.try_get_inferred_tensor_data(tensor.name):
-                logger.d(f"Using inferred data for `Range` input `{tensor.name}`.")
+                logger.debug(f"Using inferred data for `Range` input `{tensor.name}`.")
 
             return data
 
@@ -52,16 +56,16 @@ class RangeConverter(NodeConverter):
         #  had some issues using dynamic scalars (shape []) while writing the tests.
         # Right now, the shape inference would have already failed anyway.
 
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Range` with dynamic inputs is not supported.")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Range` with dynamic inputs is not supported.")
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Range` to TFLite `Range`."""
         if len(t_op.tmp_inputs) != 3:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has invalid number of inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has invalid number of inputs.")
 
         data_type = t_op.tmp_inputs[0].type
         if any(t.type != data_type for t in t_op.tmp_inputs):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has inputs with different data types.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has inputs with different data types.")
 
         self.assert_type_allowed(data_type)
 
@@ -70,14 +74,14 @@ class RangeConverter(NodeConverter):
         for input_tensor in t_op.tmp_inputs:
             # noinspection PySimplifyBooleanCheck
             if input_tensor.shape.vector != []:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has non-scalar inputs.")
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has non-scalar inputs.")
 
         # Get the operands of the `Range`, and check some edge cases.
         start, limit, delta = self._get_range_params(t_op)  # This call may raise an error.
 
         if delta == 0:
             # https://github.com/microsoft/onnxruntime/blob/d30c81d270894f41ccce7b102b1d4aedd9e628b1/onnxruntime/core/providers/cpu/generator/range.cc#L65
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has `delta` = 0, which is not allowed.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has `delta` = 0, which is not allowed.")
 
         if (start >= limit and delta > 0) or (start <= limit and delta < 0):
             # ONNX allows instances such as 'start = 0, limit = 10, step = -1'. The output is an empty tensor. Whereas

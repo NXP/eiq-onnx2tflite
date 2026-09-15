@@ -8,13 +8,14 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import gelu_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import gelu_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class GeluConverter(NodeConverter):
@@ -33,7 +34,7 @@ class GeluConverter(NodeConverter):
         :return: A list of TFLite operators to add to the model.
         """
         if len(t_op.tmp_inputs) != 1 or len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `Gelu` has invalid number of input and output tensors.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Gelu` has invalid number of input and output tensors.")
 
         x = t_op.tmp_inputs[0]
         if not t_op.is_qdq_quantized():
@@ -47,10 +48,7 @@ class GeluConverter(NodeConverter):
             approximate = True
 
         else:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX `Gelu` has invalid value `{o_gelu.approximate}` of the `approximate` attribute.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX `Gelu` has invalid value `{o_gelu.approximate}` of the `approximate` attribute.")
 
         # noinspection PyUnboundLocalVariable
         t_op.builtin_options = gelu_options.Gelu(approximate)

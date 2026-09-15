@@ -14,14 +14,21 @@ This file contains functions shared by the various files in the
 from collections.abc import MutableSequence
 from typing import Any, Optional
 
-from onnx2tflite.src import logger
+import logging
+
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator import tflite_model
+
 from onnx2tflite.src.tflite_generator.builtin_options import (
     average_pool_2d_options,
     conv_2d_options,
     max_pool_2d_options,
     transpose_conv_options,
 )
+
+logger = logging.getLogger(__name__)
+
 
 
 def exactly_one_is_none(obj1: Optional, obj2: Optional) -> bool:
@@ -118,9 +125,7 @@ def assign_2d_strides(options: StridedOptions, strides: list[int] | None) -> Non
         options.stride_w = strides[1]
 
     else:
-        logger.e(
-            logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX operator has invalid 'strides' attribute! ('{strides}')"
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX operator has invalid 'strides' attribute! ('{strides}')")
 
 
 def assign_2d_dilations(conv_2d: conv_2d_options, dilations: list[int] | None) -> None:
@@ -132,7 +137,7 @@ def assign_2d_dilations(conv_2d: conv_2d_options, dilations: list[int] | None) -
         conv_2d.dilation_h_factor = dilations[0]
         conv_2d.dilation_w_factor = dilations[1]
     else:
-        logger.d(f"Expected 2D dilations, got '{dilations}'. Leaving default values.")
+        logger.debug(f"Expected 2D dilations, got '{dilations}'. Leaving default values.")
 
 
 def uses_shape_broadcasting(t_op: tflite_model.Operator) -> bool:
@@ -143,10 +148,10 @@ def uses_shape_broadcasting(t_op: tflite_model.Operator) -> bool:
              False otherwise.
     """
     if t_op.tmp_inputs is None:
-        logger.e(logger.Code.INTERNAL_ERROR, "common.uses_shape_broadcasting(): 'tmp_inputs' are None!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "common.uses_shape_broadcasting(): 'tmp_inputs' are None!")
 
     if len(t_op.tmp_inputs) == 0:
-        logger.e(logger.Code.INTERNAL_ERROR, "common.uses_shape_broadcasting(): Operator has no inputs!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "common.uses_shape_broadcasting(): Operator has no inputs!")
 
     first_input_shape = t_op.tmp_inputs[0].shape
 
@@ -161,10 +166,10 @@ def uses_multiple_input_types(t_op: tflite_model.Operator) -> bool:
              False, if all input tensors use the same data type.
     """
     if t_op.tmp_inputs is None:
-        logger.e(logger.Code.INTERNAL_ERROR, "common.uses_multiple_input_types(): 'tmp_inputs' are None!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "common.uses_multiple_input_types(): 'tmp_inputs' are None!")
 
     if len(t_op.tmp_inputs) == 0:
-        logger.e(logger.Code.INTERNAL_ERROR, "common.uses_multiple_input_types(): Operator has no inputs!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "common.uses_multiple_input_types(): Operator has no inputs!")
 
     first_input_type = t_op.tmp_inputs[0].type
     return any([input_tensor.type != first_input_type for input_tensor in t_op.tmp_inputs[1:]])
@@ -196,7 +201,7 @@ class OpsList:
         if isinstance(ops, tflite_model.Operator):
             ops = [ops]
 
-        logger.internal_assert(isinstance(ops, list), "OpsList: add_pre() called with invalid value.")
+        errors.internal_assert(isinstance(ops, list), "OpsList: add_pre() called with invalid value.")
 
         self.pre_ops.extend(ops)
 
@@ -204,6 +209,6 @@ class OpsList:
         if isinstance(ops, tflite_model.Operator):
             ops = [ops]
 
-        logger.internal_assert(isinstance(ops, list), "OpsList: add_post() called with invalid value.")
+        errors.internal_assert(isinstance(ops, list), "OpsList: add_post() called with invalid value.")
 
         self.post_ops.extend(ops)

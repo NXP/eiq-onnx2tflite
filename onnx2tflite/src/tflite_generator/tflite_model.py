@@ -24,7 +24,13 @@ import onnx2tflite.lib.tflite.QuantizationParameters as libQuantizedParameters
 import onnx2tflite.lib.tflite.SubGraph as libSubGraphs
 import onnx2tflite.lib.tflite.Tensor as libTensor
 import onnx2tflite.lib.tflite.TensorType as libTensorType
-from onnx2tflite.src import logger, tensor_formatting
+import logging
+
+from onnx2tflite.src import errors, tensor_formatting
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
+
 from onnx2tflite.src.tflite_generator.meta import meta, types
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
 
@@ -65,7 +71,7 @@ class Buffer(meta.TFLiteObject):
             libBuffer.Start(builder)
             return libBuffer.End(builder)
 
-        logger.require_type(self.data, np.ndarray, "Buffer.data")
+        errors.require_type(self.data, np.ndarray, "Buffer.data")
 
         if self.data.dtype.itemsize != 1:
             # TFLite Buffer is an array of bytes. Larger datatypes must be reduced to bytes first.
@@ -81,11 +87,11 @@ class Buffer(meta.TFLiteObject):
         elif self.data.dtype.kind == "S":
             # String tensor. Not sure how to handle this case. I've played around with 'builder.CreateString()' but I
             #  couldn't quite make it work. As it is not a priority right now, just exit with error.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Generating a TFLite static string tensor is not yet supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Generating a TFLite static string tensor is not yet supported.")
 
         else:
             # Cannot use the 'CreateNumpyVector' method -> use specific prepend functions.
-            logger.w(
+            logger.warning(
                 f"Creating a static TFLite tensor buffer for type '{name_for_type(self.type)}'. "
                 "This is not a common case and it has not been tested!"
             )
@@ -133,9 +139,7 @@ class OperatorCode(meta.TFLiteObject):
         self.custom_code = custom_code
 
         if self.custom_code is not None and builtin_code != libBuiltinOperator.BuiltinOperator.CUSTOM:
-            logger.e(
-                logger.Code.INTERNAL_ERROR, f"Attempt to use custom code with non-CUSTOM builtin code ({builtin_code})."
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Attempt to use custom code with non-CUSTOM builtin code ({builtin_code}).")
 
     def gen_tflite(self, builder: fb.builder) -> int:
         """Generate TFLite representation for this OperatorCode"""
@@ -297,7 +301,7 @@ class Shape(meta.IntVector):
 
     @property
     def flat_size(self) -> int:
-        logger.internal_assert(self.is_well_defined(), f"Failed to compute flat size of shape {self}.")
+        errors.internal_assert(self.is_well_defined(), f"Failed to compute flat size of shape {self}.")
         return np.prod(self.vector).item()
 
     def is_symbolic(self) -> bool:
@@ -423,7 +427,7 @@ class Tensor(meta.TFLiteObject):
             name = None
 
         if self.quantization is not None:
-            logger.require_type(self.quantization, Quantization, "Tensor.quantization")
+            errors.require_type(self.quantization, Quantization, "Tensor.quantization")
             tfl_quantization = self.quantization.gen_tflite(builder)
         else:
             tfl_quantization = None
@@ -672,25 +676,25 @@ class SubGraph(meta.TFLiteObject):
         self.operators = operators
 
     def gen_tflite(self, builder: fb.Builder) -> int:
-        logger.expect_type(self.tensors, Tensors, "SubGraph.tensors")
+        errors.expect_type(self.tensors, Tensors, "SubGraph.tensors")
         if self.tensors is not None:
             tfl_tensors = self.tensors.gen_tflite(builder)
         else:
             tfl_tensors = None
 
-        logger.expect_type(self.inputs, SubGraphInputs, "SubGraph.inputs")
+        errors.expect_type(self.inputs, SubGraphInputs, "SubGraph.inputs")
         if self.inputs is not None:
             tfl_inputs = self.inputs.gen_tflite(builder)
         else:
             tfl_inputs = None
 
-        logger.expect_type(self.outputs, SubGraphOutputs, "SubGraph.outputs")
+        errors.expect_type(self.outputs, SubGraphOutputs, "SubGraph.outputs")
         if self.outputs is not None:
             tfl_outputs = self.outputs.gen_tflite(builder)
         else:
             tfl_outputs = None
 
-        logger.expect_type(self.operators, Operators, "SubGraph.operators")
+        errors.expect_type(self.operators, Operators, "SubGraph.operators")
         if self.operators is not None:
             tfl_operators = self.operators.gen_tflite(builder)
         else:
@@ -752,25 +756,25 @@ class Model(meta.TFLiteObject):
         self.buffers = buffers
 
     def gen_tflite(self, builder: fb.Builder) -> None:
-        logger.expect_type(self.operator_codes, OperatorCodes, "Model.operatorCodes")  # TODO change to 'require_type'
+        errors.expect_type(self.operator_codes, OperatorCodes, "Model.operatorCodes")  # TODO change to 'require_type'
         if self.operator_codes is not None:
             tfl_operator_codes = self.operator_codes.gen_tflite(builder)
         else:
             tfl_operator_codes = None
 
-        logger.expect_type(self.sub_graphs, SubGraphs, "Model.subGraphs")  # TODO change to 'require_type'
+        errors.expect_type(self.sub_graphs, SubGraphs, "Model.subGraphs")  # TODO change to 'require_type'
         if self.sub_graphs is not None:
             tfl_sub_graphs = self.sub_graphs.gen_tflite(builder)
         else:
             tfl_sub_graphs = None
 
         if self.description is not None:
-            logger.expect_type(self.description, str, "Model.description")
+            errors.expect_type(self.description, str, "Model.description")
             tfl_description = builder.CreateString(self.description)
         else:
             tfl_description = None
 
-        logger.expect_type(self.buffers, Buffers, "Model.buffers")  # TODO change to 'require_type'
+        errors.expect_type(self.buffers, Buffers, "Model.buffers")  # TODO change to 'require_type'
         if self.buffers is not None:
             tfl_buffers = self.buffers.gen_tflite(builder)
         else:

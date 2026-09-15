@@ -11,7 +11,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.conversion.translator import (
@@ -31,6 +30,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import clip_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import maximum_options, minimum_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection PyMethodMayBeStatic
@@ -111,7 +115,7 @@ class ClipConverter(NodeConverter):
             #  the +inf, conversion into 'Relu' would not be accurate.
             # For now, convert into Relu anyway.
             if x.type == TensorType.FLOAT32:
-                logger.i(
+                logger.info(
                     "Converting 'Clip' operator into Relu. This may cause some +inf values to stay unchanged, whereas"
                     " in ONNX, they would be clipped to 3.4028237e38."
                 )
@@ -144,11 +148,8 @@ class ClipConverter(NodeConverter):
                     # QDQ model with static min tensor
                     min_tensor = quantize_static_float_tensor(self.builder, min_tensor, x.type, scale, zp)
                 else:
-                    logger.e(
-                        logger.Code.NOT_IMPLEMENTED,
-                        "ONNX operator Clip with dynamic 'min' tensor and quantized by non-internal "
-                        "quantizer is currently not supported. Quantize model with internal quantizer.",
-                    )
+                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX operator Clip with dynamic 'min' tensor and quantized by non-internal "
+                        "quantizer is currently not supported. Quantize model with internal quantizer.")
 
             if max_tensor.quantization is None:
                 if max_tensor.type == x.type:
@@ -158,11 +159,8 @@ class ClipConverter(NodeConverter):
                     # QDQ model with static max tensor
                     max_tensor = quantize_static_float_tensor(self.builder, max_tensor, x.type, scale, zp)
                 else:
-                    logger.e(
-                        logger.Code.NOT_IMPLEMENTED,
-                        "ONNX operator Clip with dynamic 'max' tensor and quantized by non-internal "
-                        "quantizer is currently not supported. Quantize model with internal quantizer.",
-                    )
+                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX operator Clip with dynamic 'max' tensor and quantized by non-internal "
+                        "quantizer is currently not supported. Quantize model with internal quantizer.")
 
         return min_tensor, max_tensor
 
@@ -195,7 +193,7 @@ class ClipConverter(NodeConverter):
         if node.version < 11:
             # V6 -> uses attributes
             if len(t_op.tmp_inputs) != 1:
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Clip v6 has invalid number of inputs.")
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Clip v6 has invalid number of inputs.")
 
             min_tensor = self.builder.create_tensor_for_data(np.array([o_clip.min], np.float32), "min")
             max_tensor = self.builder.create_tensor_for_data(np.array([o_clip.max], np.float32), "max")
@@ -203,7 +201,7 @@ class ClipConverter(NodeConverter):
         else:
             # V11+ -> uses input tensors
             if not (1 <= len(t_op.tmp_inputs) <= 3):
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Clip v11+ has invalid number of inputs.")
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Clip v11+ has invalid number of inputs.")
 
             if (min_tensor := try_get_input(t_op, 1)) is None:
                 min_tensor = self.builder.create_tensor_for_data(
@@ -217,7 +215,7 @@ class ClipConverter(NodeConverter):
 
             # All tensors should have the same type if it's not QDQ model (min/max tensors can be float)
             if not is_qdq_model and not all(t.type == x.type for t in [x, min_tensor, max_tensor]):
-                logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Clip uses multiple types.")
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Clip uses multiple types.")
 
         # -- min_tensor and max_tensor are initialized, and may or may not contain static data. --
 
@@ -266,7 +264,7 @@ class ClipConverter(NodeConverter):
         if x.quantization is not None and x.quantization != y.quantization and len(ops_to_add) > 0:
             # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
             # We need to re-quantize output because Minimum/Maximum expects shared q-params for input and output.
-            logger.w("Requantizing output of Clip operator. Internal quantizer can potentially avoid this.")
+            logger.warning("Requantizing output of Clip operator. Internal quantizer can potentially avoid this.")
             scale = x.quantization.scale.vector
             zp = x.quantization.zero_point.vector
             ops_to_add.append(self.builder.create_quantize_operator_after(ops_to_add[-1], 0, x.type, scale, zp))

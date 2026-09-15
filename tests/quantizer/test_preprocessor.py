@@ -5,19 +5,22 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 import numpy as np
 import onnx
 from onnx import TensorProto
 
 from onnx2quant.qdq_quantization import QDQQuantizer, RandomDataCalibrationDataReader
 from onnx2quant.quantization_config import QuantizationConfig
-from onnx2tflite.src import logger
 from tests import executors
 from tests.executors import OnnxExecutor
 
 
-def test_preprocessor__replace_div_with_mul(intermediate_tflite_model_provider):
+def test_preprocessor__replace_div_with_mul(intermediate_tflite_model_provider, caplog):
+    caplog.set_level(logging.WARNING, logger="onnx2tflite")
     shape = [42]
+
 
     np.random.seed(23)
     static_value = (np.random.random(shape) + 2.).astype('float32')
@@ -48,7 +51,8 @@ def test_preprocessor__replace_div_with_mul(intermediate_tflite_model_provider):
     onnx_model_with_mul = QDQQuantizer().quantize_model(onnx_model, preprocessing_config)
 
     # Make sure the option to disable this preprocessing step was printed.
-    assert '--no-replace-div-with-mul' in logger.conversion_log.get_logs()['qdq_quantizer'][0]['message']
+    assert '--no-replace-div-with-mul' in caplog.text
+
 
     # Make sure the node got replaced.
     assert onnx_model_with_div.graph.node[7].op_type == 'Div'  # Div model has the `Div` node.

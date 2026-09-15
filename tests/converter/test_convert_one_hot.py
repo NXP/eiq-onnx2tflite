@@ -5,15 +5,19 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 import numpy as np
 import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
+
 from onnx2tflite.src.conversion_config import ConversionConfig, SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("in_type, out_type, depth_type", [
@@ -60,9 +64,9 @@ def test_convert_one_hot__invalid_types():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize("axis", [0, 1, 2, -1, -2, -3])
@@ -127,8 +131,10 @@ def test_convert_one_hot__static_negative_indices():
     executors.convert_run_compare(onnx_model, {})
 
 
-def test_convert_one_hot__inferred_negative_indices(intermediate_tflite_model_provider):
+def test_convert_one_hot__inferred_negative_indices(intermediate_tflite_model_provider, caplog):
+    caplog.set_level(logging.INFO, logger="onnx2tflite")
     input_shape = [2, 4, 6, 8]
+
     np.random.seed(42)
     input_data = (np.random.random(input_shape) * 10 - 5).astype(np.int64)
     depth = 3
@@ -155,8 +161,8 @@ def test_convert_one_hot__inferred_negative_indices(intermediate_tflite_model_pr
     config.dont_skip_nodes_with_known_outputs = True  # Make sure the `Reshape` doesn't just get skipped.
     executors.convert_run_compare(onnx_model, {}, conversion_config=config)
 
-    message = logger.conversion_log.get_logs()['node_1'][0]['message']
-    assert message == 'Using inferred static data for `OneHot` input tensor `indices` named `dynamic_indices`.'
+    assert 'Using inferred static data for `OneHot` input tensor `indices` named `dynamic_indices`.' in caplog.text
+
 
 
 def test_convert_one_hot__dynamic_indices(intermediate_tflite_model_provider):
@@ -176,10 +182,10 @@ def test_convert_one_hot__dynamic_indices(intermediate_tflite_model_provider):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    message = logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    message = str(exc_info.value)
     assert 'Conversion of ONNX `OneHot` with dynamic `indices` input is not possible' in message
     assert '--guarantee-non-negative-indices' in message
 
@@ -201,9 +207,9 @@ def test_convert_one_hot__static_negative_indices__dynamic_depth():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_logs()['shape_inference'][0]['error_code'] == logger.Code.SHAPE_INFERENCE_ERROR
+    assert exc_info.value.code == errors.Code.SHAPE_INFERENCE_ERROR
 
 
 def test_convert_one_hot__dynamic_values(intermediate_tflite_model_provider):
@@ -225,11 +231,11 @@ def test_convert_one_hot__dynamic_values(intermediate_tflite_model_provider):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
     assert 'Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.' in \
-           logger.conversion_log.get_node_error_message(0)
+           str(exc_info.value)
 
 
 @pytest.mark.parametrize("axis", [0, 1, 2, 3, 4])

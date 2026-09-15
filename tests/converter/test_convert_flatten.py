@@ -12,11 +12,12 @@ import onnx.helper
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def test_convert_flatten_default_axis_after_conv():
@@ -169,9 +170,9 @@ def test_convert_flatten_invalid_axis(axis: int):
     )
     original_model = onnx.helper.make_model(graph, producer_name="onnx-flatten")
     onnx.checker.check_model(original_model)
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         bytes(convert.convert_model(original_model))
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
 
 
 @pytest.mark.parametrize(

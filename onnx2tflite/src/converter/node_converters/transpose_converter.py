@@ -12,7 +12,6 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.transpose_options as tfl_transpose_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -22,6 +21,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import transpose_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.custom_options.flex_transpose_options import FlexTranspose
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
+import logging
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class TransposeConverter(NodeConverter):
@@ -53,17 +57,11 @@ class TransposeConverter(NodeConverter):
 
             if x.quantization is not None:
                 # TFLite inference crashes badly. Couldn't figure out why. (Fatal Python error: Aborted)
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX `Transpose` with > 5 dimensions and quantized data is not supported.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Transpose` with > 5 dimensions and quantized data is not supported.")
 
             if not self.context.conversion_config.allow_select_ops:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    f"Conversion of ONNX `Transpose` with {input_rank} dimensions without Flex delegate is not "
-                    "possible. " + logger.Message.ALLOW_SELECT_OPS,
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX `Transpose` with {input_rank} dimensions without Flex delegate is not "
+                    "possible. " + messages.Message.ALLOW_SELECT_OPS)
 
             t_op.custom_options = FlexTranspose()
 
@@ -76,7 +74,7 @@ class TransposeConverter(NodeConverter):
             if x.quantization != y.quantization:
                 # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
                 # We need to re-quantize output because Reshape expects shared q-params for input and output.
-                logger.w("Requantizing output of Transpose operator. Internal quantizer can potentially avoid this.")
+                logger.warning("Requantizing output of Transpose operator. Internal quantizer can potentially avoid this.")
                 scale = x.quantization.scale.vector
                 zp = x.quantization.zero_point.vector
                 ops.add_post(self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp))
@@ -90,10 +88,7 @@ class TransposeConverter(NodeConverter):
         else:
             perm = transpose_attrs.perm.copy()
             if len(perm) != input_rank:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                    f"ONNX Transpose attribute 'perm' does not match the input rank! ('{len(perm)}' != '{input_rank}')",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX Transpose attribute 'perm' does not match the input rank! ('{len(perm)}' != '{input_rank}')")
 
         if input_format.is_channels_last() and (not output_format.is_channels_last()):
             # Dimensions lose their meaning -> the output must be the same in ONNX and TFLite, but input is not the
@@ -122,7 +117,7 @@ class TransposeConverter(NodeConverter):
         # Verify that the permutation will create the expected output shape
         expected_output_shape = translator.apply_permutation_to(input_shape, perm)
         if expected_output_shape != output_shape:
-            logger.w(
+            logger.warning(
                 f"convert_transpose: The Transpose operator with input shape '{input_shape}' and permutation '{perm}'"
                 f" should produce output with shape '{output_shape}', but will produce '{expected_output_shape}'!"
             )

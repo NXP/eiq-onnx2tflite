@@ -8,7 +8,6 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -18,6 +17,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import batch_mat_mul_options, fully_connected_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class MatMulConverter(NodeConverter):
@@ -252,7 +253,7 @@ class MatMulConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if len(t_op.tmp_inputs) != 2:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, f"ONNX operator 'MatMul' has '{len(t_op.tmp_inputs)}' inputs!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX operator 'MatMul' has '{len(t_op.tmp_inputs)}' inputs!")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
@@ -260,20 +261,14 @@ class MatMulConverter(NodeConverter):
         y_rank = len(y.shape.vector)
 
         if x_rank > 5:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR, f"Input of 'MatMul' must have rank in range <1,5>. Got: {x_rank}!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"Input of 'MatMul' must have rank in range <1,5>. Got: {x_rank}!")
 
         if y_rank > 5:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR, f"Input of 'MatMul' must have rank in range <1,5>. Got: {y_rank}!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"Input of 'MatMul' must have rank in range <1,5>. Got: {y_rank}!")
 
         # Rare scenario - both inputs 1D - ignore for now
         if x_rank == 1 and y_rank == 1:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Both inputs of 'MatMul' has 1D rank what is currently not supported!"
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Both inputs of 'MatMul' has 1D rank what is currently not supported!")
 
         if t_op.is_qdq_quantized():
             # (U)INT8 MatMul is basically QLinearMatMul -> use already prepared conversion code
@@ -285,7 +280,7 @@ class MatMulConverter(NodeConverter):
             #  `DequantizeLinear`, which convert between float32 and (u)int8. Our approach to QDQ conversion removes
             #  these extra ops and makes the `MatMul` inputs (u)int8, which can cause the type mismatch.
             # If the `MatMul` is not QDQ quantized, the input types must be the same.
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'MatMul' has inputs with different data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'MatMul' has inputs with different data types!")
         self.assert_type_allowed(x.type)
 
         is_channels_last = x.tensor_format.is_channels_last() or y.tensor_format.is_channels_last()

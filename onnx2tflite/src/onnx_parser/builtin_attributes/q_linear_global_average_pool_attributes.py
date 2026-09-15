@@ -13,8 +13,12 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class QLinearGlobalAveragePool(meta.ONNXOperatorAttributes):
@@ -31,12 +35,9 @@ class QLinearGlobalAveragePool(meta.ONNXOperatorAttributes):
             if attr.name == "channels_last":
                 self.channels_last = attr.i
             else:
-                logger.w(f"ONNX QLinearGlobalAveragePool attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX QLinearGlobalAveragePool attribute '{attr.name}' is not supported!")
 
         if self.channels_last != 0:
             # The converter doesn't really consider this option right now.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX QLinearGlobalAveragePool with channels_last = "
-                f"'{self.channels_last}' is not yet implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearGlobalAveragePool with channels_last = "
+                f"'{self.channels_last}' is not yet implemented.")

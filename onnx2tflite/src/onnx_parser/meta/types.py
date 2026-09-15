@@ -11,8 +11,9 @@ Module implements functions that work with ONNX data types.
 
 import numpy as np
 import onnx
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
-from onnx2tflite.src import logger
 
 
 def name_for_onnx_type(o_type: onnx.TensorProto.DataType) -> str:
@@ -22,7 +23,7 @@ def name_for_onnx_type(o_type: onnx.TensorProto.DataType) -> str:
 def to_numpy_type(o_type: onnx.TensorProto.DataType) -> np.ScalarType:
     """Convert ONNX DataType to numpy dtype"""
     if o_type == onnx.TensorProto.UNDEFINED:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, "ONNX DataType 'UNDEFINED' is not supported.")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX DataType 'UNDEFINED' is not supported.")
 
     elif o_type == onnx.TensorProto.FLOAT:
         return np.dtype(np.float32)
@@ -71,7 +72,7 @@ def to_numpy_type(o_type: onnx.TensorProto.DataType) -> np.ScalarType:
 
     elif o_type == onnx.TensorProto.BFLOAT16:
         # numpy doesn't support bfloat16, and neither does TFLite. Perhaps convert to float32 if needed.
-        logger.e(logger.Code.NOT_IMPLEMENTED, "ONNX DataType 'BFLOAT16' is not yet supported.")
+        raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX DataType 'BFLOAT16' is not yet supported.")
 
     else:
-        logger.e(logger.Code.CONVERSION_IMPOSSIBLE, f"ONNX DataType '{o_type}' is not yet supported.")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"ONNX DataType '{o_type}' is not yet supported.")

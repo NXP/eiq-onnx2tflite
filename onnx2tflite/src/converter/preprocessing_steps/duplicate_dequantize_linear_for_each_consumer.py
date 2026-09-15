@@ -9,8 +9,10 @@ from collections import defaultdict
 import onnx
 from onnx.helper import make_tensor_value_info
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
@@ -49,7 +51,7 @@ class DuplicateDequantizeLinearForEachConsumer(PreprocessingStep):
         # which causes issues.
         if self.model.ir_version < 10:
             if len(dequantize_nodes_multiple_consumers) > 0:
-                logger.w(
+                logger.warning(
                     "Model contains DequantizeLinear nodes with multiple consumers but model's IR version < 10. "
                     "This will lead to unnecessary Dequantize ops in produced TFLite model and some operators "
                     "will not run quantized fashion. Use model with IR version >= 10."

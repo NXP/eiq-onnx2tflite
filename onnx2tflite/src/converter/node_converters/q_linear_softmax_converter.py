@@ -12,7 +12,6 @@ import numpy as np
 
 import onnx2tflite.src.onnx_parser.builtin_attributes.q_linear_softmax_attributes as onnx_ql_softmax_attribs
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
@@ -21,12 +20,20 @@ from onnx2tflite.src.converter.quantization_utils import set_quantization_parame
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
+import logging
+
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator.builtin_options import (
     reshape_options as tfl_reshape_options,
 )
+
 from onnx2tflite.src.tflite_generator.builtin_options import (
     softmax_options as tfl_softmax_options,
 )
+
+logger = logging.getLogger(__name__)
+
 
 
 # noinspection PyMethodMayBeStatic
@@ -42,10 +49,7 @@ class QLinearSoftmaxConverter(NodeConverter):
 
     def _normalize_axis(self, axis, rank) -> int:
         if axis < -rank or axis > rank - 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
 
         # convert negative index to positive
         if axis < 0:
@@ -61,11 +65,8 @@ class QLinearSoftmaxConverter(NodeConverter):
 
         # Avoid applying QLinearSoftmax when axis points to dimension of value 1
         if x.shape.vector[axis] == 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                "ONNX QLinearSoftmax attribute 'axis' points to dimension of value 1, "
-                f"providing undesired results. Input shape: {x.shape.vector}, Axis: {axis}",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearSoftmax attribute 'axis' points to dimension of value 1, "
+                f"providing undesired results. Input shape: {x.shape.vector}, Axis: {axis}")
 
         # tensor has format -> permute axis to TFLite format
         if x.tensor_format.is_channels_last():
@@ -175,11 +176,8 @@ class QLinearSoftmaxConverter(NodeConverter):
 
         # Avoid applying QLinearSoftmax when axis points to dimension of value 1
         if x.shape.vector[axis] == 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                "ONNX QLinearSoftmax attribute 'axis' points to dimension of value 1, "
-                f"providing undesired results. Input shape: {x.shape.vector}, Axis: {axis}",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearSoftmax attribute 'axis' points to dimension of value 1, "
+                f"providing undesired results. Input shape: {x.shape.vector}, Axis: {axis}")
 
         if x.tensor_format == TensorFormat.FORMATLESS and axis == rank - 1:
             # We don't need to reshape/transpose input when we compute over last dimension with formatless
@@ -205,7 +203,7 @@ class QLinearSoftmaxConverter(NodeConverter):
         output_zp = y.quantization.zero_point.vector
 
         if not math.isclose(output_scale[0], scale[0]) or not math.isclose(output_zp[0], zp[0]):
-            logger.w(
+            logger.warning(
                 f"Re-quantizing output tensor '{y.name}' of QLinearSoftmax op to satisfy TFLite's "
                 "q-param requirements. This can decrease accuracy of the model."
             )
@@ -231,16 +229,11 @@ class QLinearSoftmaxConverter(NodeConverter):
 
         # Input and output types must be the same
         if not (x_tensor.type == y_tensor.type):
-            logger.e(
-                logger.Code.INVALID_TYPE, "ONNX QLinearSoftmax input and output tensors must have the same data type!"
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, "ONNX QLinearSoftmax input and output tensors must have the same data type!")
 
         # ONNX only supports INT8 and UINT8
         if y_tensor.type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(
-                logger.Code.INVALID_TYPE,
-                f"ONNX QLinearSoftmax supports only INT8 and UINT8 data types. Got '{y_tensor.type}'.",
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, f"ONNX QLinearSoftmax supports only INT8 and UINT8 data types. Got '{y_tensor.type}'.")
 
         # Assign the operator its TFLite inputs and outputs
         t_op.tmp_inputs = [x_tensor]

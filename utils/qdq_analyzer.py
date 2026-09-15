@@ -17,7 +17,11 @@ from onnx2tflite.src.model_shape_inference import ModelShapeInference
 import onnx2tflite.src.onnx_parser.onnx_model as onnx_model
 from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 import numpy as np
-import onnx2tflite.src.logger as logger
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 def find_ops_with_output_tensor(model: onnx_model.ModelProto, tensor_name: str) -> [onnx_model.NodeProto]:
     """
@@ -46,9 +50,9 @@ def find_tensor(model: onnx_model.ModelProto, tensor_name: str):
               [i for i in model.graph.initializers if i.name == tensor_name] +
               [i for i in model.graph.value_info   if i.name == tensor_name])
     if not tensors:
-        logger.w('No tensor found')
+        logger.warning('No tensor found')
     if len(tensors) != 1:
-        logger.e(logger.Code.INVALID_INPUT, 'Multiple tensors found')
+        raise ConversionError(errors.Code.INVALID_INPUT, 'Multiple tensors found')
     return list(tensors)[0]
 
 
@@ -60,7 +64,7 @@ def get_tensor_type(tensor) -> np.ScalarType:
         return to_numpy_type(tensor.data_type)
     if isinstance(tensor, onnx_model.ValueInfoProto):
         return to_numpy_type(tensor.type.tensor_type.elem_type)
-    logger.e(logger.Code.INTERNAL_ERROR, 'Cannot determine tensor datatype')
+    raise ConversionError(errors.Code.INTERNAL_ERROR, 'Cannot determine tensor datatype')
 
 
 
@@ -224,11 +228,11 @@ def remove_qdq_scheme_ops(model, maybe_qdq_scheme_ops, quantized_ops, dequant_an
     for op in maybe_qdq_scheme_ops:
         if op.op_type == "QuantizeLinear" and all(i in quantized_ops for i in
                                                   find_ops_with_output_tensor(model, op.inputs[0])):
-            logger.d(f"REMOVING QuantizeOp: {op.name}")
+            logger.debug(f"REMOVING QuantizeOp: {op.name}")
             dequant_and_quant_ops.pop(op.name)
         elif op.op_type == "DequantizeLinear" and all(i in quantized_ops for i in
                                                       find_ops_with_input_tensor(model, op.outputs[0])):
-            logger.d(f"REMOVING DequantizeOp: {op.name}")
+            logger.debug(f"REMOVING DequantizeOp: {op.name}")
             dequant_and_quant_ops.pop(op.name)
         else:
             pass
@@ -267,7 +271,7 @@ def qdq_strict_pattern(model, quantized_ops, float_ops, dequantize_and_quantize_
         # if node.op_type in ["QuantizeLinear", "DequantizeLinear"]:
         #     continue
         if is_node_quantized(model, node):
-            logger.d(f'FOUND Quantized Operator {node.op_type}\t{node.name}')
+            logger.debug(f'FOUND Quantized Operator {node.op_type}\t{node.name}')
             maybe_qdq_scheme_ops.update(get_node_qdq_cluster(model, node))
             #  ******************************* Note ********************************************************************
             # We cannot yet remove operators from 'dequant_and_quant_ops' as this is a dictionary and we want to be safe,
@@ -319,7 +323,7 @@ def qdq_strict_pattern2(model, quantized_ops, float_ops, dequantize_and_quantize
         # if node.op_type in ["QuantizeLinear", "DequantizeLinear"]:
         #     continue
         if is_node_quantized2(model, node):
-            logger.d(f'FOUND Quantized Operator {node.op_type}\t{node.name}')
+            logger.debug(f'FOUND Quantized Operator {node.op_type}\t{node.name}')
             maybe_qdq_scheme_ops.update(get_node_qdq_cluster(model, node))
             #  ******************************* Note ********************************************************************
             # We cannot yet remove operators from 'dequant_and_quant_ops' as this is a dictionary and we want to be safe,
@@ -385,9 +389,9 @@ def qdq_ops_sequence(model, quantized_ops, float_ops, dequantize_and_quantize_op
         if is_node_input_quantized_3(model, op, quantized_ops + new_quantized_ops):  # start of potential sequence:
             sucess, cluster = _find_cluster(op)
             if sucess:
-                logger.d("FOUND a cluster:")
+                logger.debug("FOUND a cluster:")
                 for o in cluster:
-                    logger.d(f"OpType: {o.op_type}\tName: {o.name}")
+                    logger.debug(f"OpType: {o.op_type}\tName: {o.name}")
                 new_quantized_ops.extend(cluster)
 
     quantized_ops.extend(new_quantized_ops)
@@ -446,7 +450,6 @@ def onnx_model_sanity_check(onnx_model):
 
 
 if __name__ == "__main__":
-    logger.MIN_OUTPUT_IMPORTANCE = logger.MessageImportance.DEBUG
     parser = argparse.ArgumentParser(description='Utility to analyze QDQ Quantized ONNX model.')
     parser.add_argument("onnx_file")
 

@@ -11,11 +11,12 @@ import pytest
 from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig, SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("type_", [
@@ -54,9 +55,9 @@ def test_convert_pad__unsupported_type():
     onnx_model = onnx.helper.make_model(graph)
 
     config = ConversionConfig({"skip_opset_version_check": True})
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize(
@@ -95,9 +96,9 @@ def test_convert_pad_v2__with_negative_pads():
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 2)])
 
     config = ConversionConfig({"skip_opset_version_check": True})
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize(
@@ -186,9 +187,9 @@ def test_convert_pad_v2__bugged_reflect():
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 2)])
 
     config = ConversionConfig({"skip_opset_version_check": True})
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize(
@@ -226,9 +227,9 @@ def test_convert_pad_v2__edge():
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 2)])
 
     config = ConversionConfig({"skip_opset_version_check": True})
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize(
@@ -272,9 +273,9 @@ def test_convert_pad__dynamic_pads():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_pad__dynamic_axes():
@@ -297,9 +298,9 @@ def test_convert_pad__dynamic_axes():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_pad__default_axes():
@@ -376,24 +377,24 @@ def test_convert_pad__implicit_operands(shape: list[int], pads: list[int]):
 @pytest.mark.parametrize(
     "data_type, code",
     [
-        pytest.param(TensorProto.FLOAT16, logger.Code.CONVERSION_IMPOSSIBLE, id="FLOAT16"),
+        pytest.param(TensorProto.FLOAT16, errors.Code.CONVERSION_IMPOSSIBLE, id="FLOAT16"),
         pytest.param(TensorProto.FLOAT, None, id="FLOAT"),
-        pytest.param(TensorProto.DOUBLE, logger.Code.CONVERSION_IMPOSSIBLE, id="DOUBLE - unsupported"),
+        pytest.param(TensorProto.DOUBLE, errors.Code.CONVERSION_IMPOSSIBLE, id="DOUBLE - unsupported"),
 
         pytest.param(TensorProto.INT8, None, id="INT8"),
-        pytest.param(TensorProto.INT16, logger.Code.NOT_IMPLEMENTED, id="INT16 - unsupported"),
+        pytest.param(TensorProto.INT16, errors.Code.NOT_IMPLEMENTED, id="INT16 - unsupported"),
         pytest.param(TensorProto.INT32, None, id="INT32"),
         pytest.param(TensorProto.INT64, None, id="INT64"),
 
         pytest.param(TensorProto.UINT8, None, id="UINT8"),
-        pytest.param(TensorProto.UINT16, logger.Code.CONVERSION_IMPOSSIBLE, id="UINT16"),
-        pytest.param(TensorProto.UINT32, logger.Code.CONVERSION_IMPOSSIBLE, id="UINT32"),
-        pytest.param(TensorProto.UINT64, logger.Code.CONVERSION_IMPOSSIBLE, id="UINT64"),
+        pytest.param(TensorProto.UINT16, errors.Code.CONVERSION_IMPOSSIBLE, id="UINT16"),
+        pytest.param(TensorProto.UINT32, errors.Code.CONVERSION_IMPOSSIBLE, id="UINT32"),
+        pytest.param(TensorProto.UINT64, errors.Code.CONVERSION_IMPOSSIBLE, id="UINT64"),
 
-        pytest.param(TensorProto.BOOL, logger.Code.CONVERSION_IMPOSSIBLE, id="BOOL"),
-        pytest.param(TensorProto.STRING, logger.Code.CONVERSION_IMPOSSIBLE, id="STRING"),
+        pytest.param(TensorProto.BOOL, errors.Code.CONVERSION_IMPOSSIBLE, id="BOOL"),
+        pytest.param(TensorProto.STRING, errors.Code.CONVERSION_IMPOSSIBLE, id="STRING"),
     ])
-def test_convert_pad__implicit_constant_different_types(data_type: TensorProto.DataType, code: logger.Code | None):
+def test_convert_pad__implicit_constant_different_types(data_type: TensorProto.DataType, code: errors.Code | None):
     shape = [2, 3, 4, 5]
     pads = [1] * 8
     graph = onnx.helper.make_graph(
@@ -410,9 +411,9 @@ def test_convert_pad__implicit_constant_different_types(data_type: TensorProto.D
         executors.convert_run_compare(onnx_model, input_data)
 
     else:
-        with pytest.raises(logger.Error):
+        with pytest.raises(errors.ConversionError) as exc_info:
             convert.convert_model(onnx_model)
-        assert logger.conversion_log.get_node_error_code(0) == code
+        assert exc_info.value.code == code
 
 
 def test_convert_pad__with_quantized_input():
@@ -489,9 +490,9 @@ def test_convert_pad__bugged_reflect_mode():
         ]
     )
     onnx_model = onnx.helper.make_model(graph)
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize(
@@ -533,9 +534,9 @@ def test_convert_pad__edge_mode__unsupported_size():
         ]
     )
     onnx_model = onnx.helper.make_model(graph)
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_pad__wrap_mode():
@@ -552,9 +553,9 @@ def test_convert_pad__wrap_mode():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)

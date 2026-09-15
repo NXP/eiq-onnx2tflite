@@ -5,8 +5,10 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger as logger
 from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _buffer_has_data(t_buffer: tflite_model.Buffer) -> bool | None:
@@ -20,7 +22,7 @@ def _buffer_has_data(t_buffer: tflite_model.Buffer) -> bool | None:
         return size != 0
 
     except Exception as _:  # noqa: BLE001
-        logger.d("'ModelBuilder.bufferHasData()' failed!")
+        logger.debug("'ModelBuilder.bufferHasData()' failed!")
         return None
 
 

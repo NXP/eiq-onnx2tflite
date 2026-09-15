@@ -15,14 +15,14 @@ import pytest
 import tensorflow as tf
 
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_generator import tflite_model
 
-logger.MIN_OUTPUT_IMPORTANCE = logger.MessageImportance.DEBUG
+# Enable full logging output from the converter during tests so `caplog` can capture messages.
 pylogger = logging.getLogger("onnx2tflite")
 pylogger.setLevel(logging.DEBUG)
+
 
 @pytest.fixture
 def artifacts_dir():

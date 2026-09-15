@@ -6,6 +6,7 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 import traceback
 
 import flatbuffers as fb
@@ -16,16 +17,19 @@ import numpy as np
 import onnx.shape_inference
 
 from onnx2quant import qdq_quantization
-from onnx2tflite.src import logger, model_inspector, tensor_format_inference
+from onnx2tflite.src import errors, messages, model_inspector, tensor_format_inference
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.conversion_context import ConversionContext
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import operator_converter, tensor_converter
 from onnx2tflite.src.converter.conversion_preprocessor import ConversionPreprocessor
-from onnx2tflite.src.logger import BasicLoggingContext, Error, loggingContext
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
+
+logger = logging.getLogger(__name__)
+
 
 # Models with a lower opset will not be converted.
 MINIMUM_REQUIRED_OPSET = 7
@@ -42,21 +46,24 @@ def _assert_supported_opset(model: onnx_model.ModelProto, conversion_context: Co
     opset_map = {opset.domain: opset.version for opset in model.opset_imports}
     onnx_opset_version = opset_map.get("")
     if onnx_opset_version is None:
-        logger.e(logger.Code.INVALID_ONNX_MODEL, "The provided ONNX model doesn't have a specified opset version.")
+        raise ConversionError(
+            errors.Code.INVALID_ONNX_MODEL, "The provided ONNX model doesn't have a specified opset version."
+        )
 
     if onnx_opset_version < MINIMUM_REQUIRED_OPSET:
-        logger.e(
-            logger.Code.NOT_IMPLEMENTED,
+        raise ConversionError(
+            errors.Code.NOT_IMPLEMENTED,
             f"This model uses opset {onnx_opset_version}. Conversion of ONNX models"
-            f" with opset < {MINIMUM_REQUIRED_OPSET} is not supported. " + logger.Message.IGNORE_OPSET_VERSION,
+            f" with opset < {MINIMUM_REQUIRED_OPSET} is not supported. " + messages.Message.IGNORE_OPSET_VERSION,
         )
 
     if onnx_opset_version > MAXIMUM_VERIFIED_OPSET:
-        logger.e(
-            logger.Code.NOT_IMPLEMENTED,
+        raise ConversionError(
+            errors.Code.NOT_IMPLEMENTED,
             f"This model uses opset {onnx_opset_version}. Correct conversion of ONNX "
-            f"models with opset > {MAXIMUM_VERIFIED_OPSET} is not guaranteed. " + logger.Message.IGNORE_OPSET_VERSION,
+            f"models with opset > {MAXIMUM_VERIFIED_OPSET} is not guaranteed. " + messages.Message.IGNORE_OPSET_VERSION,
         )
+
 
 
 def _convert(conversion_context: ConversionContext) -> tflite_model.Model:
@@ -205,74 +212,68 @@ def convert_model(
     if conversion_config is None:
         conversion_config = ConversionConfig()
 
-    with loggingContext(BasicLoggingContext.GLOBAL):
-        try:
-            if isinstance(source, str):
-                # Parse the ONNX file
-                parsed_onnx_model = onnx.load(source)
-            elif isinstance(source, onnx.ModelProto):
-                # Use model directly
-                parsed_onnx_model = source
-            else:
-                logger.e(
-                    logger.Code.INVALID_INPUT,
-                    f"Cannot initialize ONNX model from object of type '{type(source)}'! "
-                    f"Expected type 'onnx.ModelProto' or 'string'.",
-                )
-
-            # Dictionary mapping names of ONNX tensors to their data, inferred by the shape inference.
-            inferred_tensor_data = {}
-
-            with loggingContext(BasicLoggingContext.SHAPE_INFERENCE):
-                # Infer the shapes of internal tensors
-                if conversion_config.skip_shape_inference:
-                    try:
-                        onnx.checker.check_model(parsed_onnx_model, full_check=True)
-                    except Exception as e:  # noqa: BLE001
-                        logger.e(
-                            logger.Code.SHAPE_INFERENCE_ERROR, f"ONNX model's shapes not completely defined: {e!s}"
-                        )
-                else:
-                    parsed_onnx_model = ModelShapeInference.infer_shapes(
-                        parsed_onnx_model,
-                        symbolic_dimensions_mapping=conversion_config.symbolic_dimensions_mapping,
-                        input_shapes_mapping=conversion_config.input_shapes_mapping,
-                        inferred_tensor_data=inferred_tensor_data,
-                        generate_artifacts_after_failed_shape_inference=conversion_config.generate_artifacts_after_failed_shape_inference,
-                    )
-
-            with loggingContext(BasicLoggingContext.CONVERSION_PREPROCESSING):
-                ConversionPreprocessor(parsed_onnx_model, conversion_config).preprocess()
-
-            with loggingContext(BasicLoggingContext.ONNX_PARSER):
-                # Initialize the internal ONNX model representation
-                internal_onnx_model = onnx_model.ModelProto(parsed_onnx_model)
-
-            conversion_context = build_conversion_context(internal_onnx_model, conversion_config, inferred_tensor_data)
-
-            with loggingContext(BasicLoggingContext.OPERATOR_CONVERSION):
-                # Convert the ONNX model to TFLite
-                internal_tflite_model = _convert(conversion_context)
-
-            with loggingContext(BasicLoggingContext.TFLITE_GENERATOR):
-                # Serialize the internal TFLite model
-                flatbuffer_builder = fb.Builder()
-                internal_tflite_model.gen_tflite(flatbuffer_builder)
-                flatbuffer_model = flatbuffer_builder.Output()
-        except google.protobuf.message.DecodeError as e:
-            logger.e(logger.Code.INVALID_INPUT, f"Failed to parse file '{source}'!", exception=e)
-        except FileNotFoundError as e:
-            logger.e(logger.Code.INVALID_INPUT, f"File '{source}' couldn't be found!", exception=e)
-        except Error as e:
-            # Just propagate the error
-            raise e
-        except Exception as e:  # noqa: BLE001
-            logger.d(f"Generic conversion exception caught ({type(e).__name__}). {traceback.format_exc()}")
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                f"Unexpected internal error: '[{type(e).__name__}] {e!s}'. Please report this issue on "
-                f"https://github.com/NXP/eiq-onnx2tflite/issues.",
-                exception=e,
+    try:
+        if isinstance(source, str):
+            # Parse the ONNX file
+            parsed_onnx_model = onnx.load(source)
+        elif isinstance(source, onnx.ModelProto):
+            # Use model directly
+            parsed_onnx_model = source
+        else:
+            raise ConversionError(
+                errors.Code.INVALID_INPUT,
+                f"Cannot initialize ONNX model from object of type '{type(source)}'! "
+                f"Expected type 'onnx.ModelProto' or 'string'.",
             )
 
-        return flatbuffer_model
+        # Dictionary mapping names of ONNX tensors to their data, inferred by the shape inference.
+        inferred_tensor_data = {}
+
+        # Infer the shapes of internal tensors
+        if conversion_config.skip_shape_inference:
+            try:
+                onnx.checker.check_model(parsed_onnx_model, full_check=True)
+            except Exception as e:
+                raise ConversionError(
+                    errors.Code.SHAPE_INFERENCE_ERROR, f"ONNX model's shapes not completely defined: {e!s}"
+                ) from e
+        else:
+            parsed_onnx_model = ModelShapeInference.infer_shapes(
+                parsed_onnx_model,
+                symbolic_dimensions_mapping=conversion_config.symbolic_dimensions_mapping,
+                input_shapes_mapping=conversion_config.input_shapes_mapping,
+                inferred_tensor_data=inferred_tensor_data,
+                generate_artifacts_after_failed_shape_inference=conversion_config.generate_artifacts_after_failed_shape_inference,
+            )
+
+        ConversionPreprocessor(parsed_onnx_model, conversion_config).preprocess()
+
+        # Initialize the internal ONNX model representation
+        internal_onnx_model = onnx_model.ModelProto(parsed_onnx_model)
+
+        conversion_context = build_conversion_context(internal_onnx_model, conversion_config, inferred_tensor_data)
+
+        # Convert the ONNX model to TFLite
+        internal_tflite_model = _convert(conversion_context)
+
+        # Serialize the internal TFLite model
+        flatbuffer_builder = fb.Builder()
+        internal_tflite_model.gen_tflite(flatbuffer_builder)
+        flatbuffer_model = flatbuffer_builder.Output()
+    except google.protobuf.message.DecodeError as e:
+        raise ConversionError(errors.Code.INVALID_INPUT, f"Failed to parse file '{source}'!") from e
+    except FileNotFoundError as e:
+        raise ConversionError(errors.Code.INVALID_INPUT, f"File '{source}' couldn't be found!") from e
+    except ConversionError:
+        # Just propagate the error
+        raise
+    except Exception as e:
+        logger.debug("Generic conversion exception caught (%s). %s", type(e).__name__, traceback.format_exc())
+        raise ConversionError(
+            errors.Code.INTERNAL_ERROR,
+            f"Unexpected internal error: '[{type(e).__name__}] {e!s}'. Please report this issue on "
+            f"https://github.com/NXP/eiq-onnx2tflite/issues.",
+        ) from e
+
+    return flatbuffer_model
+

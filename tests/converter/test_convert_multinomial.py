@@ -10,12 +10,16 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests.executors import OnnxExecutor, TFLiteExecutor, _assert_array_shape_equals_output_shape
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 # Since the `Multinomial` operator is RNG based, we cannot compare the TFLite and ONNX outputs directly. The tests below
@@ -53,7 +57,7 @@ def _convert_run_and_compare_distributions(onnx_model: onnx.ModelProto, data: np
     tflite_distribution = np.asarray(tflite_distribution, 'float32')
     onnx_distribution = np.asarray(onnx_distribution, 'float32')
 
-    logger.d(f'Maximum distribution difference = `{np.abs(tflite_distribution - onnx_distribution).max()}`.')
+    logger.debug(f'Maximum distribution difference = `{np.abs(tflite_distribution - onnx_distribution).max()}`.')
     assert np.allclose(tflite_distribution, onnx_distribution, atol=atol)
 
     return tflite_output, onnx_output
@@ -148,9 +152,9 @@ def test_convert_multinomial__invalid_dtype():
     onnx_model = onnx.helper.make_model(graph)
 
     # onnx.check_model() catches it before our converter can.
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
     assert 'int32 or int64' in e.value.msg
 
 
@@ -189,10 +193,10 @@ def test_convert_multinomial__invalid_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)
 
 
 def test_convert_multinomial__seed_mapping():

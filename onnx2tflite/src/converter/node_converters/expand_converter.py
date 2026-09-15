@@ -10,7 +10,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite import BuiltinOperator as tflBuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization
@@ -19,6 +18,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import broadcast_to_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ExpandConverter(NodeConverter):
@@ -46,7 +50,7 @@ class ExpandConverter(NodeConverter):
             propagate_quantization(x, output)
 
         if new_shape.type != TensorType.INT64:
-            logger.e(logger.Code.INVALID_TYPE, f"Input 'Shape' must be 'INT64' data type. Got '{new_shape.type}'.")
+            raise ConversionError(errors.Code.INVALID_TYPE, f"Input 'Shape' must be 'INT64' data type. Got '{new_shape.type}'.")
 
         if tensor_has_data(new_shape):
             # Try to broadcast shape and check if broadcasting has an effect on output shape
@@ -54,17 +58,14 @@ class ExpandConverter(NodeConverter):
             output_shape_same_as_input = np.array_equal(x.shape.vector, broadcasted_shape)
 
             if output_shape_same_as_input and self.builder.operator_can_be_skipped(t_op, self.inspector):
-                logger.i("Skipping operator 'Expand' because 'new_shape' input has no effect on output shape.")
+                logger.info("Skipping operator 'Expand' because 'new_shape' input has no effect on output shape.")
                 self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
                 return []
 
         if any(input_tensor.tensor_format.is_channels_last() for input_tensor in t_op.tmp_inputs):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "ONNX Operator 'Expand' uses shape broadcasting for its input tensors."
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX Operator 'Expand' uses shape broadcasting for its input tensors."
                 " This requires explicit support by the converter and has not yet been "
-                "implemented!",
-            )
+                "implemented!")
 
         ops = OpsList()
 
@@ -95,7 +96,7 @@ class ExpandConverter(NodeConverter):
         if x.quantization is not None and output.quantization is not None and x.quantization != output.quantization:
             # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
             # We need to re-quantize output because BroadcastTo expects shared q-params for input and output.
-            logger.w("Requantizing output of Expand operator. Internal quantizer can potentially avoid this.")
+            logger.warning("Requantizing output of Expand operator. Internal quantizer can potentially avoid this.")
             scale = x.quantization.scale.vector
             zp = x.quantization.zero_point.vector
             ops.add_post(self.builder.create_quantize_operator_after(broadcast_to, 0, x.type, scale, zp))

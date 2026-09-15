@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -20,6 +19,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import cum_sum_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import cum_sum_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class CumSumConverter(NodeConverter):
@@ -47,26 +48,17 @@ class CumSumConverter(NodeConverter):
 
             else:
                 # Prepend a `Cast` operator.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX `CumSum` with a dynamic INT64 `axis` is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `CumSum` with a dynamic INT64 `axis` is not yet supported.")
 
         else:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `CumSum` has unexpected `axis` type ({name_for_type(axis.type)}).",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `CumSum` has unexpected `axis` type ({name_for_type(axis.type)}).")
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `CumSum`` operator into TFLite `CumSum`."""
         ops = OpsList(middle_op=t_op)
 
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `CumSum` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `CumSum` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         self.assert_type_allowed(x.type)
@@ -86,10 +78,7 @@ class CumSumConverter(NodeConverter):
                 t_op.tmp_inputs[1] = new_axis
 
             else:
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX `CumSum` with a channels first input and a dynamic `axis` is not supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `CumSum` with a channels first input and a dynamic `axis` is not supported.")
 
         attrs = cast(cum_sum_attributes.CumSum, node.attributes)
         t_op.builtin_options = cum_sum_options.CumSum(bool(attrs.exclusive), bool(attrs.reverse))

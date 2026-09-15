@@ -10,10 +10,11 @@ import pytest
 from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.convert import convert_model
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -127,6 +128,6 @@ def test_convert_constant_with_complex_type():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model)
-    assert logger.conversion_log.get_logs()["onnx_parser"][0]["error_code"] == logger.Code.UNSUPPORTED_OPERATOR
+    assert exc_info.value.code == errors.Code.UNSUPPORTED_OPERATOR

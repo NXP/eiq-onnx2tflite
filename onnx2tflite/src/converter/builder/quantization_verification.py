@@ -10,8 +10,12 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.tflite_generator import tflite_model
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class IOTensor(abc.ABC):
@@ -70,7 +74,7 @@ class SharedParamsForType(QuantizationRule):
             elif isinstance(tensor, Output):
                 shared_tensors.append(op.tmp_outputs[tensor.idx])
             else:
-                logger.e(logger.Code.INTERNAL_ERROR, f"Unknown IOTensor type: {type(tensor)}")
+                raise ConversionError(errors.Code.INTERNAL_ERROR, f"Unknown IOTensor type: {type(tensor)}")
 
         if shared_tensors[0].type != self.tensor_type:
             return True
@@ -86,7 +90,7 @@ class SharedParamsForType(QuantizationRule):
 
         if not scales_same or not zp_same:
             tensor_names = [tensor.name for tensor in shared_tensors]
-            logger.w(f"Following tensors must have the same quantization parameters, "
+            logger.warning(f"Following tensors must have the same quantization parameters, "
                      f"but they don't: {', '.join(tensor_names)}.")
 
         return scales_same and zp_same
@@ -113,7 +117,7 @@ class ExactValueForType(QuantizationRule):
         elif isinstance(self.tensor, Output):
             tflite_tensor = op.tmp_outputs[self.tensor.idx]
         else:
-            logger.e(logger.Code.INTERNAL_ERROR, f"Unknown IOTensor type: {type(self.tensor)}")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Unknown IOTensor type: {type(self.tensor)}")
 
         if tflite_tensor.quantization is None or self.tensor_type != tflite_tensor.type:
             return True
@@ -170,27 +174,27 @@ class ValidBiasValues(QuantizationRule):
             return True
 
         if (input_1_quant := op.tmp_inputs[0].quantization) is None:
-            logger.w("Bias tensor quantized but first input tensor not. This is not supported in TFLite.")
+            logger.warning("Bias tensor quantized but first input tensor not. This is not supported in TFLite.")
             return False
         if (input_2_quant := op.tmp_inputs[1].quantization) is None:
-            logger.w("Bias tensor quantized but weight tensor not. This is not supported in TFLite.")
+            logger.warning("Bias tensor quantized but weight tensor not. This is not supported in TFLite.")
             return False
 
         if op.tmp_inputs[2].type != TensorType.INT32:
-            logger.w("Quantized bias tensor's type isn't INT32. This is not supported in TFLite.")
+            logger.warning("Quantized bias tensor's type isn't INT32. This is not supported in TFLite.")
             return False
 
         expected_bias_scale = np.array(input_1_quant.scale.vector) * np.array(input_2_quant.scale.vector)
 
         if not np.allclose(expected_bias_scale.astype(np.float32), np.array(bias_quant.scale.vector, dtype=np.float32)):
-            logger.w(
+            logger.warning(
                 f"Scale of quantized bias tensor '{op.tmp_inputs[2].name}' is not equal to 'input0_scale * "
                 "input1_scale[...]'. This is not supported in TFLite."
             )
             return False
 
         if bias_quant.zero_point.vector[0] != 0:
-            logger.w("Zero point of quantized bias tensor is not equal to '0'. This is not supported in TFLite.")
+            logger.warning("Zero point of quantized bias tensor is not equal to '0'. This is not supported in TFLite.")
             return False
 
         return True
@@ -323,7 +327,7 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
                     if not rule.valid(op):
                         # noinspection PyTypeChecker
                         op_type = int(op.builtin_options.operator_type)
-                        logger.w(
+                        logger.warning(
                             f"TFLite operator '{operator_type_str_map[op_type]}(op_type={op_type})' wasn't quantized "
                             f"properly. Following TFLite quantization rule was not satisfied: '{rule}'."
                         )
@@ -331,14 +335,11 @@ def verify_quantization_integrity(model: tflite_model.Model) -> None:
         elif operator_codes[op.opcode_index] in rules:
             for rule in rules[operator_codes[op.opcode_index]]:
                 if not rule.valid(op):
-                    logger.w(
+                    logger.warning(
                         f"TFLite operator with op_type='{operator_codes[op.opcode_index]}' wasn't quantized "
                         f"properly. Following TFLite quantization rule was not satisfied: '{rule}'."
                     )
                     is_error = True
 
     if is_error:
-        logger.e(
-            logger.Code.INTERNAL_ERROR,
-            "Some ops were not correctly quantized. Refer to previous log messages and please report this issue.",
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Some ops were not correctly quantized. Refer to previous log messages and please report this issue.")

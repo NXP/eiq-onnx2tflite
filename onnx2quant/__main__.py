@@ -18,14 +18,16 @@ from onnxruntime.quantization import CalibrationDataReader
 
 from onnx2quant.qdq_quantization import QDQQuantizer
 from onnx2quant.quantization_config import PER_CHANNEL_DEFAULT, QuantizationConfig
-from onnx2tflite.src import logger as context_logger
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter import convert
-from onnx2tflite.src.logger import BasicLoggingContext, Error, loggingContext
+from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger("onnx2tflite")
 syslog = logging.StreamHandler()
 syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
 logger.addHandler(syslog)
+logger.setLevel(logging.WARNING)
+
 
 
 def _get_preprocessing_parser() -> argparse.ArgumentParser:
@@ -191,11 +193,12 @@ def _parse_calibration_dataset_mapping(mapped_calibration_dataset: list[str] | s
         mapping_details = mapping.split(";")
 
         if len(mapping_details) != 2:
-            context_logger.e(
-                context_logger.Code.INVALID_INPUT,
+            raise ConversionError(
+                errors.Code.INVALID_INPUT,
                 f"Calibration dataset mapping '{mapping}' in invalid format. Must be "
                 f"'<input_name>;<path_to_dataset>' for example 'input_1;data_3_224/'.",
             )
+
         parsed_mapping[mapping_details[0]] = mapping_details[1]
 
     return parsed_mapping
@@ -234,16 +237,17 @@ class NpyCalibrationDataReader(CalibrationDataReader):
 
             filepaths = self._get_filepaths(dir_path)
             if len(filepaths) == 0:
-                context_logger.e(context_logger.Code.INVALID_INPUT, f"No *.npy files found in directory '{dir_path}'")
+                raise ConversionError(errors.Code.INVALID_INPUT, f"No *.npy files found in directory '{dir_path}'")
 
             self.input_data_paths.append(filepaths)
 
         input_lens = [len(dataset) for dataset in self.input_data_paths]
 
         if len(set(input_lens)) != 1:
-            context_logger.e(
-                context_logger.Code.INVALID_INPUT, "Input dataset dirs don't contain same number of *.npy files."
+            raise ConversionError(
+                errors.Code.INVALID_INPUT, "Input dataset dirs don't contain same number of *.npy files."
             )
+
 
         self.dataset_length = input_lens[0]
 
@@ -254,7 +258,8 @@ class NpyCalibrationDataReader(CalibrationDataReader):
         :return: List of paths to *.npy files.
         """
         if not os.path.isdir(dir_path):
-            context_logger.e(context_logger.Code.INVALID_INPUT, f"Path '{dir_path}' is not a directory.")
+            raise ConversionError(errors.Code.INVALID_INPUT, f"Path '{dir_path}' is not a directory.")
+
 
         return [os.path.join(dir_path, file) for file in os.listdir(dir_path) if file.endswith(".npy")]
 
@@ -294,52 +299,54 @@ def run_quantization() -> None:
         model_name = os.path.basename(args.onnx_model)
         output_onnx_model_path = model_name[:-5] + "_quant.onnx"
 
-    with loggingContext(BasicLoggingContext.GLOBAL):
-        try:
-            if args.symbolic_dimensions_mapping:
-                assert isinstance(args.symbolic_dimensions_mapping, list)
-                args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
-                    args.symbolic_dimensions_mapping
-                )
-
-            if args.input_shapes_mapping:
-                assert isinstance(args.input_shapes_mapping, list)
-                args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
-
-            if not args.use_random_calibration_dataset:
-                assert isinstance(args.calibration_dataset_mapping, list)
-                args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
-        except Exception as e:  # noqa: BLE001
-            context_logger.e(
-                context_logger.Code.INVALID_INPUT, f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}"
+    try:
+        if args.symbolic_dimensions_mapping:
+            assert isinstance(args.symbolic_dimensions_mapping, list)
+            args.symbolic_dimensions_mapping = convert.parse_symbolic_dimensions_mapping(
+                args.symbolic_dimensions_mapping
             )
 
-        try:
-            onnx_model = onnx.load(args.onnx_model)
+        if args.input_shapes_mapping:
+            assert isinstance(args.input_shapes_mapping, list)
+            args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
 
-            _quantize_model(onnx_model, output_onnx_model_path, vars(args))
-        except google.protobuf.message.DecodeError as e:
-            context_logger.e(
-                context_logger.Code.INVALID_INPUT, f"Failed to parse file '{args.onnx_model}'!", exception=e
-            )
-        except FileNotFoundError as e:
-            context_logger.e(
-                context_logger.Code.INVALID_INPUT, f"File '{args.onnx_model}' couldn't be found!", exception=e
-            )
-        except Error as e:
-            # Just propagate the error
-            raise e
-        except Exception as e:  # noqa: BLE001
-            context_logger.e(
-                context_logger.Code.INTERNAL_ERROR, f"Internal error ({type(e).__name__}). {traceback.format_exc()}"
-            )
+        if not args.use_random_calibration_dataset:
+            assert isinstance(args.calibration_dataset_mapping, list)
+            args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
+    except ConversionError:
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise ConversionError(
+            errors.Code.INVALID_INPUT, f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}"
+        ) from e
+
+    try:
+        onnx_model = onnx.load(args.onnx_model)
+
+        _quantize_model(onnx_model, output_onnx_model_path, vars(args))
+    except google.protobuf.message.DecodeError as e:
+        raise ConversionError(errors.Code.INVALID_INPUT, f"Failed to parse file '{args.onnx_model}'!") from e
+    except FileNotFoundError as e:
+        raise ConversionError(errors.Code.INVALID_INPUT, f"File '{args.onnx_model}' couldn't be found!") from e
+    except ConversionError:
+        # Just propagate the error
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise ConversionError(
+            errors.Code.INTERNAL_ERROR, f"Internal error ({type(e).__name__}). {traceback.format_exc()}"
+        ) from e
 
 
 def run_quantization_wrapper() -> None:
     try:
         run_quantization()
-    except context_logger.Error as e:
-        exit(e.error_code.value)
+    except ConversionError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception("%s", e)
+        else:
+            logger.error("%s", e)
+        raise SystemExit(e.code.value) from e
+
 
 
 if __name__ == "__main__":

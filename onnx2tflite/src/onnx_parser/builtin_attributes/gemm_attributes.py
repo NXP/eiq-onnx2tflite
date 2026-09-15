@@ -14,8 +14,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Gemm(meta.ONNXOperatorAttributes):
@@ -44,4 +46,4 @@ class Gemm(meta.ONNXOperatorAttributes):
             elif attr.name == "transB":
                 self.transB = attr.i
             else:
-                logger.w(f"ONNX Gemm attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Gemm attribute '{attr.name}' is not supported!")

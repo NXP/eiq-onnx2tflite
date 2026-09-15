@@ -9,7 +9,6 @@ from typing import cast
 
 import onnx2tflite.src.tflite_generator.builtin_options.reshape_options as tfl_reshape_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -19,6 +18,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes.flatten_attributes import Fl
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class FlattenConverter(NodeConverter):
@@ -45,10 +49,7 @@ class FlattenConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if axis < -rank or axis > rank:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX Flatten attribute 'axis' ({axis}) must be in range [{-rank}, {rank}]!!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX Flatten attribute 'axis' ({axis}) must be in range [{-rank}, {rank}]!!")
 
         # Ensure flatten is done in N[C]HW
         if x.tensor_format.is_channels_last():
@@ -64,7 +65,7 @@ class FlattenConverter(NodeConverter):
         elif t_op.is_qdq_quantized() and x.quantization != y.quantization:
             # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
             # We need to re-quantize output because Reshape expects shared q-params for input and output.
-            logger.w("Requantizing output of Flatten operator. Internal quantizer can potentially avoid this.")
+            logger.warning("Requantizing output of Flatten operator. Internal quantizer can potentially avoid this.")
             scale = x.quantization.scale.vector
             zp = x.quantization.zero_point.vector
             ops.add_post(self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp))

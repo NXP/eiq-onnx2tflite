@@ -11,10 +11,11 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_tensor
 from onnx2tflite.src.onnx_parser.meta import meta
 from onnx2tflite.src.onnx_parser.onnx_tensor import SparseTensor, TensorProto
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class Constant(meta.ONNXOperatorAttributes):
@@ -54,10 +55,7 @@ class Constant(meta.ONNXOperatorAttributes):
             elif attr.name == "value_strings":
                 self.value_strings = meta.ONNXStringListAttribute(attr)
             else:
-                logger.e(
-                    logger.Code.UNSUPPORTED_OPERATOR_ATTRIBUTES,
-                    f"ONNX Operator 'Constant' has attribute '{attr.name}' which is not yet supported!",
-                )
+                raise ConversionError(errors.Code.UNSUPPORTED_OPERATOR_ATTRIBUTES, f"ONNX Operator 'Constant' has attribute '{attr.name}' which is not yet supported!")
 
         # Exactly 1 of the operator attributes must be given!
         attrs = [
@@ -71,4 +69,4 @@ class Constant(meta.ONNXOperatorAttributes):
             hasattr(self, "value_strings"),
         ]
         if sum(attrs) != 1:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Constant' must have exactly 1 attribute set!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Constant' must have exactly 1 attribute set!")

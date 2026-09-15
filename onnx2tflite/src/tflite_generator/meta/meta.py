@@ -16,7 +16,9 @@ import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.BuiltinOperator as bOp
 import onnx2tflite.lib.tflite.BuiltinOptions as bOpt
-from onnx2tflite.src import logger
+import logging
+
+logger = logging.getLogger(__name__)
 
 """ This file contains parent classes for simple classes used in the '/model' directory. """
 
@@ -27,7 +29,7 @@ class TFLiteObject:
     """ Generates tflite representation for this object. MUST be overridden! """
 
     def gen_tflite(self, builder: fb.Builder) -> int:
-        logger.w("TFLiteObject: genTFLite() is not defined!")
+        logger.warning("TFLiteObject: genTFLite() is not defined!")
         return 0
 
 
@@ -213,16 +215,16 @@ class BuiltinOptions(TFLiteObject):
         self, builtin_options_type: bOpt.BuiltinOptions | int, operator_type: bOp.BuiltinOperator | int
     ) -> None:
         if builtin_options_type is None:
-            logger.d("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'builtinOptionsType'!")
+            logger.debug("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'builtinOptionsType'!")
         if operator_type is None:
-            logger.d("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'operatorType'!")
+            logger.debug("TFLITE: Operator inheriting from 'BuiltinOptions'. MUST specify the 'operatorType'!")
         self.builtin_options_type = builtin_options_type
         self.operator_type = operator_type
 
     """ Function has to be overwritten """
 
     def gen_tflite(self, builder: fb.Builder) -> int:
-        logger.w(f"BuiltinOperator '{self.builtin_options_type}':genTFLite() is not defined!")
+        logger.warning(f"BuiltinOperator '{self.builtin_options_type}':genTFLite() is not defined!")
         raise NotImplementedError
 
 

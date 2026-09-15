@@ -8,8 +8,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ReduceMean(meta.ONNXOperatorAttributes):
@@ -34,4 +36,4 @@ class ReduceMean(meta.ONNXOperatorAttributes):
             elif attr.name == "noop_with_empty_axes":
                 self.noop_with_empty_axes = attr.i
             else:
-                logger.w(f"ONNX `ReduceMean` attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX `ReduceMean` attribute '{attr.name}' is not supported!")

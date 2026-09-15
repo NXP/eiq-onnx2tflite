@@ -8,7 +8,6 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
@@ -18,6 +17,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import unsqueeze_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class UnsqueezeConverter(NodeConverter):
@@ -34,10 +38,7 @@ class UnsqueezeConverter(NodeConverter):
         attrs = cast(unsqueeze_attributes.Unsqueeze, node.attributes)
 
         if attrs.axes is not None and len(t_op.tmp_inputs) > 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                "Input 'axes' provided both as input tensor and attribute for 'Unsqueeze' operator.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "Input 'axes' provided both as input tensor and attribute for 'Unsqueeze' operator.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -54,7 +55,7 @@ class UnsqueezeConverter(NodeConverter):
             if x.quantization != y.quantization:
                 # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
                 # We need to re-quantize output because Reshape expects shared q-params for input and output.
-                logger.w("Requantizing output of Unsqueeze operator. Internal quantizer can potentially avoid this.")
+                logger.warning("Requantizing output of Unsqueeze operator. Internal quantizer can potentially avoid this.")
                 scale = x.quantization.scale.vector
                 zp = x.quantization.zero_point.vector
                 ops.add_post(self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp))
@@ -62,10 +63,7 @@ class UnsqueezeConverter(NodeConverter):
         new_shape = ensure_reshape_transposition(self.builder, ops)
 
         if len(new_shape) > 8:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!")
 
         # The new shape can be represented using operators parameters. No need for the 'axes' input tensor -> remove it
         if len(t_op.tmp_inputs) != 1:

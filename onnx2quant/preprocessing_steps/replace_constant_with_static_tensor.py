@@ -7,8 +7,10 @@
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ReplaceConstantWithStaticTensor(PreprocessingStep):
@@ -32,7 +34,7 @@ class ReplaceConstantWithStaticTensor(PreprocessingStep):
                         new_output_tensor = attr.t
 
                     case _:
-                        logger.d(f"ReplaceConstantWithStaticTensor: attribute `{attr.name}` is not yet supported.")
+                        logger.debug(f"ReplaceConstantWithStaticTensor: attribute `{attr.name}` is not yet supported.")
 
             # Add the `output_tensor` to `initializers`.
             new_output_tensor.name = node.output[0]

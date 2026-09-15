@@ -9,9 +9,10 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -98,10 +99,10 @@ def test_convert_range__zero_delta():
     )
 
     onnx_model = onnx.helper.make_model(graph)
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_logs()['shape_inference'][0]['error_code'] == logger.Code.INVALID_ONNX_OPERATOR
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
 
 
 @pytest.mark.parametrize(
@@ -145,10 +146,10 @@ def test_convert_range__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_MODEL
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL
 
 
 def test_convert_range__different_input_types():
@@ -165,10 +166,10 @@ def test_convert_range__different_input_types():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
 
 
 def test_convert_range__dynamic_inputs():
@@ -184,10 +185,10 @@ def test_convert_range__dynamic_inputs():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_logs()['shape_inference'][0]['error_code'] == logger.Code.SHAPE_INFERENCE_ERROR
+    assert exc_info.value.code == errors.Code.SHAPE_INFERENCE_ERROR
 
 # I couldn't think of an operator which outputs a scalar value, to test this.
 # Everything that I tried outputs a tensor of shape [1], but ONNX (and TFLite) needs shape [] for scalars.

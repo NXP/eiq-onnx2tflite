@@ -11,7 +11,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared import reduce_utils
@@ -21,6 +20,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_l2_attributes import 
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import cast_options, square_options, sum_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ReduceL2Converter(NodeConverter):
@@ -96,15 +100,12 @@ class ReduceL2Converter(NodeConverter):
         if axes_tensor := try_get_input(t_op, 1):
             # ONNX uses int64, while TFLite requires int32 for the `axes` tensor.
             if axes_tensor.type != TensorType.INT64:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR,
-                    f"ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.")
 
             # Try to get the inferred data for the `axes` input.
             if (axes_data := self.inspector.try_get_inferred_tensor_data(axes_tensor.name)) is not None:
                 # The `axes` were inferred during shape inference.
-                logger.d("Using inferred data for the `axes` input tensor of ONNX `ReduceL2`.")
+                logger.debug("Using inferred data for the `axes` input tensor of ONNX `ReduceL2`.")
 
                 # Create a new tensor, in case the original `axes` tensor is used by multiple ops.
                 axes_tensor = self.builder.create_tensor_for_data(axes_data.astype(np.int32), "axes")
@@ -121,7 +122,7 @@ class ReduceL2Converter(NodeConverter):
                 #  on runtime data. Conversion could be implemented by adding multiple extra operators.
                 # I don't thing that completely prohibiting the conversion here is ideal, since the issue arises only in
                 #  an edge case, which is hopefully not very common. Just print a warning message for now.
-                logger.w(
+                logger.warning(
                     "Conversion of ONNX `ReduceL2` with a dynamic `axes` input will not be correct, if the `axes`"
                     "are empty at runtime!"
                 )
@@ -156,12 +157,9 @@ class ReduceL2Converter(NodeConverter):
             #     self.builder.turn_operator_to_identity(t_op)
             #     return [t_op]
 
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                "ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
                 " indicates that the operator should do nothing. This is however not supported by ONNX"
-                " Runtime, and therefore the conversion is also not supported.",
-            )
+                " Runtime, and therefore the conversion is also not supported.")
 
         else:
             # Default is to reduce all axes.
@@ -194,7 +192,7 @@ class ReduceL2Converter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `ReduceL2` operator into TFLite's `Square` + `Sum` + `Sqrt`."""
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceL2` has unexpected number of inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceL2` has unexpected number of inputs.")
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 

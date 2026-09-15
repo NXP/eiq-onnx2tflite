@@ -7,15 +7,19 @@
 #
 
 
+import logging
 import typing
 
 # noinspection PyPackageRequirements
 import google.protobuf.message
 import onnx
 
-from onnx2tflite.src import logger, tensor_formatting
+from onnx2tflite.src import errors, tensor_formatting
 from onnx2tflite.src.onnx_parser import builtin_attributes, onnx_tensor
 from onnx2tflite.src.onnx_parser.meta import meta
+
+logger = logging.getLogger(__name__)
+
 
 
 class Tensor(meta.ONNXObject):
@@ -340,7 +344,10 @@ class NodeProto(meta.ONNXObject):
 
         if self._init_node_attributes:
             if self.op_type not in NodeProto.op_type_to_attribute_constructor_map:
-                logger.e(logger.Code.UNSUPPORTED_OPERATOR, f"ONNX operator '{self.op_type}' is not yet supported!")
+                raise errors.ConversionError(
+                    errors.Code.UNSUPPORTED_OPERATOR, f"ONNX operator '{self.op_type}' is not yet supported!"
+                )
+
 
             get_attributes_fn = NodeProto.op_type_to_attribute_constructor_map[self.op_type]
             if get_attributes_fn is None:
@@ -368,20 +375,21 @@ class RepeatedNodeProto(list[NodeProto]):
         unsupported_nodes = set()
 
         for idx, descriptor in enumerate(descriptor_iterable):
-            with logger.loggingContext(logger.NodeLoggingContext(idx)):
-                if descriptor.domain not in opset_map:
-                    logger.e(
-                        logger.Code.INVALID_ONNX_OPERATOR,
-                        f"Domain '{descriptor.domain}' not present in model's opset_imports.",
-                    )
-                try:
-                    self.append(NodeProto(descriptor, opset_map[descriptor.domain], idx, init_node_attributes))
-                except logger.Error:
-                    unsupported_nodes.add(descriptor.op_type)
+            if descriptor.domain not in opset_map:
+                raise errors.ConversionError(
+                    errors.Code.INVALID_ONNX_OPERATOR,
+                    f"Domain '{descriptor.domain}' not present in model's opset_imports.",
+                )
+            try:
+                self.append(NodeProto(descriptor, opset_map[descriptor.domain], idx, init_node_attributes))
+            except errors.ConversionError as e:
+                logger.error("Node %d ('%s'): %s", idx, descriptor.op_type, e)
+                unsupported_nodes.add(descriptor.op_type)
 
         if len(unsupported_nodes) > 0:
             msg = f"Model contains unsupported nodes: [{', '.join(unsupported_nodes)}]."
-            logger.e(logger.Code.UNSUPPORTED_OPERATOR, msg)
+            raise errors.ConversionError(errors.Code.UNSUPPORTED_OPERATOR, msg)
+
 
 
 class GraphProto(meta.ONNXObject):
@@ -447,18 +455,21 @@ class ModelProto(meta.ONNXObject):
                 model = onnx.load(source)
                 super().__init__(model)
 
-            except google.protobuf.message.DecodeError:
-                logger.e(logger.Code.INVALID_INPUT, f"Couldn't parse model from file '{source}'!")
+            except google.protobuf.message.DecodeError as e:
+                raise errors.ConversionError(
+                    errors.Code.INVALID_INPUT, f"Couldn't parse model from file '{source}'!"
+                ) from e
 
         elif isinstance(source, onnx.ModelProto):
             super().__init__(source)
 
         else:
-            logger.e(
-                logger.Code.INVALID_INPUT,
+            raise errors.ConversionError(
+                errors.Code.INVALID_INPUT,
                 f"Cannot initialize ONNX model from object of type '{type(source)}'! "
                 f"Expected type 'onnx.ModelProto' or 'string'.",
             )
+
 
     def _init_attributes(self) -> None:
         """Initialize object attributes from the '_descriptor' attribute of the parent object."""

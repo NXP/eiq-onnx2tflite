@@ -12,10 +12,11 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta import types
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -64,10 +65,10 @@ def test_convert_less_with_unsupported_type():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize(
@@ -92,9 +93,9 @@ def test_convert_less_with_types_unsupported_by_onnx_try_convert(main_shape: Lis
     onnx_model.opset_import[0].version = 17
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_MODEL
+    assert e.value.code == errors.Code.INVALID_ONNX_MODEL
 
 
 def test_convert_less_with_different_input_types():
@@ -111,10 +112,10 @@ def test_convert_less_with_different_input_types():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
 
 
 @pytest.mark.parametrize(

@@ -12,12 +12,13 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.Padding import Padding
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder.model_builder import ModelBuilder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes, q_linear_conv_attributes
+import logging
+
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import (
     concatenation_options,
@@ -25,6 +26,9 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
     conv_3d_options,
     split_options,
 )
+
+logger = logging.getLogger(__name__)
+
 
 ConvAttributes = conv_attributes.Conv | q_linear_conv_attributes.QLinearConv
 TFTensor = tflite_model.Tensor
@@ -58,14 +62,14 @@ def group_conv_convertible_into_multiple_convolutions(o_conv_attributes: ConvAtt
     if isinstance(o_conv_attributes, q_linear_conv_attributes.QLinearConv):
         weight_tensor = t_op.tmp_inputs[3]
         if weight_tensor.shape.vector[0] % o_conv_attributes.group != 0:
-            logger.d("Unable to split group QLinearConv into separated convolutions because out_channels % group != 0.")
+            logger.debug("Unable to split group QLinearConv into separated convolutions because out_channels % group != 0.")
             return False
 
     elif isinstance(o_conv_attributes, conv_attributes.Conv):
         weight_tensor = t_op.tmp_inputs[1]
 
         if weight_tensor.shape.vector[0] % o_conv_attributes.group != 0:
-            logger.d("Unable to split group Conv into separated convolutions because out_channels % group != 0.")
+            logger.debug("Unable to split group Conv into separated convolutions because out_channels % group != 0.")
             return False
 
     if o_conv_attributes.group == 1:
@@ -73,7 +77,7 @@ def group_conv_convertible_into_multiple_convolutions(o_conv_attributes: ConvAtt
 
     is_supported_group_count = 2 <= o_conv_attributes.group <= 10
     if not is_supported_group_count:
-        logger.d("Attribute 'group' of Conv operator not in range 2 <= 'group' <= 10. Splitting not performed.")
+        logger.debug("Attribute 'group' of Conv operator not in range 2 <= 'group' <= 10. Splitting not performed.")
 
     return is_supported_group_count
 

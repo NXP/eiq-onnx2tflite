@@ -8,8 +8,12 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class GRU(meta.ONNXOperatorAttributes):
@@ -53,13 +57,11 @@ class GRU(meta.ONNXOperatorAttributes):
             elif attr.name == "linear_before_reset":
                 self.linear_before_reset = attr.i
             else:
-                logger.w(f"ONNX GRU attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX GRU attribute '{attr.name}' is not supported!")
 
         # Attribute 'hidden_size' is required
         if not hasattr(self, "hidden_size"):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'GRU' is missing required 'hidden_size' attribute!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'GRU' is missing required 'hidden_size' attribute!")
 
         if self.activations is None:
             if self.direction == "forward":

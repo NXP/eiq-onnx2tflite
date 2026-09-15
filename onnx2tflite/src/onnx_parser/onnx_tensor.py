@@ -20,7 +20,13 @@ import typing
 import numpy as np
 import onnx
 
-from onnx2tflite.src import logger, tensor_formatting
+import logging
+
+from onnx2tflite.src import errors, tensor_formatting
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
+
 from onnx2tflite.src.onnx_parser.meta import meta, types
 
 
@@ -41,7 +47,7 @@ class Dimension(meta.ONNXObject):
         elif self._descriptor.HasField("dim_param"):
             self.value = self._descriptor.dim_param
         else:
-            logger.w("ONNX TensorShape.Dimension has no valid value!")
+            logger.warning("ONNX TensorShape.Dimension has no valid value!")
 
 
 class TensorShapeProto(meta.ONNXObject):
@@ -124,17 +130,13 @@ class TensorProto(meta.ONNXObject):
         try:
             if self.data_type in [onnx.TensorProto.COMPLEX64, onnx.TensorProto.COMPLEX128]:
                 # TODO Explicit support needs to be implemented. Probably not worth the time right now.
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Loading ONNX complex tensors is not yet supported!")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Loading ONNX complex tensors is not yet supported!")
 
             # Some models use empty tensor with dimension [0]. Avoid reshaping.
             if self.dims != [0]:
                 self.data = np.reshape(self.data, self.dims)
         except Exception as e:  # noqa: BLE001
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'",
-                exception=e,
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'") from e
 
     def _assign_data(self) -> None:
         """Assign tensor's data to the 'data' attribute from any initialized array in the descriptor.
@@ -156,7 +158,7 @@ class TensorProto(meta.ONNXObject):
 
             if self.data_type == onnx.TensorProto.COMPLEX64:
                 # TODO Explicit support needs to be implemented. Probably not worth the time right now.
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Loading ONNX complex tensors is not yet supported!")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Loading ONNX complex tensors is not yet supported!")
 
             self.data = np.fromiter(self._descriptor.float_data, types.to_numpy_type(self.data_type))
 
@@ -188,12 +190,12 @@ class TensorProto(meta.ONNXObject):
 
         # String data
         elif _has_data(self._descriptor.string_data):
-            logger.i("onnx_tensor.TensorProto._assignData(): string_data")
+            logger.info("onnx_tensor.TensorProto._assignData(): string_data")
 
             # 'onnx-ml.proto' line '555'
             self._assert_type_allowed([onnx.TensorProto.STRING], "string_data")
 
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Loading ONNX string tensors is not yet implemented!")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Loading ONNX string tensors is not yet implemented!")
 
         # Int64 data
         elif _has_data(self._descriptor.int64_data):
@@ -204,27 +206,27 @@ class TensorProto(meta.ONNXObject):
 
         # Double data
         elif _has_data(self._descriptor.double_data):
-            logger.i("onnx_tensor.TensorProto._assignData(): double_data")
+            logger.info("onnx_tensor.TensorProto._assignData(): double_data")
 
             # 'onnx-ml.proto' line '612'
             self._assert_type_allowed([onnx.TensorProto.DOUBLE, onnx.TensorProto.COMPLEX128], "double_data")
 
             if self.data_type == onnx.TensorProto.COMPLEX128:
                 # TODO Explicit support needs to be implemented. Probably not worth the time right now.
-                logger.e(logger.Code.NOT_IMPLEMENTED, "Loading ONNX complex tensors is not yet supported!")
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Loading ONNX complex tensors is not yet supported!")
 
             self.data = np.fromiter(self._descriptor.double_data, types.to_numpy_type(self.data_type))
 
         # Uint64 data
         elif _has_data(self._descriptor.uint64_data):
-            logger.i("onnx_tensor.TensorProto._assignData(): uint64_data")
+            logger.info("onnx_tensor.TensorProto._assignData(): uint64_data")
 
             # 'onnx-ml.proto' line '617'
             self._assert_type_allowed([onnx.TensorProto.UINT32, onnx.TensorProto.UINT64], "uint64_data")
 
             if self.data_type == onnx.TensorProto.UINT32:
                 # UINT32 and UINT64 have different size. Loadig may potentially be inaccurate.
-                logger.i("onnx_tensor.TensorProto._assign_data(): uint64_data + UINT32.")
+                logger.info("onnx_tensor.TensorProto._assign_data(): uint64_data + UINT32.")
 
             self.data = np.fromiter(self._descriptor.uint64_data, types.to_numpy_type(self.data_type))
 
@@ -235,7 +237,7 @@ class TensorProto(meta.ONNXObject):
         Return 'True' if type is allowed.
         """
         if self.data_type not in allowed_types:
-            logger.w(
+            logger.warning(
                 f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! "
                 f"MUST be one of '{allowed_types}'."
             )
@@ -249,7 +251,7 @@ class TensorProto(meta.ONNXObject):
         Return 'True' if type is not banned.
         """
         if self.data_type in banned_types:
-            logger.w(
+            logger.warning(
                 f"ONNX Tensor '{for_field}' is used and 'data_type' is '{self.data_type}'! must NOT be "
                 f"one of '{banned_types}'."
             )

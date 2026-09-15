@@ -12,9 +12,10 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("kernel_shape, auto_pad, pads, strides", [
@@ -260,9 +261,9 @@ def test_convert_2d_q_linear_average_pool_with_unusable_explicit_padding(kernel_
     onnx_model = onnx.helper.make_model(graph)
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize("kernel_shape, auto_pad, pads, strides", [
@@ -296,27 +297,27 @@ def test_convert_2d_q_linear_average_pool_with_count_include_pad(kernel_shape: L
     onnx_model = onnx.helper.make_model(graph)
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize(
     "input_shape, error_code",
     [
-        pytest.param([2, 4, 6, 8, 10], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 5D"),
-        pytest.param([2, 4, 6, 8, 10, 12], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (1)"),
-        pytest.param([2, 4, 6, 1, 10, 12], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (2)"),
+        pytest.param([2, 4, 6, 8, 10], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 5D"),
+        pytest.param([2, 4, 6, 8, 10, 12], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (1)"),
+        pytest.param([2, 4, 6, 1, 10, 12], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (2)"),
 
-        pytest.param([2, 4, 1, 8, 10], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (1)"),
-        pytest.param([2, 4, 6, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (2)"),
-        pytest.param([2, 4, 1, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (3)"),
+        pytest.param([2, 4, 1, 8, 10], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (1)"),
+        pytest.param([2, 4, 6, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (2)"),
+        pytest.param([2, 4, 1, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (3)"),
 
-        pytest.param([2, 4, 6, 8, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (1)"),
-        pytest.param([2, 4, 1, 1, 1, 12], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (2)"),
-        pytest.param([2, 4, 1, 1, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (3)"),
+        pytest.param([2, 4, 6, 8, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (1)"),
+        pytest.param([2, 4, 1, 1, 1, 12], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (2)"),
+        pytest.param([2, 4, 1, 1, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (3)"),
     ])
-def test_convert_q_linear_average_pool_with_large_rank(input_shape: List[int], error_code: logger.Code):
+def test_convert_q_linear_average_pool_with_large_rank(input_shape: List[int], error_code: errors.Code):
     kernel_shape = input_shape[2:]
     scale = [0.1]
     zp = [42]
@@ -336,9 +337,9 @@ def test_convert_q_linear_average_pool_with_large_rank(input_shape: List[int], e
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == error_code
+    assert exc_info.value.code == error_code
 
 
 def test_convert_1d_q_linear_average_pool_with_symbolic_shape():
@@ -389,9 +390,9 @@ def test_convert_q_linear_average_pool_with_channels_last():
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.UNSUPPORTED_OPERATOR
 
 
 def test_convert_q_linear_average_pool_with_ceil_mode():
@@ -416,9 +417,9 @@ def test_convert_q_linear_average_pool_with_ceil_mode():
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_q_linear_average_pool_with_dynamic_quantization_parameters():
@@ -440,9 +441,9 @@ def test_convert_q_linear_average_pool_with_dynamic_quantization_parameters():
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_q_linear_average_pool_with_per_channel_quantization():
@@ -464,9 +465,9 @@ def test_convert_q_linear_average_pool_with_per_channel_quantization():
     onnx_model.opset_import.append(onnx.helper.make_opsetid("com.microsoft", 1))  # Add opset with QLinearAveragePool
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_q_linear_average_pool__default_output_zero_point():

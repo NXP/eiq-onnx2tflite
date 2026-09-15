@@ -13,8 +13,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Shape(meta.ONNXOperatorAttributes):
@@ -35,4 +37,4 @@ class Shape(meta.ONNXOperatorAttributes):
             elif attr.name == "end":
                 self.end = attr.i
             else:
-                logger.w(f"ONNX 'Shape' attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX 'Shape' attribute '{attr.name}' is not supported!")

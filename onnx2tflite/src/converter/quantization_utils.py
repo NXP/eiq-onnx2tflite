@@ -13,11 +13,12 @@ from onnxruntime.quantization import quant_utils
 
 from onnx2tflite.lib.tflite import TensorType as tflTensorType
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger as logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def quantization_is_equal(
@@ -47,9 +48,7 @@ def quantization_is_equal(
 
 def quantization_params_to_lists(scale: np.ndarray, zero_point: np.ndarray) -> (list[float], list[int]):
     if (scale is None) or (zero_point is None):
-        logger.e(
-            logger.Code.INTERNAL_ERROR, "Missing zero_point and/or scale quantization params when converting to list!"
-        )
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Missing zero_point and/or scale quantization params when converting to list!")
 
     if (scale.size == 1) and (zero_point.size == 1):
         # Per tensor quantization
@@ -60,10 +59,7 @@ def quantization_params_to_lists(scale: np.ndarray, zero_point: np.ndarray) -> (
         scale = scale.tolist()
         zero_point = zero_point.tolist()
     else:
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            "TFLite doesn't support combination of per-channel and per-tensor quantization params.",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "TFLite doesn't support combination of per-channel and per-tensor quantization params.")
 
     return scale, zero_point
 
@@ -104,7 +100,7 @@ def get_symmetric_zero_point_for_type(tensor_type: TensorType) -> int:
         case TensorType.UINT8:
             return 128
         case _:
-            logger.e(logger.Code.INTERNAL_ERROR, f"Attempt to get zero point definition for type: {tensor_type}")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Attempt to get zero point definition for type: {tensor_type}")
 
 
 def re_compute_q_params_for_type(
@@ -118,19 +114,16 @@ def re_compute_q_params_for_type(
     :return: Tuple with scale and zero_point values as lists.
     """
     if tensor.quantization is None:
-        logger.e(logger.Code.INTERNAL_ERROR, f"Attempt to re-compute q-params for non-quantized tensor {tensor.name}.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"Attempt to re-compute q-params for non-quantized tensor {tensor.name}.")
 
     scale = tensor.quantization.scale.vector
     zp = tensor.quantization.zero_point.vector
 
     if len(scale) > 1:
-        logger.e(
-            logger.Code.NOT_IMPLEMENTED,
-            "Q-params re-computing is currently not supported for per-channel quantized tensors.",
-        )
+        raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Q-params re-computing is currently not supported for per-channel quantized tensors.")
 
     if not tensor_has_data(tensor):
-        logger.e(logger.Code.INTERNAL_ERROR, f"Attempt to re-compute q-params for non-static tensor {tensor.name}.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, f"Attempt to re-compute q-params for non-static tensor {tensor.name}.")
 
     match new_type:
         case TensorType.INT8:
@@ -138,7 +131,7 @@ def re_compute_q_params_for_type(
         case TensorType.UINT8:
             q_type = TensorProto.UINT8
         case _:
-            logger.e(logger.Code.INTERNAL_ERROR, f"Attempt to get zero point definition for type: {new_type}")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"Attempt to get zero point definition for type: {new_type}")
 
     data = dequantize(tensor.tmp_buffer.data, scale, zp)
     r_min = np.min(data)
@@ -166,14 +159,11 @@ def _validate_or_set_quant_params(tensor: tflite_model.Tensor, quant: tflite_mod
 def propagate_quantization(from_tensor: tflite_model.Tensor, to_tensor: tflite_model.Tensor) -> None:
     """Propagates quantization parameters from from_tensor to to_tensor. If to_tensor already has the params set
     checks the consistency.
-    :raises: logger.Error - INVALID_ONNX_MODEL
+    :raises: errors.ConversionError - INVALID_ONNX_MODEL
     """
     # noinspection PyTypeChecker
     if not _validate_or_set_quant_params(to_tensor, from_tensor.quantization):
-        logger.e(
-            logger.Code.INVALID_ONNX_MODEL,
-            f'Mismatched quantization parameters between tensors "{from_tensor.name}" and "{to_tensor.name}"',
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f'Mismatched quantization parameters between tensors "{from_tensor.name}" and "{to_tensor.name}"')
 
 
 def set_quantization_parameters_to_tensor(
@@ -189,10 +179,7 @@ def set_quantization_parameters_to_tensor(
     :param quantized_dimension: The quantized dimension attribute of TFLite QuantizationParameters.
     """
     if (scale is None) or (zero_point is None):
-        logger.e(
-            logger.Code.NOT_IMPLEMENTED,
-            "Conversion of ONNX quantized operators is only supported when the quantization parameters are static!",
-        )
+        raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX quantized operators is only supported when the quantization parameters are static!")
 
     if (scale.size == 1) and (zero_point.size == 1):
         # Per tensor quantization
@@ -203,33 +190,24 @@ def set_quantization_parameters_to_tensor(
         # Per channel quantization
 
         if scale.size != zero_point.size:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"The per channel quantization parameters of ONNX tensor "
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"The per channel quantization parameters of ONNX tensor "
                 f"'{tflite_tensor.name}' are of different sizes! ('{scale.size}'"
-                f" != '{zero_point.size}')",
-            )
+                f" != '{zero_point.size}')")
 
         quantized_dimension_size = tflite_tensor.shape.get(quantized_dimension)
         if scale.size != quantized_dimension_size:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"The ONNX per channel quantization parameter vectors do not "
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"The ONNX per channel quantization parameter vectors do not "
                 f"match the size of the quantized dimension! ('{scale.size}' != "
-                f"'{quantized_dimension_size}')",
-            )
+                f"'{quantized_dimension_size}')")
 
         scale = scale.tolist()
         zero_point = zero_point.tolist()
 
     else:
         # Combination of per tensor and per channel quantization parameters
-        logger.e(
-            logger.Code.INVALID_ONNX_MODEL,
-            f"ONNX tensor '{tflite_tensor.name}' uses a combination of per "
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX tensor '{tflite_tensor.name}' uses a combination of per "
             f"tensor and per channel quantization parameters. Conversion to "
-            f"TFLite is not possible!",
-        )
+            f"TFLite is not possible!")
 
     quant = tflite_model.Quantization(
         scale=tflite_model.Scale(scale),
@@ -237,11 +215,8 @@ def set_quantization_parameters_to_tensor(
         quantized_dimension=quantized_dimension,
     )
     if not _validate_or_set_quant_params(tflite_tensor, quant):
-        logger.e(
-            logger.Code.INVALID_ONNX_MODEL,
-            f'Mismatched quantization parameters between tensors: "{tflite_tensor.name}" already '
-            f"has the quantization params set",
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f'Mismatched quantization parameters between tensors: "{tflite_tensor.name}" already '
+            f"has the quantization params set")
 
 
 def calculate_uint_to_int_re_quantization_zero_point(
@@ -300,10 +275,10 @@ def re_quantize_static_tensor(
     :return: A new re-quantized tensor.
     """
     if tflite_tensor.quantization is None:
-        logger.e(logger.Code.INTERNAL_ERROR, "translator.re_quantize_static_tensor(): Got tensor without quantization!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "translator.re_quantize_static_tensor(): Got tensor without quantization!")
 
     if tflite_tensor.tmp_buffer.data is None:
-        logger.e(logger.Code.INTERNAL_ERROR, "translator.re_quantize_static_tensor(): Got tensor without static data!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "translator.re_quantize_static_tensor(): Got tensor without static data!")
 
     new_dtype = tf_lite_type_to_numpy(to_type)
     re_quantized_tensor = builder.duplicate_tensor(tflite_tensor)
@@ -319,7 +294,7 @@ def re_quantize_static_tensor(
 
     elif tensor_data.dtype == np.int32 and new_dtype == np.int8:  # INT32 -> INT8
         if new_zero_point is None or new_scale is None:
-            logger.e(logger.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
 
         old_zp = re_quantized_tensor.quantization.zero_point.vector
         old_scale = re_quantized_tensor.quantization.scale.vector
@@ -333,7 +308,7 @@ def re_quantize_static_tensor(
 
     elif tensor_data.dtype == np.int32 and new_dtype == np.uint8:  # INT32 -> UINT8
         if new_zero_point is None or new_scale is None:
-            logger.e(logger.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
 
         old_zp = re_quantized_tensor.quantization.zero_point.vector
         old_scale = re_quantized_tensor.quantization.scale.vector
@@ -348,7 +323,7 @@ def re_quantize_static_tensor(
     elif tensor_data.dtype == np.int8 and new_dtype == np.int8:  # INT8 -> INT8
         # Re-quantizing int8 tensor data with different quantization parameters
         if new_zero_point is None or new_scale is None:
-            logger.e(logger.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
 
         zero_point_data = re_quantized_tensor.quantization.zero_point.vector
         scale_data = re_quantized_tensor.quantization.scale.vector
@@ -360,7 +335,7 @@ def re_quantize_static_tensor(
 
     elif tensor_data.dtype == np.int32 and new_dtype == np.int32:  # INT32 -> INT32
         if new_zero_point is None or new_scale is None:
-            logger.e(logger.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when re-quantizing tensor.")
 
         old_zp = re_quantized_tensor.quantization.zero_point.vector
         old_scale = re_quantized_tensor.quantization.scale.vector
@@ -380,11 +355,8 @@ def re_quantize_static_tensor(
         #     all_slices.append(np.asarray((tensor_slice + new_zero_point[i]) / scale[i], output_type))
         # re_quantized_tensor = np.stack(all_slices, axis=axis)
 
-        logger.e(
-            logger.Code.NOT_IMPLEMENTED,
-            f"Re-quantization of static tensors from type '{tensor_data.dtype}' "
-            f"to type '{to_type}' is not yet implemented!",
-        )
+        raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Re-quantization of static tensors from type '{tensor_data.dtype}' "
+            f"to type '{to_type}' is not yet implemented!")
 
     return re_quantized_tensor
 
@@ -407,16 +379,16 @@ def quantize_static_float_tensor(
     :param quantized_dimension: Quantized dimension.
     """
     if tflite_tensor.quantization is not None:
-        logger.e(logger.Code.INTERNAL_ERROR, "Got tensor with quantization!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Got tensor with quantization!")
 
     if tflite_tensor.tmp_buffer.data is None:
-        logger.e(logger.Code.INTERNAL_ERROR, "Got tensor without static data!")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Got tensor without static data!")
 
     quantized_tensor = builder.duplicate_tensor(tflite_tensor)
     tensor_data = quantized_tensor.tmp_buffer.data
 
     if zero_point is None or scale is None:
-        logger.e(logger.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when quantizing tensor.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Missing new zero_point or new scale when quantizing tensor.")
 
     new_dtype = tf_lite_type_to_numpy(to_type)
 
@@ -451,10 +423,7 @@ def quantize_static_float_tensor(
         quantized_tensor.quantization.quantized_dimension = quantized_dimension
 
     else:
-        logger.e(
-            logger.Code.NOT_IMPLEMENTED,
-            f"Quantization of static tensors from type '{tensor_data.dtype}' "
-            f"to type '{to_type}' is not yet implemented!",
-        )
+        raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Quantization of static tensors from type '{tensor_data.dtype}' "
+            f"to type '{to_type}' is not yet implemented!")
 
     return quantized_tensor

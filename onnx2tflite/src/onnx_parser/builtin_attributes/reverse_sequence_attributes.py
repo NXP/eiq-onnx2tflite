@@ -5,8 +5,10 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ReverseSequence(meta.ONNXOperatorAttributes):
@@ -25,4 +27,4 @@ class ReverseSequence(meta.ONNXOperatorAttributes):
                 case "time_axis":
                     self.time_axis = attr.i
                 case _:
-                    logger.w(f"ONNX `ReverseSequence` attribute `{attr.name}` is not supported!")
+                    logger.warning(f"ONNX `ReverseSequence` attribute `{attr.name}` is not supported!")

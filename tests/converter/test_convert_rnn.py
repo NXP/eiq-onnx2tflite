@@ -9,9 +9,10 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def noise(shape: list[int]) -> np.ndarray:
@@ -124,10 +125,10 @@ def test_convert_forward_rnn_with_unsupported_activations(activations: list[str]
                               activations=activations)
     ], x_shape, w_shape, r_shape, b_shape)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_forward_rnn_with_channels_first_input():
@@ -175,9 +176,9 @@ def test_convert_rnn_with_layout():
         onnx.helper.make_node('RNN', ['x', 'w', 'r'], ['y'], hidden_size=16, layout=1)
     ], *_get_rnn_shapes())
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
 
 
 def test_convert_rnn_with_clip():
@@ -185,9 +186,9 @@ def test_convert_rnn_with_clip():
         onnx.helper.make_node('RNN', ['x', 'w', 'r'], ['y'], hidden_size=16, clip=1.)
     ], *_get_rnn_shapes())
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_rnn_with_initial_h():
@@ -215,9 +216,9 @@ def test_convert_rnn_with_initial_h():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_rnn_with_2_outputs():
@@ -242,9 +243,9 @@ def test_convert_rnn_with_2_outputs():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 # ------------------------------------------ REVERSE ------------------------------------------
@@ -322,10 +323,10 @@ def test_convert_reverse_rnn_with_unsupported_activations(activations: list[str]
                               activations=activations)
     ], x_shape, w_shape, r_shape, b_shape)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_reverse_rnn_with_channels_first_input():
@@ -444,10 +445,10 @@ def test_convert_bidirectional_rnn_with_unsupported_activations(activations: lis
                               activations=activations)
     ], x_shape, w_shape, r_shape, b_shape)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_bidirectional_rnn_with_channels_first_input():
@@ -556,7 +557,7 @@ def test_convert_rnn__invalid_type():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)

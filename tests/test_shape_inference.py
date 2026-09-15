@@ -14,11 +14,11 @@ import pytest
 from onnx import TensorProto
 from onnxruntime.tools.symbolic_shape_infer import get_shape_from_type_proto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.convert import convert_model
-from onnx2tflite.src.logger import conversion_log
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("input_shape,output_shape", [
@@ -134,7 +134,7 @@ def test_shape_inference__multiple_inputs_symbolic():
         opset_imports=[onnx.helper.make_opsetid(domain="com.microsoft", version=1),
                        onnx.helper.make_opsetid(domain="", version=8)])
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         ModelShapeInference.infer_shapes(onnx_model)
 
     assert "Model inputs contain following symbolic dimensions: 'batch'." in e.value.msg
@@ -175,7 +175,7 @@ def test_ignoring_automatic_symbolic_batch_dim_for_model_with_2_inputs():
     )
     model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         ModelShapeInference.infer_shapes(model)
 
     assert "Model inputs contain following symbolic dimensions: 'N'." in e.value.msg
@@ -201,13 +201,14 @@ def test_undefined_symbolic_dimensions_logged():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model)
 
-    error_log = logger.conversion_log.get_logs()["shape_inference"][0]["message"]
-    assert "[Code.INVALID_INPUT] - Model inputs contain following symbolic dimensions:" in error_log
+    error_log = str(exc_info.value)
+    assert "[INVALID_INPUT] - Model inputs contain following symbolic dimensions:" in error_log
     assert 'batch' in error_log
     assert 'w' in error_log
+
 
 
 def test_symbolic_dimensions_definition():
@@ -235,9 +236,9 @@ def test_symbolic_dimensions_definition():
         "batch": 1,
         "w": 10
     }
+    # Should convert successfully without raising.
     _ = convert_model(onnx_model, conversion_config=cc)
 
-    assert len(conversion_log.get_logs()) == 0
 
 
 def test_partial_symbolic_dimensions_definition():
@@ -263,11 +264,11 @@ def test_partial_symbolic_dimensions_definition():
     cc = ConversionConfig()
     cc.symbolic_dimensions_mapping = {"batch": 1}
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model, conversion_config=cc)
 
-    error_log = logger.conversion_log.get_logs()["shape_inference"][0]["message"]
-    assert "[Code.INVALID_INPUT] - Model inputs contain following symbolic dimensions: 'w'." in error_log
+    assert "[INVALID_INPUT] - Model inputs contain following symbolic dimensions: 'w'." in str(exc_info.value)
+
 
 
 def test_slice___negative_int_max_ends():
@@ -341,13 +342,13 @@ def test_incomplete_shape_inference__best_effort_model__generated():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model)
-    error = logger.conversion_log.get_logs()['shape_inference'][0]
 
-    assert error['error_code'] == logger.Code.SHAPE_INFERENCE_ERROR
-    assert 'sym_shape_infer_temp.onnx' in error['message']
+    assert exc_info.value.code == errors.Code.SHAPE_INFERENCE_ERROR
+    assert 'sym_shape_infer_temp.onnx' in str(exc_info.value)
     assert os.path.isfile(model_path)
+
 
     os.remove(model_path)  # Remove the generated file.
 
@@ -372,13 +373,13 @@ def test_incomplete_shape_inference__best_effort_model__not_generated():
     config = ConversionConfig()
     config.generate_artifacts_after_failed_shape_inference = False  # Prohibit generation of the model.
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model, conversion_config=config)
-    error = logger.conversion_log.get_logs()['shape_inference'][0]
 
-    assert error['error_code'] == logger.Code.SHAPE_INFERENCE_ERROR
-    assert 'sym_shape_infer_temp.onnx' not in error['message']
+    assert exc_info.value.code == errors.Code.SHAPE_INFERENCE_ERROR
+    assert 'sym_shape_infer_temp.onnx' not in str(exc_info.value)
     assert not os.path.isfile(model_path)  # Make sure the file wasn't generated.
+
 
 
 def test_shape_inference__operator_with_impossible_shape_inference():
@@ -390,12 +391,12 @@ def test_shape_inference__operator_with_impossible_shape_inference():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model)
-    error = logger.conversion_log.get_logs()['shape_inference'][0]
 
-    assert error['error_code'] == logger.Code.SHAPE_INFERENCE_ERROR
-    assert 'Unique' in error['message']
+    assert exc_info.value.code == errors.Code.SHAPE_INFERENCE_ERROR
+    assert 'Unique' in str(exc_info.value)
+
 
 
 def test_shape_inference__unexpected_error():
@@ -411,9 +412,9 @@ def test_shape_inference__unexpected_error():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         ModelShapeInference.infer_shapes(onnx_model)
 
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
     assert 'cause might be the `Mul` operator' in e.value.msg
     assert "output tensors ['x2']" in e.value.msg

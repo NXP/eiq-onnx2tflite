@@ -10,8 +10,12 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class QLinearAveragePool(meta.ONNXOperatorAttributes):
@@ -52,18 +56,13 @@ class QLinearAveragePool(meta.ONNXOperatorAttributes):
             elif attr.name == "strides":
                 self.strides = meta.ONNXIntListAttribute(attr)
             else:
-                logger.w(f"ONNX QLinearAveragePool attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX QLinearAveragePool attribute '{attr.name}' is not supported!")
 
         if self.kernel_shape is None:
             # Required attribute
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearAveragePool is missing the 'kernel_shape'!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX QLinearAveragePool is missing the 'kernel_shape'!")
 
         if self.channels_last != 0:
             # The converter doesn't really consider this option right now.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX QLinearAveragePool with channels_last = "
-                f"'{self.channels_last}' is not yet implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearAveragePool with channels_last = "
+                f"'{self.channels_last}' is not yet implemented.")

@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -21,6 +20,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import slice_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import slice_options, strided_slice_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection PyMethodMayBeStatic
@@ -54,13 +58,11 @@ class SliceConverter(NodeConverter):
         """
         starts = o_slice_attributes.starts
         if starts is None:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Slice' v1 has attribute 'starts' uninitialized!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Slice' v1 has attribute 'starts' uninitialized!")
 
         ends = o_slice_attributes.ends
         if ends is None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Slice' v1 has attribute 'ends' uninitialized!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX 'Slice' v1 has attribute 'ends' uninitialized!")
 
         if o_slice_attributes.axes is not None:
             axes = o_slice_attributes.axes
@@ -102,12 +104,10 @@ class SliceConverter(NodeConverter):
         """
         axes = [axis if axis >= 0 else axis + input_rank for axis in axes]
         if not all(0 <= axis < input_rank for axis in axes):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attribute 'axes' contains invalid indices!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attribute 'axes' contains invalid indices!")
         if common.contains_duplicates(axes):
             # Behavior is undefined according to documentation
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attribute 'axes' contains duplicates!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attribute 'axes' contains duplicates!")
 
         return axes
 
@@ -155,10 +155,7 @@ class SliceConverter(NodeConverter):
             # ONNX Slice v10+
 
             if not (3 <= len(t_op.tmp_inputs) <= 5):
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR,
-                    f"ONNX 'Slice' has unexpected number of inputs! Expected 3 to 5, got '{len(t_op.tmp_inputs)}'.",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX 'Slice' has unexpected number of inputs! Expected 3 to 5, got '{len(t_op.tmp_inputs)}'.")
 
             starts_tensor = self._try_get_tensor_with_data(t_op.tmp_inputs[1])
             ends_tensor = self._try_get_tensor_with_data(t_op.tmp_inputs[2])
@@ -171,11 +168,8 @@ class SliceConverter(NodeConverter):
             ):
                 # Some inputs are dynamic.
                 # Conversion might be possible via combination with other operators. But that could be difficult.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX Slice is only supported when"
-                    " the starts, ends, axes and steps input tensors are static!",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX Slice is only supported when"
+                    " the starts, ends, axes and steps input tensors are static!")
 
             starts = list(starts_tensor.tmp_buffer.data)
             ends = list(ends_tensor.tmp_buffer.data)
@@ -185,10 +179,7 @@ class SliceConverter(NodeConverter):
         # -- starts, ends, axes and steps are all initialized --
 
         if not (len(starts) == len(ends) == len(axes) == len(steps)):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                "ONNX Slice attributes 'starts', 'ends', 'axes' and steps' don't have matching lengths!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Slice attributes 'starts', 'ends', 'axes' and steps' don't have matching lengths!")
 
         axes = self._validate_axes(axes, input_rank)
 
@@ -200,7 +191,7 @@ class SliceConverter(NodeConverter):
         self._validate_starts_and_ends(starts, ends, axes, main_input_shape, steps)
 
         if any(step == 0 for step in steps):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX Slice must have non-zero 'steps'.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX Slice must have non-zero 'steps'.")
         elif all(step == 1 for step in steps):
             self._convert_to_slice(t_op, main_input, input_rank, starts, ends, axes)
         else:
@@ -211,7 +202,7 @@ class SliceConverter(NodeConverter):
 
         elif t_op.is_qdq_quantized():
             if main_input.quantization != y.quantization:
-                logger.w(
+                logger.warning(
                     f"Re-quantizing input tensor '{main_input.name}' of Slice op to match output tensor's q-params. "
                     f"This can decrease accuracy of the model."
                 )

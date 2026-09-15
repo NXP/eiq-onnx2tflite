@@ -5,8 +5,10 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Gelu(meta.ONNXOperatorAttributes):
@@ -20,4 +22,4 @@ class Gelu(meta.ONNXOperatorAttributes):
             if attr.name == "approximate":
                 self.approximate = attr.s.decode("utf-8")
             else:
-                logger.w(f"ONNX `Gelu` attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX `Gelu` attribute '{attr.name}' is not supported!")

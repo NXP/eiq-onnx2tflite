@@ -11,16 +11,20 @@
 Module contains high level functions to convert ONNX operators to TFLite.
 """
 
+import logging
+
 import numpy as np
 
 from onnx2quant.qdq_quantization import RecognizedQDQOps
-from onnx2tflite.src import conversion_context, logger
+from onnx2tflite.src import conversion_context, errors, messages
 from onnx2tflite.src.converter import node_converters
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
+
+logger = logging.getLogger(__name__)
 
 
 class OperatorConverter:
@@ -190,10 +194,11 @@ class OperatorConverter:
 
         else:
             if node.op_type not in self._op_type_to_node_converter_constructor_map:
-                logger.e(
-                    logger.Code.UNSUPPORTED_OPERATOR,
+                raise errors.ConversionError(
+                    errors.Code.UNSUPPORTED_OPERATOR,
                     f"Conversion of ONNX operator '{node.op_type}' is not yet supported!",
                 )
+
 
             node_converter_constructor = self._op_type_to_node_converter_constructor_map[node.op_type]
             ops_to_add = node_converter_constructor(self._context).convert(node, t_op)
@@ -219,21 +224,21 @@ class OperatorConverter:
         skipped_ops: list[tuple[str, str]] = []
 
         def run_conversion_safe(conversion_fn) -> None:
-            has_inconvertible_node = False
+            # The error of the first inconvertible node. It is logged for each node as it is encountered, and the
+            #  first one is re-raised after all nodes are processed, so that its specific error code is preserved.
+            first_error: errors.ConversionError | None = None
 
             for idx, node in enumerate(o_nodes):
-                with logger.loggingContext(logger.NodeLoggingContext(idx)):
-                    try:
-                        conversion_fn(node)
-                    except logger.Error:
-                        has_inconvertible_node = True
+                try:
+                    conversion_fn(node)
+                except errors.ConversionError as e:
+                    logger.error("Node %d ('%s'): %s", idx, node.op_type, e)
+                    if first_error is None:
+                        first_error = e
 
-            if has_inconvertible_node:
-                raise logger.Error(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Some nodes in the model are not supported or cannot be converted. Please "
-                    "review the console output above for more information and possible solutions.",
-                )
+            if first_error is not None:
+                raise first_error
+
 
         def convert_all_ops(node: onnx_model.NodeProto) -> None:
             def _tensors_are_formatless(onnx_tensors: list[str]) -> bool:
@@ -293,11 +298,12 @@ class OperatorConverter:
 
         if len(skipped_ops) != 0:
             ops_as_str = "\n".join(f"\t{op_type}({name})" for op_type, name in skipped_ops)
-            logger.i(
+            logger.info(
                 "The output data of the following nodes has been statically inferred, so they will not be present "
                 "in the output model.\n"
                 + ops_as_str
                 + "\n"
                 + "If you wish to prohibit this and convert all operators, run the conversion again with the flag "
-                f"{logger.Style.bold + logger.Style.cyan}--dont-skip-nodes-with-known-outputs{logger.Style.end}."
+                f"{messages.Style.bold + messages.Style.cyan}--dont-skip-nodes-with-known-outputs{messages.Style.end}."
             )
+

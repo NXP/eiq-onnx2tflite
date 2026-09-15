@@ -10,12 +10,13 @@ import onnx.helper
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta import types
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests.executors import convert_run_compare
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("input_shape", [[5], [5, 5], [5, 5, 5], [5, 5, 5, 5]], ids=lambda x: f"rank={len(x)}D")
@@ -118,11 +119,11 @@ def test_convert_topk__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_MODEL
-    assert 'INT8' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL
+    assert 'INT8' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("axis", list(range(-3, 3)) + [None], ids=lambda x: f"axis={x}")
@@ -164,11 +165,11 @@ def test_convert_topk__not_sorted():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert "'sorted=0' is not possible" in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert "'sorted=0' is not possible" in str(exc_info.value)
 
 
 def test_convert_topk__not_largest():
@@ -186,11 +187,11 @@ def test_convert_topk__not_largest():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert "'largest=0' and 'sorted=1' is not yet implemented" in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert "'largest=0' and 'sorted=1' is not yet implemented" in str(exc_info.value)
 
 
 def test_convert_topk__int64_consumer():

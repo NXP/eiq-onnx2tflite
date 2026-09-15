@@ -9,8 +9,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ConvTranspose(meta.ONNXOperatorAttributes):
@@ -55,4 +57,4 @@ class ConvTranspose(meta.ONNXOperatorAttributes):
             elif attr.name == "strides":
                 self.strides = meta.ONNXIntListAttribute(attr)
             else:
-                logger.w(f"ONNX ConvTranspose attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX ConvTranspose attribute '{attr.name}' is not supported!")

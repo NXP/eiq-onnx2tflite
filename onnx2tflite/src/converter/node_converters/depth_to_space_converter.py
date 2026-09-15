@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
@@ -19,6 +18,8 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options, transpose_options
 from onnx2tflite.src.tflite_generator.builtin_options.depth_to_space_options import DepthToSpace
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class DepthToSpaceConverter(NodeConverter):
@@ -77,10 +78,7 @@ class DepthToSpaceConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX `DepthToSpace` operator to TFLite `DepthToSpace`."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `DepthToSpace` has unexpected number of inputs ({len(t_op.tmp_inputs)}).",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `DepthToSpace` has unexpected number of inputs ({len(t_op.tmp_inputs)}).")
 
         x = t_op.tmp_inputs[0]
         if not t_op.is_qdq_quantized():

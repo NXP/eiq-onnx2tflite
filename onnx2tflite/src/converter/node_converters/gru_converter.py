@@ -9,7 +9,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -23,6 +22,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import gru_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.custom_options.onnx_gru_options import Activation, Direction, OnnxGRU
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class GRUConverter(NodeConverter):
@@ -31,7 +32,7 @@ class GRUConverter(NodeConverter):
     # noinspection PyMethodMayBeStatic
     def check_quantization(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator):
         if not t_op.is_qdq_quantized():
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Only quantized version of GRU is currently implemented.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Only quantized version of GRU is currently implemented.")
 
         error_message_base = (
             "GRU wasn't quantized by onnx2quant but by some third party quantizer, because {reason}. "
@@ -47,52 +48,46 @@ class GRUConverter(NodeConverter):
 
         if x.quantization is None:
             message = error_message_base.format(reason="input 'x' is not quantized")
-            logger.e(logger.Code.NOT_IMPLEMENTED, message)
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, message)
         if w.quantization is None:
             message = error_message_base.format(reason="input 'w' is not quantized")
-            logger.e(logger.Code.NOT_IMPLEMENTED, message)
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, message)
         if r.quantization is None:
             message = error_message_base.format(reason="input 'r' is not quantized")
-            logger.e(logger.Code.NOT_IMPLEMENTED, message)
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, message)
 
         if (bias := try_get_input(t_op, 3)) is not None:
             if bias.quantization is not None:
                 message = error_message_base.format(reason="input 'b' is quantized")
-                logger.e(logger.Code.NOT_IMPLEMENTED, message)
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, message)
 
         if (initial_h := try_get_input(t_op, 5)) is not None:
             if initial_h.quantization is not None:
                 message = error_message_base.format(reason="input 'initial_h' is quantized")
-                logger.e(logger.Code.NOT_IMPLEMENTED, message)
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, message)
 
         assert y.quantization is not None
 
         if y_h.quantization is not None:
             message = error_message_base.format(reason="output 'y_h' is quantized")
-            logger.e(logger.Code.NOT_IMPLEMENTED, message)
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, message)
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         attrs = cast(gru_attributes.GRU, node.attributes)
 
         if attrs.direction not in [Direction.forward.value, Direction.bidirectional.value]:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Only 'forward'/'bidirectional' value of GRU attribute 'direction' is currently implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Only 'forward'/'bidirectional' value of GRU attribute 'direction' is currently implemented.")
 
         if attrs.activation_alpha is not None:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "GRU attribute 'activation_alpha' isn't implemented yet.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "GRU attribute 'activation_alpha' isn't implemented yet.")
 
         if attrs.activation_beta is not None:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "GRU attribute 'activation_beta' isn't implemented yet.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "GRU attribute 'activation_beta' isn't implemented yet.")
 
         if attrs.layout != 0:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "GRU operator currently supports only layout=0. Other layout values are not implemented yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "GRU operator currently supports only layout=0. Other layout values are not implemented yet.")
         if not t_op.is_qdq_quantized():
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Only quantized version of GRU is currently implemented.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Only quantized version of GRU is currently implemented.")
 
         self.check_quantization(node, t_op)
 
@@ -104,33 +99,21 @@ class GRUConverter(NodeConverter):
         y_h = t_op.tmp_outputs[1]
 
         if self.inspector.get_ops_with_input_tensor(y_h.name) or self.inspector.is_output_of_model(y_h.name):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "GRU operator with output tensor 'y_h' consumed by other "
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "GRU operator with output tensor 'y_h' consumed by other "
                 "operators or used as an output of the model is currently not "
-                "implemented.",
-            )
+                "implemented.")
 
         if not tensor_has_data(w):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX GRU with a dynamic weight tensor 'w' is not supported yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX GRU with a dynamic weight tensor 'w' is not supported yet.")
 
         if not tensor_has_data(r):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX GRU with a dynamic weight tensor 'r' is not supported yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX GRU with a dynamic weight tensor 'r' is not supported yet.")
 
         if (bias := try_get_input(t_op, 3)) is None:
             bias = self.builder.create_null_tensor()
         else:
             if not tensor_has_data(bias):
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX GRU with a dynamic bias tensor is not supported.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX GRU with a dynamic bias tensor is not supported.")
 
             scale_w_b = np.array(w.quantization.scale.vector) * x.quantization.scale.vector[0]
             scale_w_r = np.array(r.quantization.scale.vector) * y.quantization.scale.vector[0]
@@ -142,10 +125,7 @@ class GRUConverter(NodeConverter):
         if (sequence_length := try_get_input(t_op, 4)) is None:
             sequence_length = self.builder.create_null_tensor()
         else:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX GRU with 'sequence_length' tensor is not supported yet.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX GRU with 'sequence_length' tensor is not supported yet.")
 
         if (initial_h := try_get_input(t_op, 5)) is None:
             initial_h = self.builder.create_null_tensor()

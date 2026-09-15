@@ -5,8 +5,8 @@
 # See the LICENSE for more details.
 #
 import pytest
+from onnx2tflite.src import errors
 
-from onnx2tflite.src import logger
 
 COMPARISON_ARGS = "comparison_args"
 CONVERSION_ARGS = "conversion_args"
@@ -16,28 +16,29 @@ CONVERSION_ERROR_ERROR = "error"
 CONVERSION_ERROR_MSG = "message"
 
 
-def get_error_dict(code: logger.Code, message: str, node_idx: int):
+def get_error_dict(code: errors.Code, message: str, node_idx: int):
     return {
         CONVERSION_ERROR_NODE: node_idx,
         CONVERSION_ERROR_ERROR: code,
-        CONVERSION_ERROR_MSG: f'[Code.{logger.Code(code).name}] - ' + message
+        CONVERSION_ERROR_MSG: f'[{errors.Code(code).name}] - ' + message
+
     }
 
 
 def conversion_impossible(message: str, node_idx: int = 0):
-    return get_error_dict(logger.Code.CONVERSION_IMPOSSIBLE, message, node_idx)
+    return get_error_dict(errors.Code.CONVERSION_IMPOSSIBLE, message, node_idx)
 
 
 def not_implemented(message: str, node_idx: int = 0):
-    return get_error_dict(logger.Code.NOT_IMPLEMENTED, message, node_idx)
+    return get_error_dict(errors.Code.NOT_IMPLEMENTED, message, node_idx)
 
 
 def internal_error(message: str, node_idx: int = 0):
-    return get_error_dict(logger.Code.INTERNAL_ERROR, message, node_idx)
+    return get_error_dict(errors.Code.INTERNAL_ERROR, message, node_idx)
 
 
 def invalid_onnx_operator(message: str, node_idx: int = 0):
-    return get_error_dict(logger.Code.INVALID_ONNX_OPERATOR, message, node_idx)
+    return get_error_dict(errors.Code.INVALID_ONNX_OPERATOR, message, node_idx)
 
 
 # @formatter:off

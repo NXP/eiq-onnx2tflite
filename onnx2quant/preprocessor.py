@@ -12,7 +12,8 @@ import onnx
 from onnx2quant.preprocessing_steps.replace_constant_with_static_tensor import ReplaceConstantWithStaticTensor
 from onnx2quant.preprocessing_steps.replace_div_with_quantizable_mul import ReplaceDivWithQuantizableMul
 from onnx2quant.quantization_config import QuantizationConfig
-from onnx2tflite.src import logger
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
 
 
 @dataclass
@@ -32,10 +33,6 @@ class Preprocessor:
                 preprocessing_step.run()
 
             except Exception as e:  # noqa: BLE001
-                logger.e(
-                    logger.Code.PREPROCESSING_ERROR,
-                    "An unexpected error occurred during preprocessing. Run the quantization again with the "
-                    f"flag {logger.Style.cyan + preprocessing_step.disabling_flag() + logger.Style.end} to avoid "
-                    "this.",
-                    e,
-                )
+                raise ConversionError(errors.Code.PREPROCESSING_ERROR, "An unexpected error occurred during preprocessing. Run the quantization again with the "
+                    f"flag {messages.Style.cyan + preprocessing_step.disabling_flag() + messages.Style.end} to avoid "
+                    "this.") from e

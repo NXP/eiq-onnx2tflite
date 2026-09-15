@@ -10,8 +10,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Squeeze(meta.ONNXOperatorAttributes):
@@ -29,4 +31,4 @@ class Squeeze(meta.ONNXOperatorAttributes):
             if attr.name == "axes":
                 self.axes = meta.ONNXIntListAttribute(attr)
             else:
-                logger.w(f"ONNX Squeeze attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Squeeze attribute '{attr.name}' is not supported!")

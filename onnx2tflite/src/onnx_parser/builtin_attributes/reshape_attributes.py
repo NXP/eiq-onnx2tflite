@@ -14,8 +14,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Reshape(meta.ONNXOperatorAttributes):
@@ -32,4 +34,4 @@ class Reshape(meta.ONNXOperatorAttributes):
             if attr.name == "allowzero":  # Not tested!
                 self.allow_zero = attr.i
             else:
-                logger.w(f"ONNX Reshape attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Reshape attribute '{attr.name}' is not supported!")

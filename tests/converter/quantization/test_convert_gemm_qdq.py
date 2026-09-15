@@ -14,11 +14,12 @@ from onnx import TensorProto
 from onnx2quant.qdq_quantization import InputSpec, QDQQuantizer, RandomDataCalibrationDataReader
 from onnx2quant.quantization_config import QuantizationConfig
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from tests import executors
 from tests.model_surgeon import ONNXSurgeon
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("a_shape, b_shape, c_shape, alpha, beta, output_shape", [
@@ -170,9 +171,9 @@ def test_gemm_qdq__static_non_fusible_bias(a_shape: list[int], b_shape: list[int
     quantized_model = QDQQuantizer().quantize_model(onnx_model, calibration_data_reader.to_config())
     quantized_model = ModelShapeInference.infer_shapes(quantized_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(quantized_model)
-    assert logger.conversion_log.get_node_error_code(5) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 @pytest.mark.parametrize("a_shape, b_shape, alpha, beta, output_shape", [

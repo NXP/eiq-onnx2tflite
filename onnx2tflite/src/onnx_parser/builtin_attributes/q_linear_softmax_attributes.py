@@ -14,8 +14,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class QLinearSoftmax(meta.ONNXOperatorAttributes):
@@ -36,4 +38,4 @@ class QLinearSoftmax(meta.ONNXOperatorAttributes):
             elif attr.name == "opset":
                 self.opset = attr.i
             else:
-                logger.w(f"ONNX QLinearSoftmax attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX QLinearSoftmax attribute '{attr.name}' is not supported!")

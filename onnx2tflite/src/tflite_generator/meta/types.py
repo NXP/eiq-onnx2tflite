@@ -17,7 +17,11 @@ from typing import Any
 import flatbuffers as fb
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 # Lists of types. Used to simplify specification of supported types in conversion modules.
 FLOATS = [TensorType.FLOAT16, TensorType.FLOAT32, TensorType.FLOAT64]
@@ -135,7 +139,7 @@ def type_size(data_type: TensorType) -> int:
     if data_type in {TensorType.COMPLEX128}:
         return 16
 
-    logger.e(logger.Code.INTERNAL_ERROR, f"Unexpected type '{data_type}' in types.type_size().")
+    raise ConversionError(errors.Code.INTERNAL_ERROR, f"Unexpected type '{data_type}' in types.type_size().")
 
 
 def prepend_function(builder: fb.Builder, data_type: TensorType) -> Callable[[Any], Any]:
@@ -159,7 +163,7 @@ def prepend_function(builder: fb.Builder, data_type: TensorType) -> Callable[[An
         return builder.PrependInt64
 
     if data_type == TensorType.FLOAT16:
-        logger.w("Flatbuffer prepend function for FLOAT16 datatype is not supported! Using default 16b alternative.")
+        logger.warning("Flatbuffer prepend function for FLOAT16 datatype is not supported! Using default 16b alternative.")
         return builder.PrependInt16  # Might not work
     if data_type == TensorType.FLOAT32:
         return builder.PrependFloat32
@@ -169,4 +173,4 @@ def prepend_function(builder: fb.Builder, data_type: TensorType) -> Callable[[An
     if data_type == TensorType.BOOL:
         return builder.PrependBool
 
-    logger.e(logger.Code.NOT_IMPLEMENTED, f"Unsupported flatbuffer prepend function for type '{data_type}'!")
+    raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Unsupported flatbuffer prepend function for type '{data_type}'!")

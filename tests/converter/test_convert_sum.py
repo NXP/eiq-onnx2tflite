@@ -12,10 +12,11 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize(
@@ -150,9 +151,9 @@ def test_convert_sum_with_many_inputs_shape_broadcasting(input_shapes: List[List
 
     # TODO Rewrite this test once shape broadcasting support is implemented.
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 @pytest.mark.parametrize(
@@ -213,9 +214,9 @@ def test_convert_sum_with_channels_first_shape_broadcasting_and_many_inputs(inpu
 
     # TODO Rewrite this test once shape broadcasting support is implemented.
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_sum_with_mismatched_input_types():
@@ -232,9 +233,9 @@ def test_convert_sum_with_mismatched_input_types():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_MODEL
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL
 
 
 def test_convert_sum__invalid_type():
@@ -250,10 +251,10 @@ def test_convert_sum__invalid_type():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)
@@ -282,6 +283,6 @@ def test_convert___quantized(type_: TensorProto.DataType):
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(2) == logger.Code.INVALID_ONNX_MODEL
+    assert exc_info.value.code == errors.Code.INVALID_ONNX_MODEL

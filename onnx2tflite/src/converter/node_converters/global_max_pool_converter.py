@@ -9,13 +9,14 @@ import numpy as np
 
 import onnx2tflite.lib.tflite.Padding as tflPadding
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import max_pool_2d_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class GlobalMaxPoolConverter(NodeConverter):
@@ -35,10 +36,7 @@ class GlobalMaxPoolConverter(NodeConverter):
 
         # Input and output types must be the same.
         if x.type != y.type:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                "ONNX `GlobalMaxPool` has input and output tensors with different types.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `GlobalMaxPool` has input and output tensors with different types.")
 
         if t_op.is_qdq_quantized():
             if x.quantization != y.quantization:
@@ -120,6 +118,4 @@ class GlobalMaxPoolConverter(NodeConverter):
             # kernel with at least 3 dimensions
             return self._convert_more_than_2d_global_max_pool(t_op)
 
-        logger.e(
-            logger.Code.INVALID_ONNX_OPERATOR, f"ONNX `GlobalMaxPool` has unexpected number of dimensions (`{rank}`)."
-        )
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `GlobalMaxPool` has unexpected number of dimensions (`{rank}`).")

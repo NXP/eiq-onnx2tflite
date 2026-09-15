@@ -12,7 +12,6 @@ import numpy as np
 
 import onnx2tflite.src.onnx_parser.builtin_attributes.max_pool_attributes as onnx_max_pool_attributes
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -22,6 +21,11 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import max_pool_2d_options as tfl_max_pool_2d_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class MaxPoolConverter(NodeConverter):
@@ -43,10 +47,7 @@ class MaxPoolConverter(NodeConverter):
         for dim in t_op.tmp_inputs[0].shape.vector:
             if (not isinstance(dim, int)) or dim < 0:
                 # Dynamic shapes make it difficult to use the Reshape operators.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of 1D ONNX MaxPool with a dynamic shape is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of 1D ONNX MaxPool with a dynamic shape is not yet supported.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -113,7 +114,7 @@ class MaxPoolConverter(NodeConverter):
             case TensorType.FLOAT32:
                 return np.asarray([np.finfo(np.float32).min], dtype=np.float32)
             case _:
-                logger.e(logger.Code.INVALID_TYPE, "Unexpected input type for MaxPool operator.")
+                raise ConversionError(errors.Code.INVALID_TYPE, "Unexpected input type for MaxPool operator.")
 
     def _convert_2d_max_pool(self, o_mp: onnx_max_pool_attributes.MaxPool, t_op: tflite_model.Operator) -> OpsList:
         """Convert the ONNX 'MaxPool' operator with a 2D kernel to TFLite 'MaxPool2D'."""
@@ -123,25 +124,17 @@ class MaxPoolConverter(NodeConverter):
         if o_mp.dilations is not None:
             if any(dilation != 1 for dilation in o_mp.dilations):
                 # TFLite MaxPool2D doesn't support dilations.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    f"MaxPool dilations '{o_mp.dilations}' cannot be converted to TFLite!",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"MaxPool dilations '{o_mp.dilations}' cannot be converted to TFLite!")
 
         if o_mp.ceil_mode == 1:
             # TFLite always uses 'floor' to round, so the output shape may be different from ONNX.
             # Conversion should be possible by inserting a 'Pad' operator before the MaxPool.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX MaxPool with 'ceil_mode' == 1 is not yet supported."
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX MaxPool with 'ceil_mode' == 1 is not yet supported.")
 
         if len(t_op.tmp_outputs) == 2:
             # The 'Indices' tensor is the second output. TFLite doesn't provide such functionality.
             # Right now, there is no simple way to check if the second output is actually used by other operators.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX MaxPool with a second 'Indices' output tensor is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX MaxPool with a second 'Indices' output tensor is not possible.")
 
         ops = OpsList(middle_op=t_op)
 
@@ -152,7 +145,7 @@ class MaxPoolConverter(NodeConverter):
         elif t_op.is_qdq_quantized() and x.quantization != y.quantization:
             # I/O q-params doesn't match -> external quantizer was used. We need to re-quantize output
             # because MaxPool expects shared q-params for input and output.
-            logger.w("Requantizing output of MaxPool operator. This can be avoided by using internal quantizer.")
+            logger.warning("Requantizing output of MaxPool operator. This can be avoided by using internal quantizer.")
             scale = x.quantization.scale.vector
             zp = x.quantization.zero_point.vector
             ops.add_post(self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp))
@@ -193,13 +186,7 @@ class MaxPoolConverter(NodeConverter):
         if kernel_rank - num_ones <= 2:
             # Enough dimensions are '1', so the input can be reshaped to 4D and a MaxPool2D can be applied.
             # Not sure if this is a realistic scenario and worth putting time into.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not yet implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not yet implemented.")
 
         else:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!")

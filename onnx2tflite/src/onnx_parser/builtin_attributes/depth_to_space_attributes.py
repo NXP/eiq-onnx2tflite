@@ -9,8 +9,12 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class DepthToSpace(meta.ONNXOperatorAttributes):
@@ -30,9 +34,7 @@ class DepthToSpace(meta.ONNXOperatorAttributes):
             elif attr.name == "mode":
                 self.mode = attr.s.decode("utf-8")
             else:
-                logger.w(f"ONNX `DepthToSpace` attribute `{attr.name}` is not supported!")
+                logger.warning(f"ONNX `DepthToSpace` attribute `{attr.name}` is not supported!")
 
         if not hasattr(self, "block_size"):
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL, "ONNX `DepthToSpace` is missing the required `blocksize` attribute."
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `DepthToSpace` is missing the required `blocksize` attribute.")

@@ -5,13 +5,14 @@
 # See the LICENSE for more details.
 #
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def ensure_correct_tensor_formatting(
@@ -67,10 +68,7 @@ def get_activation_function_for_name(name: str, op_type: str = "LSTM") -> Activa
         return act_fun
 
     # Couldn't find a corresponding activation function
-    logger.e(
-        logger.Code.CONVERSION_IMPOSSIBLE,
-        f"Conversion of ONNX {op_type} with activation function '{name}' is not possible.",
-    )
+    raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX {op_type} with activation function '{name}' is not possible.")
 
 
 def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: str = "LSTM") -> None:
@@ -86,7 +84,4 @@ def check_sequence_lens(t_op: tflite_model.Operator, seq_length: int, op_type: s
         if (not tensor_has_data(sequence_lens)) or any(elt != seq_length for elt in sequence_lens.tmp_buffer.data):
             # The 'sequence_lens' is either dynamic, or static with at least one value different from 'seq_length'.
             # Conversion most likely impossible.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX {op_type} with 'sequence_lens' input is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX {op_type} with 'sequence_lens' input is not possible.")

@@ -5,9 +5,11 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
 from onnx2tflite.src.onnx_parser.meta.meta import ONNXIntListAttribute
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection SpellCheckingInspection
@@ -64,4 +66,4 @@ class Resize(meta.ONNXOperatorAttributes):
                 self.keep_aspect_ratio_policy = attr.s.decode("utf-8")
 
             else:
-                logger.w(f"ONNX `Resize` attribute `{attr.name}` is not supported!")
+                logger.warning(f"ONNX `Resize` attribute `{attr.name}` is not supported!")

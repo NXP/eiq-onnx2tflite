@@ -13,7 +13,6 @@ from onnxruntime.quantization import quant_utils
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
     compute_scale_zero_point,
@@ -25,6 +24,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import hard_sigmoid_attribut
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_options, minimum_options, mul_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class HardSigmoidConverter(NodeConverter):
@@ -149,13 +150,10 @@ class HardSigmoidConverter(NodeConverter):
          quantization parameters so every TFLite op in the chain has legal quantized inputs/outputs.
         """
         if x.quantization is None or y.quantization is None:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "Quantized `HardSigmoid` is missing input/output quantization.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Quantized `HardSigmoid` is missing input/output quantization.")
 
         if x.type not in (TensorType.INT8, TensorType.UINT8):
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Quantized `HardSigmoid` supports only INT8/UINT8, got `{x.type}`.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Quantized `HardSigmoid` supports only INT8/UINT8, got `{x.type}`.")
 
         alpha = hs_attributes.alpha
         beta = hs_attributes.beta
@@ -163,10 +161,7 @@ class HardSigmoidConverter(NodeConverter):
         if alpha < 0.0 or beta < 0.0:
             # Quantizing a constant with a negative value would require a negative scale, which is invalid. A negative
             #  alpha/beta could be handled via a dedicated Mul/Add operand quantization, but it is not a common case.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Quantized `HardSigmoid` with negative `alpha`/`beta` is not supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Quantized `HardSigmoid` with negative `alpha`/`beta` is not supported.")
 
         # Compute the float range of the (quantized) input from its quantization parameters.
         x_min, x_max = self._quantized_tensor_range(x)
@@ -265,10 +260,7 @@ class HardSigmoidConverter(NodeConverter):
         zero_point = tensor.quantization.zero_point.vector
 
         if len(scale) != 1 or len(zero_point) != 1:
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Quantized `HardSigmoid` supports only per-tensor quantization.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Quantized `HardSigmoid` supports only per-tensor quantization.")
 
         q_type = TensorProto.INT8 if tensor.type == TensorType.INT8 else TensorProto.UINT8
         q_min, q_max = quant_utils.get_qmin_qmax_for_qType(q_type, reduce_range=False, symmetric=False)

@@ -8,7 +8,6 @@
 
 import onnx2tflite.src.tflite_generator.builtin_options.reshape_options as tfl_reshape_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
@@ -16,6 +15,11 @@ from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ReshapeConverter(NodeConverter):
@@ -44,10 +48,7 @@ class ReshapeConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX 'Reshape' to TFLite 'Reshape'."""
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX: Reshape operator has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX: Reshape operator has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
@@ -64,7 +65,7 @@ class ReshapeConverter(NodeConverter):
             if x.quantization != y.quantization:
                 # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
                 # We need to re-quantize output because Reshape expects shared q-params for input and output.
-                logger.w("Requantizing output of Reshape operator. Internal quantizer can potentially avoid this.")
+                logger.warning("Requantizing output of Reshape operator. Internal quantizer can potentially avoid this.")
                 scale = x.quantization.scale.vector
                 zp = x.quantization.zero_point.vector
                 ops.add_post(self.builder.create_quantize_operator_after(t_op, 0, x.type, scale, zp))
@@ -72,10 +73,7 @@ class ReshapeConverter(NodeConverter):
         new_shape = ensure_reshape_transposition(self.builder, ops)
 
         if len(new_shape) > 8:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"ONNX Reshape output tensor has '{len(new_shape)}' dimensions TFLite only supports up to 8!")
 
         # The new shape can be represented using operators parameters. No need for the input tensor -> remove it
         t_op.tmp_inputs.pop()
@@ -89,7 +87,7 @@ class ReshapeConverter(NodeConverter):
         if flat_input_size != flat_output_size:
             # Doesn't necessarily indicate an error in conversion. For example [-1, 3, 12, 12] can be reshaped to
             #  [-1, 12].
-            logger.w(
+            logger.warning(
                 f"convert_reshape: Flat size of the input tensor '{x.name}' is not the same as "
                 f"the flat size of the output tensor '{y.name}'."
             )

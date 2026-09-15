@@ -11,7 +11,6 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.concatenation_options as tflite_concatenation_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
@@ -23,6 +22,8 @@ from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.q_linear_concat_attributes import QLinearConcat
 from onnx2tflite.src.tflite_generator import tflite_model
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class QLinearConcatConverter(NodeConverter):
@@ -36,10 +37,7 @@ class QLinearConcatConverter(NodeConverter):
         rank = len(t_op.tmp_inputs[2].shape.vector)
 
         if axis < -rank or axis > rank - 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX attribute 'axis' ({axis}) must be in range [{-rank}, {rank - 1}]!!")
 
         if axis < 0:  # convert negative index to positive
             axis += rank
@@ -53,17 +51,12 @@ class QLinearConcatConverter(NodeConverter):
 
         # ONNX only supports INT8 and UINT8
         if output_tensor.type not in {TensorType.INT8, TensorType.UINT8}:
-            logger.e(
-                logger.Code.INVALID_TYPE,
-                f"ONNX QLinearConcat supports only INT8 and UINT8 data types. Got '{output_tensor.type}'.",
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, f"ONNX QLinearConcat supports only INT8 and UINT8 data types. Got '{output_tensor.type}'.")
 
         # Input types match with output type
         io_types = [t.type for t in t_op.tmp_inputs[2::3]] + [output_tensor.type]
         if len(set(io_types)) != 1:
-            logger.e(
-                logger.Code.INVALID_TYPE, "ONNX QLinearConcat at least one input type doesn't match with output type!"
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, "ONNX QLinearConcat at least one input type doesn't match with output type!")
 
         input_tensors = []
         ops_to_add = []

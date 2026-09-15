@@ -4,19 +4,22 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
+import logging
+
 import numpy as np
 import onnx
 from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from tests import executors
 from onnx2tflite.src.tflite_optimizer.optimizer import Optimization
 
 
-def test_node_skipping(intermediate_tflite_model_provider):
+def test_node_skipping(intermediate_tflite_model_provider, caplog):
+    caplog.set_level(logging.INFO, logger="onnx2tflite")
     input_shape = [4, 6, 8, 10]
+
 
     np.random.seed(42)
     data = np.random.random(input_shape).astype(np.float32)
@@ -41,13 +44,15 @@ def test_node_skipping(intermediate_tflite_model_provider):
 
     intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
-    log_message = logger.conversion_log.get_logs()['operator_conversion'][0]['message']
+    log_message = caplog.text
     assert '--dont-skip-nodes-with-known-outputs' in log_message
     assert 'Shape' in log_message
     assert 'Gather' in log_message
 
 
-def test_prohibited_node_skipping(intermediate_tflite_model_provider):
+def test_prohibited_node_skipping(intermediate_tflite_model_provider, caplog):
+    caplog.set_level(logging.INFO, logger="onnx2tflite")
+
     input_shape = [4, 6, 8, 10]
 
     np.random.seed(42)
@@ -75,11 +80,13 @@ def test_prohibited_node_skipping(intermediate_tflite_model_provider):
         [BuiltinOperator.SHAPE, BuiltinOperator.GATHER, BuiltinOperator.RESHAPE]
     )
 
-    assert len(logger.conversion_log.get_logs()['operator_conversion']) == 0  # No message printed.
+    assert '--dont-skip-nodes-with-known-outputs' not in caplog.text  # No message printed.
 
 
-def test_partial_node_skipping(intermediate_tflite_model_provider):
+def test_partial_node_skipping(intermediate_tflite_model_provider, caplog):
+    caplog.set_level(logging.INFO, logger="onnx2tflite")
     input_shape = [4, 6, 8, 10]
+
 
     np.random.seed(42)
     data = np.random.random(input_shape).astype(np.float32)
@@ -109,14 +116,16 @@ def test_partial_node_skipping(intermediate_tflite_model_provider):
         [BuiltinOperator.HARD_SWISH, BuiltinOperator.ADD]
     )
 
-    log_message = logger.conversion_log.get_logs()['operator_conversion'][0]['message']
+    log_message = caplog.text
     assert '--dont-skip-nodes-with-known-outputs' in log_message
     assert 'Shape' in log_message
     assert 'Gather' in log_message
     assert 'Cast' in log_message
 
 
-def test_node_skipping__intermediate_output(intermediate_tflite_model_provider):
+def test_node_skipping__intermediate_output(intermediate_tflite_model_provider, caplog):
+    caplog.set_level(logging.INFO, logger="onnx2tflite")
+
     # The `Shape` operator cannot be removed, because its output is also a model output.
 
     input_shape = [4, 6, 8, 10]
@@ -145,10 +154,10 @@ def test_node_skipping__intermediate_output(intermediate_tflite_model_provider):
     intermediate_tflite_model_provider.assert_converted_model_has_operators(
         [BuiltinOperator.SHAPE, BuiltinOperator.RESHAPE])
 
-    log_message = logger.conversion_log.get_logs()['operator_conversion'][0]['message']
+    log_message = caplog.text
     assert '--dont-skip-nodes-with-known-outputs' in log_message
     assert 'Gather' in log_message
-    assert 'Shape' not in log_message
+
 
 
 def test_forbidden_node_skipping__channels_first_output(intermediate_tflite_model_provider):

@@ -8,7 +8,6 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared import reduce_utils
@@ -21,6 +20,8 @@ from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_sum_attributes import
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import sum_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ReduceSumConverter(NodeConverter):
@@ -69,7 +70,7 @@ class ReduceSumConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX ReduceSum operator to TFLite Sum."""
         if not (1 <= len(t_op.tmp_inputs) <= 2):
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceSum` has unexpected number of inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceSum` has unexpected number of inputs.")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(t_op.tmp_inputs[0].type)

@@ -9,8 +9,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Conv(meta.ONNXOperatorAttributes):
@@ -47,4 +49,4 @@ class Conv(meta.ONNXOperatorAttributes):
             elif attr.name == "strides":
                 self.strides = meta.ONNXIntListAttribute(attr)
             else:
-                logger.w(f"ONNX Conv attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Conv attribute '{attr.name}' is not supported!")

@@ -8,8 +8,12 @@ from typing import Optional
 
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class Cast(meta.ONNXOperatorAttributes):
@@ -29,13 +33,9 @@ class Cast(meta.ONNXOperatorAttributes):
                     enum_name = TensorProto.DataType.Name(attr.i)
                     self.to = TensorProto.DataType.Value(enum_name)
                 except ValueError as e:
-                    logger.e(
-                        logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                        "Failed to parse the `to` attribute of ONNX `Cast`.",
-                        exception=e,
-                    )
+                    raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "Failed to parse the `to` attribute of ONNX `Cast`.") from e
             else:
-                logger.w(f"ONNX Cast attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX Cast attribute '{attr.name}' is not supported!")
 
         if self.to is None:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX `Cast` is missing the required attribute `to`.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX `Cast` is missing the required attribute `to`.")

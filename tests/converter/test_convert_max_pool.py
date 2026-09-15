@@ -12,11 +12,12 @@ import onnx
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("kernel_shape", [[3], [4]], ids=lambda x: f"kernel_shape = {x}")
@@ -143,19 +144,19 @@ def test_convert_2d_max_pool_quantized(type_: TensorProto.DataType):
 @pytest.mark.parametrize(
     "input_shape, error_code",
     [
-        pytest.param([2, 4, 6, 8, 10], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 5D"),
-        pytest.param([2, 4, 6, 8, 10, 12], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (1)"),
-        pytest.param([2, 4, 6, 1, 10, 12], logger.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (2)"),
+        pytest.param([2, 4, 6, 8, 10], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 5D"),
+        pytest.param([2, 4, 6, 8, 10, 12], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (1)"),
+        pytest.param([2, 4, 6, 1, 10, 12], errors.Code.CONVERSION_IMPOSSIBLE, id="Impossible 6D (2)"),
 
-        pytest.param([2, 4, 1, 8, 10], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (1)"),
-        pytest.param([2, 4, 6, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (2)"),
-        pytest.param([2, 4, 1, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 5D (3)"),
+        pytest.param([2, 4, 1, 8, 10], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (1)"),
+        pytest.param([2, 4, 6, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (2)"),
+        pytest.param([2, 4, 1, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 5D (3)"),
 
-        pytest.param([2, 4, 6, 8, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (1)"),
-        pytest.param([2, 4, 1, 1, 1, 12], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (2)"),
-        pytest.param([2, 4, 1, 1, 1, 1], logger.Code.NOT_IMPLEMENTED, id="Convertible 6D (3)"),
+        pytest.param([2, 4, 6, 8, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (1)"),
+        pytest.param([2, 4, 1, 1, 1, 12], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (2)"),
+        pytest.param([2, 4, 1, 1, 1, 1], errors.Code.NOT_IMPLEMENTED, id="Convertible 6D (3)"),
     ])
-def test_convert_max_pool_with_large_rank(input_shape: List[int], error_code: logger.Code):
+def test_convert_max_pool_with_large_rank(input_shape: List[int], error_code: errors.Code):
     kernel_shape = input_shape[2:]
 
     graph = onnx.helper.make_graph(
@@ -167,9 +168,9 @@ def test_convert_max_pool_with_large_rank(input_shape: List[int], error_code: lo
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == error_code
+    assert exc_info.value.code == error_code
 
 
 def test_convert_max_pool_with_2_outputs():
@@ -184,9 +185,9 @@ def test_convert_max_pool_with_2_outputs():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert e.value.error_code == logger.Code.CONVERSION_IMPOSSIBLE
+    assert e.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_max_pool_with_dilations():
@@ -202,9 +203,9 @@ def test_convert_max_pool_with_dilations():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert e.value.error_code == logger.Code.CONVERSION_IMPOSSIBLE
+    assert e.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_1d_max_pool_with_dynamic_shape():
@@ -221,9 +222,9 @@ def test_convert_1d_max_pool_with_dynamic_shape():
 
     config = ConversionConfig()
     config.skip_shape_inference = True
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
 
 
 def test_convert_1d_max_pool_with_symbolic_shape():
@@ -286,6 +287,6 @@ def test_convert_2d_max_pool_invalid_type(input_type: onnx.TensorProto.DataType)
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE

@@ -19,9 +19,10 @@ from onnx import TensorProto
 from onnx2quant.__main__ import _quantize_model
 from onnx2quant.qdq_quantization import InputSpec, QDQQuantizer, RandomDataCalibrationDataReader
 from onnx2quant.quantization_config import QuantizationConfig
-from onnx2tflite.src import logger
 from onnx2tflite.src.tflite_generator import tflite_model
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 _ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 
@@ -133,7 +134,7 @@ def test_cmd_dataset_size_not_correspond():
             result = exec_quantization([model_path, "-c", "Input3;first_dataset", "-c", "Inp;another_dataset"])
 
     assert result.returncode != 0
-    assert "[ERROR] [Code.INVALID_INPUT] - Input dataset dirs don't contain same number of *.npy files." in result.stderr
+    assert "[ERROR] [INVALID_INPUT] - Input dataset dirs don't contain same number of *.npy files." in result.stderr
 
 
 def test_quantizer_via_code():
@@ -245,12 +246,12 @@ def test_quantizer__incomplete_shape_inference__best_effort_model__generated():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         # Quantize the model.
         q_config = QuantizationConfig(RandomDataCalibrationDataReader.from_onnx_model(onnx_model))
         QDQQuantizer().quantize_model(onnx_model, q_config)
 
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
     assert 'sym_shape_infer_temp.onnx' in e.value.msg
     assert os.path.isfile(model_path)
 
@@ -274,13 +275,13 @@ def test_quantizer__incomplete_shape_inference__best_effort_model__not_generated
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         # Quantize the model.
         q_config = QuantizationConfig(RandomDataCalibrationDataReader.from_onnx_model(onnx_model))
         q_config.generate_artifacts_after_failed_shape_inference = False  # Prohibit generation of the model.
         QDQQuantizer().quantize_model(onnx_model, q_config)
 
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR
     assert 'sym_shape_infer_temp.onnx' not in e.value.msg
     assert not os.path.isfile(model_path)  # Make sure the file wasn't generated.
 

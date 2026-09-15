@@ -9,7 +9,6 @@ from typing import Any, cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -20,6 +19,11 @@ from onnx2tflite.src.onnx_parser.builtin_attributes import gather_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import gather_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
+import logging
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 # noinspection PyMethodMayBeStatic
@@ -47,10 +51,7 @@ class GatherConverter(NodeConverter):
         :return: The indices for the TFLite Gather operator.
         """
         if not self._is_an_array_of_ints(indices):
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Gather' has invalid indices tensor ('{indices}'). Only arrays of integers are supported.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Gather' has invalid indices tensor ('{indices}'). Only arrays of integers are supported.")
 
         original_shape = indices.shape
 
@@ -59,7 +60,7 @@ class GatherConverter(NodeConverter):
             if index < 0:
                 index += dimension_size
             if not (0 <= index < dimension_size):
-                logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX 'Gather' operator has invalid 'indices' tensor!")
+                raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 'Gather' operator has invalid 'indices' tensor!")
 
             new_indices.append(index)
 
@@ -81,10 +82,7 @@ class GatherConverter(NodeConverter):
 
         if not (0 <= axis < input_rank):
             # This code is currently unreachable, as the shape inference detects this before conversion.
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX 'Gather' has invalid 'axis' attribute! ('{o_gather_attributes.axis}')",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX 'Gather' has invalid 'axis' attribute! ('{o_gather_attributes.axis}')")
 
         return axis
 
@@ -96,10 +94,7 @@ class GatherConverter(NodeConverter):
         :return: A list of TFLite operators, to add to the model.
         """
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Gather' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Gather' has unexpected number of inputs! Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         o_gather_attributes = cast(gather_attributes.Gather, node.attributes)
 
@@ -122,7 +117,7 @@ class GatherConverter(NodeConverter):
             if input_tensor.quantization != output_tensor.quantization:
                 # I/O q-params doesn't match -> external quantizer was used or removed Clip/Relu modified q-params.
                 # We need to re-quantize output because Gather expects shared q-params for input and output.
-                logger.w("Requantizing output of Gather operator. Internal quantizer can potentially avoid this.")
+                logger.warning("Requantizing output of Gather operator. Internal quantizer can potentially avoid this.")
                 scale = input_tensor.quantization.scale.vector
                 zp = input_tensor.quantization.zero_point.vector
                 ops.add_post(self.builder.create_quantize_operator_after(t_op, 0, input_tensor.type, scale, zp))
@@ -170,12 +165,9 @@ class GatherConverter(NodeConverter):
 
             else:
                 # Conversion may be possible via `Less`, `Where`, `Add` and `Gather` operators.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX 'Gather' operator with dynamic 'indices' tensor is not yet implemented, "
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Gather' operator with dynamic 'indices' tensor is not yet implemented, "
                     "because ONNX may use negative indices, which TFLite doesn't support. "
-                    + logger.Message.GUARANTEE_NON_NEGATIVE_INDICES,
-                )
+                    + messages.Message.GUARANTEE_NON_NEGATIVE_INDICES)
 
         else:
             # Static indices. Make sure they are valid.

@@ -11,7 +11,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.conversion.translator import apply_permutation_to
@@ -29,6 +28,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes, q_linear_conv_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import conv_2d_options, depthwise_conv_2d_options, reshape_options
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 ConvAttributes = conv_attributes.Conv | q_linear_conv_attributes.QLinearConv
 
@@ -70,14 +71,14 @@ class QLinearConvConverter(NodeConverter):
             return 8
         if isinstance(attrs, conv_attributes.Conv):
             return 2
-        logger.e(logger.Code.INTERNAL_ERROR, "Attempt to get index of bias tensor of incorrect ONNX operator.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Attempt to get index of bias tensor of incorrect ONNX operator.")
 
     def get_weight_tensor_index(self, attrs: ConvAttributes) -> int:
         if isinstance(attrs, q_linear_conv_attributes.QLinearConv):
             return 3
         if isinstance(attrs, conv_attributes.Conv):
             return 1
-        logger.e(logger.Code.INTERNAL_ERROR, "Attempt to get index of weight tensor of incorrect ONNX operator.")
+        raise ConversionError(errors.Code.INTERNAL_ERROR, "Attempt to get index of weight tensor of incorrect ONNX operator.")
 
     def _get_output_quant_params(self, t_op) -> tuple[tflite_model.Tensor, np.ndarray, np.ndarray]:
         """Get output tensor and corresponding q-params from other inputs (QLinearConv) or
@@ -150,10 +151,7 @@ class QLinearConvConverter(NodeConverter):
             set_quantization_parameters_to_tensor(output_tensor, output_scale, output_zero_point)
 
         if np.all(weight_zero_point != get_symmetric_zero_point_for_type(weight_tensor.type)):
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "TFLite Conv2D (DepthwiseConv2D) op doesn't support 'zero_point' of weight tensor to be non-zero.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "TFLite Conv2D (DepthwiseConv2D) op doesn't support 'zero_point' of weight tensor to be non-zero.")
 
         # ONNX only supports INT8 and UINT8 input/output/weight types
         if (
@@ -161,19 +159,14 @@ class QLinearConvConverter(NodeConverter):
             or output_tensor.type not in {TensorType.UINT8, TensorType.INT8}
             or weight_tensor.type not in {TensorType.UINT8, TensorType.INT8}
         ):
-            logger.e(
-                logger.Code.INVALID_TYPE,
-                "ONNX QLinearConv with an unexpected input/output/weight data type. Only INT8 and UINT8 are supported!",
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, "ONNX QLinearConv with an unexpected input/output/weight data type. Only INT8 and UINT8 are supported!")
         if bias_tensor.type != TensorType.INT32:
-            logger.e(
-                logger.Code.INVALID_TYPE, "ONNX QLinearConv with an unexpected bias data type. Only INT32 is supported!"
-            )
+            raise ConversionError(errors.Code.INVALID_TYPE, "ONNX QLinearConv with an unexpected bias data type. Only INT32 is supported!")
 
         # Ensure equal input and output type
         if input_tensor.type != output_tensor.type:
             # https://github.com/microsoft/onnxruntime/blob/main/onnxruntime/core/providers/cpu/quantization/qlinearconv.cc#L306
-            logger.e(logger.Code.INVALID_TYPE, "ONNX QLinearConv with mismatching input/output tensor types!")
+            raise ConversionError(errors.Code.INVALID_TYPE, "ONNX QLinearConv with mismatching input/output tensor types!")
 
         # Ensure supported quantization and data type combination, if possible.
         if weight_tensor.quantization.is_per_channel():  # Per CHANNEL quantization
@@ -197,22 +190,16 @@ class QLinearConvConverter(NodeConverter):
                 if weight_tensor.type == TensorType.UINT8:
                     new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, weight_zero_point)
                     if not all([zp == 0 for zp in new_zero_point]):
-                        logger.e(
-                            logger.Code.CONVERSION_IMPOSSIBLE,
-                            "ONNX QLinearConv uses UINT8 weights, which cannot be"
-                            " re-quantized to INT8, because their zero point != 128.",
-                        )
+                        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX QLinearConv uses UINT8 weights, which cannot be"
+                            " re-quantized to INT8, because their zero point != 128.")
 
                     if tensor_has_data(weight_tensor):
                         weight_tensor = re_quantize_static_tensor(self.builder, weight_tensor, TensorType.INT8)
                         conversion_result.conv_weight_tensor = weight_tensor
                         t_op.tmp_inputs[1] = weight_tensor
                     else:
-                        logger.e(
-                            logger.Code.CONVERSION_IMPOSSIBLE,
-                            "ONNX QLinearConv uses dynamic UINT8 weights with per"
-                            " channel quantization what is not supported in TFLite.",
-                        )
+                        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX QLinearConv uses dynamic UINT8 weights with per"
+                            " channel quantization what is not supported in TFLite.")
 
                 # OUTPUT
                 new_zero_point = calculate_uint_to_int_re_quantization_zero_point(1, output_zero_point)
@@ -383,14 +370,11 @@ class QLinearConvConverter(NodeConverter):
         if attrs.kernel_shape is None:
             attrs.kernel_shape = translator.infer_kernel_shape(weight_tensor)
         elif attrs.kernel_shape != translator.infer_kernel_shape(weight_tensor):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
 
         kernel_rank = len(attrs.kernel_shape)
         if kernel_rank == 1:
             return self._convert_1d_q_linear_conv(attrs, t_op)
         if kernel_rank == 2:
             return self._convert_2d_q_linear_conv(attrs, t_op)
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            f"Conversion of ONNX QLinearConv with '{kernel_rank}' dimensions is not possible!",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearConv with '{kernel_rank}' dimensions is not possible!")

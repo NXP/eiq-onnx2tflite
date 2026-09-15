@@ -12,9 +12,13 @@ from typing import Any
 import onnx
 from onnx import AttributeProto, TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser import onnx_tensor
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ConstantOfShape(meta.ONNXOperatorAttributes):
@@ -36,10 +40,7 @@ class ConstantOfShape(meta.ONNXOperatorAttributes):
                     self.value = onnx_tensor.TensorProto(attr.t)
 
                 else:
-                    logger.e(
-                        logger.Code.NOT_IMPLEMENTED,
-                        f"ONNX ConstantOfShape attribute 'value' has type '{attr.type}'. This is not yet supported!",
-                    )
+                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"ONNX ConstantOfShape attribute 'value' has type '{attr.type}'. This is not yet supported!")
 
             else:
-                logger.w(f"ONNX ConstantOfShape attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX ConstantOfShape attribute '{attr.name}' is not supported!")

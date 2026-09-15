@@ -7,7 +7,6 @@
 
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization, re_quantize_static_tensor
@@ -16,6 +15,11 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import select_v2_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class WhereConverter(NodeConverter):
@@ -29,10 +33,7 @@ class WhereConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX 'Where' operator into TFLite 'SelectV2'."""
         if len(t_op.tmp_inputs) != 3:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Where' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '3'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Where' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '3'.")
 
         condition = t_op.tmp_inputs[0]
         x = t_op.tmp_inputs[1]
@@ -43,7 +44,7 @@ class WhereConverter(NodeConverter):
             self.assert_type_allowed(x.type)
 
         if t_op.is_quantized_without_qdq():
-            logger.w(
+            logger.warning(
                 f"Propagating quantization params from first input tensor ('{x.name}') to output tensor ('{out.name}')"
                 " in 'Where' operator. This can negatively affect accuracy of the output."
             )
@@ -52,10 +53,10 @@ class WhereConverter(NodeConverter):
         ops = OpsList(middle_op=t_op)
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'Where' has inputs with different data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX operator 'Where' has inputs with different data types!")
 
         if condition.type != TensorType.BOOL:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "Type of condition tensor in 'Where' operator is not bool!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "Type of condition tensor in 'Where' operator is not bool!")
 
         ops.pre_ops.extend(self.builder.ensure_correct_broadcasting(t_op, out))
 
@@ -71,13 +72,13 @@ class WhereConverter(NodeConverter):
                 if input_tensor.quantization != out.quantization:
                     # Tensor's q-params doesn't match with output ones
                     if tensor_has_data(input_tensor):
-                        logger.w(
+                        logger.warning(
                             f"Requantizing tensor '{input_tensor.name}' to match q-params of 'Where' output tensor."
                         )
                         input_tensor = re_quantize_static_tensor(self.builder, input_tensor, y.type, scale, zp)
                         t_op.tmp_inputs[idx] = input_tensor
                     else:
-                        logger.w(
+                        logger.warning(
                             f"Re-quantizing input tensor '{input_tensor.name}' of 'Where' op to satisfy TFLite's "
                             "q-param requirements. This can decrease accuracy of the model."
                         )

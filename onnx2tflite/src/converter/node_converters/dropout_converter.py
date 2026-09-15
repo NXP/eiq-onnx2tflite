@@ -8,13 +8,14 @@
 
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class DropoutConverter(NodeConverter):
@@ -46,16 +47,10 @@ class DropoutConverter(NodeConverter):
                 # Cannot determine if training mode is set or not.
                 # If needed, add a flag to guarantee `training_mode` 0.
                 # This is tested by `node:test_training_dropout*`.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Dropout` with a dynamic `training_mode` input tensor is not supported.")
 
         if training_mode != 0:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX `Dropout` with `training_mode` != 0 is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Dropout` with `training_mode` != 0 is not possible.")
 
         # Remove the extra inputs of the operator.
         t_op.tmp_inputs[1:] = []
@@ -67,10 +62,7 @@ class DropoutConverter(NodeConverter):
         ):
             # The `Dropout` uses extra outputs, which are used later in the model. Conversion is not possible.
             # This is tested by `node:test_dropout_default_mask*`.
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX `Dropout` with more than 1 output is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Dropout` with more than 1 output is not possible.")
 
         if self.builder.operator_can_be_skipped(t_op, self.inspector):
             self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])

@@ -149,4 +149,4 @@ def test_cmd__set_input_shape__invalid_format():
         result = exec_conversion([model_path, "-m", "input:(1a,5,4)"])
 
         assert result.returncode != 0
-        assert "[Code.INVALID_INPUT] - Input shape definition 'input:(1a,5,4)' in invalid format." in result.stderr
+        assert "[INVALID_INPUT] - Input shape definition 'input:(1a,5,4)' in invalid format." in result.stderr

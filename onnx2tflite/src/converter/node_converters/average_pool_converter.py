@@ -13,7 +13,6 @@ import numpy as np
 import onnx2tflite.src.onnx_parser.builtin_attributes.average_pool_attributes as onnx_average_pool_attributes
 from onnx2tflite.lib.tflite.Padding import Padding
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -22,6 +21,8 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options as tfl_average_pool_2d_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class AveragePoolConverter(NodeConverter):
@@ -46,10 +47,7 @@ class AveragePoolConverter(NodeConverter):
         for dim in t_op.tmp_inputs[0].shape.vector:
             if (not isinstance(dim, int)) or dim < 0:
                 # Dynamic shapes make it difficult to use the Reshape operators.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of 1D ONNX AveragePool with a dynamic shape is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of 1D ONNX AveragePool with a dynamic shape is not yet supported.")
 
         # -- Calculate the shapes for equivalent 2D AveragePool --
         reshape1_output_shape = translator.nhc_dimensions_to_nhwc(t_op.tmp_inputs[0].shape.vector)
@@ -100,26 +98,17 @@ class AveragePoolConverter(NodeConverter):
             if any([dilation != 1 for dilation in attrs.dilations]):
                 # TFLite AveragePool doesn't support dilations. TODO Convert to DepthwiseConv2D, which has dilations.
                 # ONNX dilations were only added in v19. Also onnx.checker still doesn't allow dilations even for v19.
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    f"Conversion of ONNX AveragePool with dilations '{attrs.dilations}' is not yet implemented.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX AveragePool with dilations '{attrs.dilations}' is not yet implemented.")
 
         if attrs.ceil_mode == 1:
             # TFLite always uses 'floor' to round, so the output shape may be different from ONNX.
             # TODO Calculate the output shape, to see if this attribute even makes a difference.
             # TODO Prepending a 'Pad' operator should work, but only if 'count_include_pad' is 1.
             if attrs.count_include_pad == 1:
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX AveragePool with 'ceil_mode' = 1 is not yet supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX AveragePool with 'ceil_mode' = 1 is not yet supported.")
 
             else:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX AveragePool with 'ceil_mode' = 1 and 'count_include_pad' = 0 is not possible.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX AveragePool with 'ceil_mode' = 1 and 'count_include_pad' = 0 is not possible.")
 
         t_op.builtin_options = tfl_average_pool_2d_options.AveragePool2D()
         ops = OpsList(middle_op=t_op)
@@ -142,11 +131,8 @@ class AveragePoolConverter(NodeConverter):
             # Need to prepend a 'Pad' operator, which adds 0s. But these will be included in the computation!
             if attrs.count_include_pad == 0:
                 # The 0s must NOT be included in the computation of the average value.
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of "
-                    "input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX AveragePool with 'count_include_pad' = 0 and a specific combination of "
+                    "input shape, 'kernel_shape', 'strides', 'dilations' and padding is not possible!")
 
             ops.add_pre(self.builder.create_pad_operator_before(t_op, 0, explicit_padding))
 
@@ -182,9 +168,7 @@ class AveragePoolConverter(NodeConverter):
             self.assert_type_allowed(t_op.tmp_inputs[0].type)
         elif t_op.is_quantized_without_qdq():
             # ONNX doesn't support (U)INT8. Leave this check in case the support is added in the future.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `AveragePool` with a quantized input is not supported."
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `AveragePool` with a quantized input is not supported.")
 
         attrs = cast(onnx_average_pool_attributes.AveragePool, node.attributes)
 
@@ -199,13 +183,7 @@ class AveragePoolConverter(NodeConverter):
         if kernel_rank - num_ones <= 2:
             # TODO Enough dimensions are '1', so the input can be reshaped to 4D and a AveragePool2D can be applied.
             #  Not sure if this is a realistic scenario and worth putting time into.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not yet implemented.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not yet implemented.")
 
         else:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not possible!")

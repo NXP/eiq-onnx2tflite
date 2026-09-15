@@ -23,8 +23,12 @@ try:
     import tensorflow.lite as tflite
 except ModuleNotFoundError:
     import tflite_runtime.interpreter as tflite
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter import convert
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class OnnxExecutor:
@@ -77,12 +81,12 @@ class OnnxExecutor:
                 sess_options = onnxruntime.SessionOptions()
                 if has_only_x64_u8u8_compatible_ops(model):
                     sess_options.add_session_config_entry("session.x64quantprecision", "1")
-                    logger.w(f"OnnxExecutor: Running in mode using U8U8 matrix multiplication instructions.")
+                    logger.warning(f"OnnxExecutor: Running in mode using U8U8 matrix multiplication instructions.")
 
                 self.sess = onnxruntime.InferenceSession(model.SerializeToString(), sess_options)
             except Exception as e:
                 # Something has failed, try without session options.
-                logger.w(f"OnnxExecutor: Failed to create inference session. Reason: {e}. Trying default session.")
+                logger.warning(f"OnnxExecutor: Failed to create inference session. Reason: {e}. Trying default session.")
                 self.sess = onnxruntime.InferenceSession(model.SerializeToString())
 
     def _get_input_name(self, idx=0):
@@ -173,7 +177,7 @@ class TFLiteExecutor:
             self._interpreter.set_tensor(input_details[0]['index'], input_data)
         elif isinstance(input_data, Dict):
             if len(input_data) != len(input_details):
-                logger.w(f"Number of model inputs: '{len(input_details)}', and provided input data: '{len(input_data)}'"
+                logger.warning(f"Number of model inputs: '{len(input_details)}', and provided input data: '{len(input_data)}'"
                          f" is not the same. Using first {len(input_details)} inputs tensors.")
             for index in range(len(input_details)):
                 self._interpreter.set_tensor(input_details[index]['index'], input_data[index])
@@ -209,7 +213,7 @@ def compare_output_arrays(tfl_output: np.ndarray, onnx_output: np.ndarray, outpu
     onnx_output = onnx_output.astype(np.float32)
 
     if tfl_output.dtype != np.bool_ and tfl_output.size != 0:
-        logger.i(f"Maximum output difference of the `{output_name}`tensor: {np.max(np.abs(tfl_output - onnx_output))}. "
+        logger.info(f"Maximum output difference of the `{output_name}`tensor: {np.max(np.abs(tfl_output - onnx_output))}. "
                  f"(atol={atol}, rtol={rtol})")
 
     assert tfl_output.shape == onnx_output.shape, "Output shapes don't match!"
@@ -223,7 +227,7 @@ def _get_output_tensor_for_name(name: str, model: onnx.ModelProto) -> onnx.Value
         if output.name == name:
             return output
 
-    logger.e(logger.Code.INTERNAL_ERROR, '_get_output_for_name(): failed to find output.')
+    raise ConversionError(errors.Code.INTERNAL_ERROR, '_get_output_for_name(): failed to find output.')
 
 
 def _assert_array_shape_equals_output_shape(output: onnx.ValueInfoProto, array: np.ndarray, verify_output_shape: bool):
@@ -270,7 +274,7 @@ def convert_run_compare(onnx_model: onnx.ModelProto, input_data, check_model=Tru
                                                         onnx_output[output_name], verify_output_shape)
 
         else:
-            logger.e(logger.Code.INTERNAL_ERROR, "Original ONNX and converted TFLite models have different outputs.")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "Original ONNX and converted TFLite models have different outputs.")
 
     elif isinstance(tflite_output, np.ndarray) and isinstance(onnx_output, np.ndarray):
         compare_output_arrays(tflite_output, onnx_output, 'main output', rtol, atol)
@@ -278,7 +282,7 @@ def convert_run_compare(onnx_model: onnx.ModelProto, input_data, check_model=Tru
 
     else:
         # This can happen for example, if the TFLite model does not have some outputs, which are in the ONNX model.
-        logger.e(logger.Code.NOT_IMPLEMENTED, "Original ONNX and converted TFLite models have different number of "
+        raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Original ONNX and converted TFLite models have different number of "
                                               "outputs. Testing is not implemented for this case.")
 
     return tflite_executor, onnx_executor

@@ -10,7 +10,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
@@ -23,6 +22,8 @@ from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import concatenation_options, gather_nd_options, reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
 
 
 class GatherElementsConverter(NodeConverter):
@@ -68,10 +69,7 @@ class GatherElementsConverter(NodeConverter):
         so the same decomposition works for both static and dynamic `indices`.
         """
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX `GatherElements` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX `GatherElements` has unexpected number of inputs. Got `{len(t_op.tmp_inputs)}`, expected `2`.")
 
         x = t_op.tmp_inputs[0]
         rank = x.rank
@@ -107,7 +105,7 @@ class GatherElementsConverter(NodeConverter):
             negative_mask = normalized < 0
             normalized[negative_mask] += dim_size
             if np.any(normalized < 0) or np.any(normalized >= dim_size):
-                logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `GatherElements` operator has invalid `indices` tensor!")
+                raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `GatherElements` operator has invalid `indices` tensor!")
 
             # TFLite `GatherND` requires full coordinate vector for each output position.
             # For the gather axis substitute `indices`, for every other axis keep the
@@ -121,12 +119,9 @@ class GatherElementsConverter(NodeConverter):
             # Dynamic `indices`. Build the coordinate tensor at runtime with `Concat`. Only the `axis` coordinate is
             #  dynamic, the rest are static constants.
             if not self.context.conversion_config.guarantee_non_negative_indices:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion of ONNX `GatherElements` with dynamic `indices` is not possible because they may "
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `GatherElements` with dynamic `indices` is not possible because they may "
                     "contain negative values, which is not supported by TFLite. "
-                    + logger.Message.GUARANTEE_NON_NEGATIVE_INDICES,
-                )
+                    + messages.Message.GUARANTEE_NON_NEGATIVE_INDICES)
 
             numpy_type = tf_lite_type_to_numpy(indices.type)
 
@@ -170,8 +165,5 @@ class GatherElementsConverter(NodeConverter):
             axis += rank
 
         if not (0 <= axis < rank):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE,
-                f"ONNX `GatherElements` has invalid `axis` attribute! (`{axis}`)",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX `GatherElements` has invalid `axis` attribute! (`{axis}`)")
         return axis

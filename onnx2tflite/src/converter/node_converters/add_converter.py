@@ -11,13 +11,17 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.add_options as tflite_add_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class AddConverter(NodeConverter):
@@ -37,17 +41,14 @@ class AddConverter(NodeConverter):
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Add' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Add' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
         output = t_op.tmp_outputs[0]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX 'Add' has mismatched input data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 'Add' has mismatched input data types!")
 
         if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
@@ -55,7 +56,7 @@ class AddConverter(NodeConverter):
             # ONNX Runtime doesn't support INT8 / UINT8.
             # https://github.com/microsoft/onnxruntime/blob/v1.17.0/onnxruntime/core/providers/cpu/math/element_wise_ops.cc#L156-L167
             # Keep this check in case support is added later.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Add` with quantized inputs is not supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Add` with quantized inputs is not supported.")
 
         x_only_zeros = self._is_zeros_tensor(x)
         y_only_zeros = self._is_zeros_tensor(y)
@@ -67,7 +68,7 @@ class AddConverter(NodeConverter):
             input_tensor = y if x_only_zeros else x
 
             if (input_tensor.shape == output.shape) and self.builder.operator_can_be_skipped(t_op, self.inspector):
-                logger.i("Skipping operator 'Add' because one of the inputs was just zeros.")
+                logger.info("Skipping operator 'Add' because one of the inputs was just zeros.")
                 self.builder.redirect_tensor(output, input_tensor)
                 return []
 

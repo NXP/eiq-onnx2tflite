@@ -9,13 +9,17 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.sub_options as tflite_sub_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class SubConverter(NodeConverter):
@@ -36,24 +40,19 @@ class SubConverter(NodeConverter):
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         if len(t_op.tmp_inputs) != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX 'Sub' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX 'Sub' has unexpected number of inputs. Got '{len(t_op.tmp_inputs)}', expected '2'.")
 
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_inputs[1]
         output = t_op.tmp_outputs[0]
 
         if x.type != y.type:
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX 'Sub' has mismatched input data types!")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX 'Sub' has mismatched input data types!")
 
         if t_op.is_quantized_without_qdq():
             # ONNX Runtime currently doesn't support `(u)int8` inputs, so this case cannot be tested.
             # If support is added in the future, propagate the quantization parameters.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Sub` with quantized inputs is not yet supported."
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Sub` with quantized inputs is not yet supported.")
 
         elif not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
@@ -65,7 +64,7 @@ class SubConverter(NodeConverter):
 
         if y_only_zeros:
             if x.shape == output.shape and self.builder.operator_can_be_skipped(t_op, self.inspector):
-                logger.i("Skipping operator 'Sub' because second input 'y' is just zeros.")
+                logger.info("Skipping operator 'Sub' because second input 'y' is just zeros.")
                 self.builder.redirect_tensor(output, x)
                 return []
 

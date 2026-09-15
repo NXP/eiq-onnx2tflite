@@ -6,8 +6,8 @@
 #
 
 from onnxruntime.quantization import CalibrationDataReader
+from onnx2tflite.src import errors
 
-from onnx2tflite.src import logger
 
 PER_CHANNEL_DEFAULT = False
 
@@ -42,7 +42,7 @@ class QuantizationConfig:
                 if key in self.__dict__:
                     setattr(self, key, value)
 
-        logger.internal_assert(
+        errors.internal_assert(
             (self.calibration_data_reader is not None) ^ self.use_random_calibration_dataset,
             "Calibration data reader not provided!",
         )

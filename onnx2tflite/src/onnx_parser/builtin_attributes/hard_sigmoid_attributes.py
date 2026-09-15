@@ -9,8 +9,10 @@ from collections.abc import Iterable
 import numpy as np
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class HardSigmoid(meta.ONNXOperatorAttributes):
@@ -31,4 +33,4 @@ class HardSigmoid(meta.ONNXOperatorAttributes):
             elif attr.name == "beta":
                 self.beta = attr.f
             else:
-                logger.w(f"ONNX HardSigmoid attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX HardSigmoid attribute '{attr.name}' is not supported!")

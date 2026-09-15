@@ -15,14 +15,17 @@ import logging
 import ntpath
 from argparse import Namespace
 
-import onnx2tflite.src.logger as context_logger
+from onnx2tflite.src import errors
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
+from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger("onnx2tflite")
 syslog = logging.StreamHandler()
 syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
 logger.addHandler(syslog)
+logger.setLevel(logging.WARNING)
+
 
 
 def _get_user_choice_parser() -> argparse.ArgumentParser:
@@ -190,7 +193,6 @@ def run_conversion() -> None:
 
     if args.verbose:
         # Print all logging messages
-        context_logger.MIN_OUTPUT_IMPORTANCE = context_logger.MessageImportance.INFO
         logger.setLevel(logging.DEBUG)
 
     if args.symbolic_dimensions_mapping:
@@ -200,14 +202,15 @@ def run_conversion() -> None:
                 args.symbolic_dimensions_mapping
             )
         except Exception as err:  # noqa: BLE001
-            context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
+            raise ConversionError(errors.Code.INVALID_INPUT, str(err)) from err
 
     if args.input_shapes_mapping:
         assert isinstance(args.input_shapes_mapping, list)
         try:
             args.input_shapes_mapping = convert.parse_input_shape_mapping(args.input_shapes_mapping)
         except Exception as err:  # noqa: BLE001
-            context_logger.e(context_logger.Code.INVALID_INPUT, str(err))
+            raise ConversionError(errors.Code.INVALID_INPUT, str(err)) from err
+
 
     """ Convert the model """
     binary_tflite_model = convert.convert_model(args.onnx_file, ConversionConfig(vars(args)))
@@ -221,8 +224,13 @@ def run_conversion() -> None:
 def run_conversion_wrapper() -> None:
     try:
         run_conversion()
-    except context_logger.Error as e:
-        exit(e.error_code.value)
+    except ConversionError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception("%s", e)
+        else:
+            logger.error("%s", e)
+        raise SystemExit(e.code.value) from e
+
 
 
 if __name__ == "__main__":

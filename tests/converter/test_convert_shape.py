@@ -13,12 +13,13 @@ import pytest
 from onnx import TensorProto
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.converter.conversion import common
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("end", list(range(-5, 5, 2)), ids=lambda x: f" end='{x}'")
@@ -45,9 +46,9 @@ def test_convert_shape(input_shape, start: int, end: int):
     end = common.clamp(end, 0, rank)
     if end < start:
         # Expect error
-        with pytest.raises(logger.Error):
+        with pytest.raises(errors.ConversionError) as exc_info:
             convert.convert_model(onnx_model)
-        assert logger.conversion_log.get_node_error_code(0) == logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
+        assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
 
     else:
         input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
@@ -82,9 +83,9 @@ def test_convert_shape_with_channels_first_input(input_shape, start: int, end: i
     end = common.clamp(end, 0, rank)
     if end < start:
         # Expect error
-        with pytest.raises(logger.Error):
+        with pytest.raises(errors.ConversionError) as exc_info:
             convert.convert_model(onnx_model)
-        assert logger.conversion_log.get_node_error_code(1) == logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
+        assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE
 
     else:
         input_data = np.arange(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
@@ -173,10 +174,10 @@ def test_convert_shape__invalid_type():
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
-    assert 'UINT16' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert 'UINT16' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("type_", [TensorProto.INT8, TensorProto.UINT8], ids=name_for_onnx_type)

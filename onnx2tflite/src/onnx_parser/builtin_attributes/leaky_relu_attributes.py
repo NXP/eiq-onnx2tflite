@@ -11,8 +11,10 @@ from collections.abc import Iterable
 import numpy as np
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LeakyRelu(meta.ONNXOperatorAttributes):
@@ -29,4 +31,4 @@ class LeakyRelu(meta.ONNXOperatorAttributes):
             if attr.name == "alpha":
                 self.alpha = attr.f
             else:
-                logger.w(f"ONNX LeakyRelu attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX LeakyRelu attribute '{attr.name}' is not supported!")

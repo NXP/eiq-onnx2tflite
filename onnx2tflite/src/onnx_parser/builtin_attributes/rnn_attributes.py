@@ -8,8 +8,10 @@ from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RNN(meta.ONNXOperatorAttributes):
@@ -50,4 +52,4 @@ class RNN(meta.ONNXOperatorAttributes):
             elif attr.name == "layout":
                 self.layout = attr.i
             else:
-                logger.w(f"ONNX RNN attribute '{attr.name}' is not supported!")
+                logger.warning(f"ONNX RNN attribute '{attr.name}' is not supported!")

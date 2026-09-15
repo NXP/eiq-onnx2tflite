@@ -11,7 +11,6 @@ import numpy as np
 from onnx import TensorProto as onnxType
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
@@ -21,6 +20,8 @@ from onnx2tflite.src.onnx_parser.onnx_tensor import TensorProto
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import broadcast_to_options, gather_options
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 class ConstantOfShapeConverter(NodeConverter):
@@ -30,17 +31,11 @@ class ConstantOfShapeConverter(NodeConverter):
         """Make sure the 'value' is a valid 1 element ONNX tensor and return a corresponding TFLite tensor."""
         # ONNX documentation says the 'value' should always be a tensor.
         if not isinstance(value, onnx_tensor.TensorProto):
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX ConstantOfShape is only implemented when the 'value' attribute is a tensor!",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX ConstantOfShape is only implemented when the 'value' attribute is a tensor!")
 
         if value.data.size != 1:
             # ONNX Runtime only supports 1 element tensors and documentation also suggests a 1D tensor.
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX ConstantOfShape attribute 'value' should only have '1' element! Got '{value.data.size()}'!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX ConstantOfShape attribute 'value' should only have '1' element! Got '{value.data.size()}'!")
 
         if value.data_type not in {
             onnxType.BOOL,
@@ -56,11 +51,8 @@ class ConstantOfShapeConverter(NodeConverter):
             onnxType.UINT64,
             onnxType.UINT8,
         }:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX ConstantOfShape has 'value' tensor of type '{value.data_type}'"
-                " which is not allowed in the documentation!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX ConstantOfShape has 'value' tensor of type '{value.data_type}'"
+                " which is not allowed in the documentation!")
 
         return self.builder.create_tensor_for_data(value.data, "value")
 
@@ -73,11 +65,8 @@ class ConstantOfShapeConverter(NodeConverter):
         """
         output_rank = broadcast_to_op.tmp_outputs[0].rank
         if output_rank == 0:
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX 'ConstantOfShape' with a channels first "
-                "output and a dynamic 'shape' with unknown rank is not possible!",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX 'ConstantOfShape' with a channels first "
+                "output and a dynamic 'shape' with unknown rank is not possible!")
 
         to_tflite_perm = translator.create_channels_first_to_channels_last_permutation(output_rank)
         gather_output = self.builder.duplicate_tensor(broadcast_to_op.tmp_inputs[1], "channels_last_shape")
@@ -94,18 +83,12 @@ class ConstantOfShapeConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX ConstantOfShape operator to TFLite BroadcastTo."""
         if len(t_op.tmp_inputs) != 1:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX ConstantOfShape has unexpected number of operators. Got '{len(t_op.tmp_inputs)}', expected '1'.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX ConstantOfShape has unexpected number of operators. Got '{len(t_op.tmp_inputs)}', expected '1'.")
 
         shape_tensor = t_op.tmp_inputs[0]
         if shape_tensor.type != TensorType.INT64:
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                "ONNX operator ConstantOfShape has input 'shape' tensor of type "
-                f"'{name_for_type(shape_tensor.type)}' instead of the expected 'INT64'!",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX operator ConstantOfShape has input 'shape' tensor of type "
+                f"'{name_for_type(shape_tensor.type)}' instead of the expected 'INT64'!")
 
         attrs = cast(ConstantOfShape, node.attributes)
 

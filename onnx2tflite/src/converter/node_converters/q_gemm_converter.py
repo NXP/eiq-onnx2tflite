@@ -9,7 +9,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion.common import OpsList, exactly_one_is_none, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
@@ -22,6 +21,8 @@ from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import q_gemm_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import fully_connected_options, mul_options
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyMethodMayBeStatic
@@ -49,9 +50,7 @@ class QGemmConverter(NodeConverter):
 
         if exactly_one_is_none(*output_parameter_tensors):
             # Exactly one output quantization parameter is specified. This goes against the documentation.
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR, "ONNX Runtime QGemm has a 'y_scale' input, but not 'y_zero_point'."
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Runtime QGemm has a 'y_scale' input, but not 'y_zero_point'.")
 
         # Remove `None` values from `parameter_tensors`.
         output_parameter_tensors = list(filter(lambda x: x is not None, output_parameter_tensors))
@@ -60,10 +59,7 @@ class QGemmConverter(NodeConverter):
         parameter_tensors.extend(output_parameter_tensors)
 
         if not all_tensors_are_static(*parameter_tensors):
-            logger.e(
-                logger.Code.CONVERSION_IMPOSSIBLE,
-                "Conversion of ONNX Runtime QGemm with dynamic quantization parameters is not possible.",
-            )
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX Runtime QGemm with dynamic quantization parameters is not possible.")
 
         params = [param_tensor.tmp_buffer.data for param_tensor in parameter_tensors]
         if not all(param.size == 1 for param in params):
@@ -74,12 +70,9 @@ class QGemmConverter(NodeConverter):
             b_zp_all_zeros = not params[3].any()
 
             if not (is_trans_b and a_is_int8 and b_is_int8 and b_zp_all_zeros):
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "ONNX Runtime QGemm uses per-channel quantization. Conversion to TFLite is "
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX Runtime QGemm uses per-channel quantization. Conversion to TFLite is "
                     "supported only when attribute 'transB=1', types equal to INT8 and zero points of second "
-                    "input tensor equal to zero.",
-                )
+                    "input tensor equal to zero.")
 
         if len(params) == 4:
             # The output parameters were omitted.
@@ -91,10 +84,7 @@ class QGemmConverter(NodeConverter):
         t = t_op.tmp_inputs[input_idx]
 
         if t.rank != 2:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"ONNX Runtime QGemm has a main intput with {t.rank} dimensions instead of 2.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX Runtime QGemm has a main intput with {t.rank} dimensions instead of 2.")
 
         if tensor_has_data(t):
             # Transpose statically.
@@ -136,11 +126,8 @@ class QGemmConverter(NodeConverter):
         #     another error.
         # Combination of errors mentioned above leads to large degradation in accuracy.
         # Bias in shape different from [N] or [1, N] is also rare, so we let user improve the model.
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE,
-            "ONNX Runtime operator QGemm has bias input ('C') with shape that is not supported by TFLite. "
-            "Make sure bias tensor has shape [N] or [1, N].",
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "ONNX Runtime operator QGemm has bias input ('C') with shape that is not supported by TFLite. "
+            "Make sure bias tensor has shape [N] or [1, N].")
 
     def _handle_alpha_attribute(self, alpha: float, t_op: tflite_model.Operator, ops: OpsList) -> None:
         """Handle the conversion of the 'alpha' attribute of the ORT QGemm operator.
@@ -164,7 +151,7 @@ class QGemmConverter(NodeConverter):
         if alpha < 0:
             # Rare scenario -> For negative alpha, a Mul op must be added, or dequantize the static data,
             #  multiply by alpha and quantize it back.
-            logger.e(logger.Code.NOT_IMPLEMENTED, "Conversion of QGemm with negative alpha is not supported.")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of QGemm with negative alpha is not supported.")
 
         # Find if the QGemm has a static input.
         static_input = None
@@ -217,10 +204,7 @@ class QGemmConverter(NodeConverter):
         o_q_gemm = cast(q_gemm_attributes.QGemm, q_gemm_node.attributes)
 
         if not (6 <= len(t_op.tmp_inputs) <= 9):
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"ONNX QGemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 6 - 9.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX QGemm has unexpected number of inputs ({len(t_op.tmp_inputs)}), instead of 6 - 9.")
 
         ops = OpsList(middle_op=t_op)
 
@@ -230,7 +214,7 @@ class QGemmConverter(NodeConverter):
         y = t_op.tmp_outputs[0]
 
         if a.type != b.type:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR, "ONNX Runtime QGemm has mismatched input types.")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Runtime QGemm has mismatched input types.")
 
         # Quantization parameters (numpy arrays or None). y_s and y_zp may be None (together), which means that the
         #  output of the QGemm should be float32.
@@ -244,10 +228,7 @@ class QGemmConverter(NodeConverter):
 
         else:
             if y.type != TensorType.FLOAT32:
-                logger.e(
-                    logger.Code.INVALID_ONNX_OPERATOR,
-                    "ONNX Runtime QGemm has no output quantization parameters, but its output is not float32.",
-                )
+                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX Runtime QGemm has no output quantization parameters, but its output is not float32.")
 
             # The output is FLOAT32. I believe ONNX Runtime does not do the computation in 8bits. I somehow couldn't
             #  find where this is handled within ONNX Runtime. In my tests, the ONNX output had a resolution of
@@ -256,10 +237,7 @@ class QGemmConverter(NodeConverter):
             #  14.9700384461955 bits would be the minimum required for this precision.
 
             # Probably convert into float FullyConnected if necessary.
-            logger.e(
-                logger.Code.NOT_IMPLEMENTED,
-                "Conversion of ONNX Runtime QGemm with a float32 output is not yet supported.",
-            )
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX Runtime QGemm with a float32 output is not yet supported.")
 
         # Assign the operator its TFLite inputs.
         t_op.tmp_inputs = [a, b]

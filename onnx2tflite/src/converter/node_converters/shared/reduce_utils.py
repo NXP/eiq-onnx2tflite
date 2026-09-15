@@ -8,7 +8,6 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.builder.model_builder import ModelBuilder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
@@ -17,6 +16,11 @@ from onnx2tflite.src.model_inspector import ONNXModelInspector
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
+import logging
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 def convert_axes_from_attribute(t_op: tflite_model.Operator, builder: ModelBuilder, axes: list[int] | None) -> None:
@@ -56,15 +60,12 @@ def convert_axes_from_input_tensor(
     if axes_tensor := try_get_input(t_op, 1):
         # ONNX uses int64, while TFLite requires int32 for the `axes` tensor.
         if axes_tensor.type != TensorType.INT64:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR,
-                f"ONNX `{op_type}` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of INT64.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `{op_type}` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of INT64.")
 
         # Try to get the inferred data for the `axes` input.
         if (axes_data := inspector.try_get_inferred_tensor_data(axes_tensor.name)) is not None:
             # The `axes` were inferred during shape inference.
-            logger.d(f"Using inferred data for the `axes` input tensor of ONNX `{op_type}`.")
+            logger.debug(f"Using inferred data for the `axes` input tensor of ONNX `{op_type}`.")
 
             # Create a new tensor, in case the original `axes` tensor is used by multiple ops.
             axes_tensor = builder.create_tensor_for_data(axes_data.astype(np.int32), "axes")
@@ -87,7 +88,7 @@ def convert_axes_from_input_tensor(
             #  on runtime data. Conversion could be implemented by adding multiple extra operators.
             # I don't think that completely prohibiting the conversion here is ideal, since the issue arises only in
             #  an edge case, which is hopefully not very common. Just print a warning message for now.
-            logger.w(
+            logger.warning(
                 f"Conversion of ONNX `{op_type}` with a dynamic `axes` input will not be correct, if the `axes`"
                 "are empty at runtime!"
             )
@@ -121,12 +122,9 @@ def convert_axes_from_input_tensor(
         #     self.builder.turn_operator_to_identity(t_op)
         #     return [t_op]
 
-        logger.e(
-            logger.Code.INVALID_ONNX_OPERATOR,
-            f"ONNX `{op_type}` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `{op_type}` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
             " indicates that the operator should do nothing. This is however not supported by ONNX"
-            " Runtime, and therefore the conversion is also not supported.",
-        )
+            " Runtime, and therefore the conversion is also not supported.")
 
     else:
         # Default is to reduce all axes.

@@ -11,7 +11,6 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -29,6 +28,8 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
     reshape_options,
 )
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyPep8Naming
@@ -208,7 +209,7 @@ class ConvConverter(NodeConverter):
         elif len(o_conv_attributes.strides) == 3:
             t_conv.stride_d, t_conv.stride_h, t_conv.stride_w = o_conv_attributes.strides
         else:
-            logger.e(logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Conv with a 3D kernel doesn't have 3D strides!")
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Conv with a 3D kernel doesn't have 3D strides!")
 
         if o_conv_attributes.dilations is None:
             # Default dilations
@@ -216,9 +217,7 @@ class ConvConverter(NodeConverter):
         elif len(o_conv_attributes.dilations) == 3:
             t_conv.dilation_d_factor, t_conv.dilation_h_factor, t_conv.dilation_w_factor = o_conv_attributes.dilations
         else:
-            logger.e(
-                logger.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Conv with a 3D kernel doesn't have 3D dilations!"
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, "ONNX Conv with a 3D kernel doesn't have 3D dilations!")
 
         conversion_result = conv_utils.ConvConversionResult(input_tensor, weight_tensor, bias_tensor, output_tensor)
         conversion_result.ops_list.middle_op = t_op
@@ -250,7 +249,7 @@ class ConvConverter(NodeConverter):
                 o_conv_attributes, t_op, self.builder, self._convert_unpadded_3D, conv_utils.conv_op_factory, 4
             )
         if o_conv_attributes.group != 1:
-            logger.e(logger.Code.NOT_IMPLEMENTED, "ONNX Conv with a 3D kernel and unsupported 'group' value!")
+            raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX Conv with a 3D kernel and unsupported 'group' value!")
 
         conversion_result = self._convert_unpadded_3D(o_conv_attributes, t_op)
         padding, pad_op = conv_utils.build_input_tensor_padding(o_conv_attributes, t_op, self.builder)
@@ -271,10 +270,7 @@ class ConvConverter(NodeConverter):
         o_conv_attributes = cast(conv_attributes.Conv, conv_node.attributes)
 
         if not (2 <= len(t_op.tmp_inputs) <= 3):
-            logger.e(
-                logger.Code.INVALID_ONNX_MODEL,
-                f"ONNX Conv has invalid number of inputs. Got '{len(t_op.tmp_inputs)}', expected 2 or 3.",
-            )
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX Conv has invalid number of inputs. Got '{len(t_op.tmp_inputs)}', expected 2 or 3.")
 
         input_tensor = t_op.tmp_inputs[0]
         weight_tensor = t_op.tmp_inputs[1]
@@ -282,11 +278,11 @@ class ConvConverter(NodeConverter):
         if o_conv_attributes.kernel_shape is None:
             o_conv_attributes.kernel_shape = translator.infer_kernel_shape(weight_tensor)
         elif o_conv_attributes.kernel_shape != translator.infer_kernel_shape(weight_tensor):
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "Weight tensor shape not corresponds to kernel_shape attribute")
 
         if t_op.is_quantized_without_qdq():
             # Not supported by ONNX. Keep this check just in case.
-            logger.e(logger.Code.INVALID_ONNX_MODEL, "ONNX `Conv` has quantized inputs.")
+            raise ConversionError(errors.Code.INVALID_ONNX_MODEL, "ONNX `Conv` has quantized inputs.")
 
         if input_tensor.quantization is None:
             self.assert_type_allowed(input_tensor.type)
@@ -294,11 +290,8 @@ class ConvConverter(NodeConverter):
         else:
             # Only INT8 and UINT8 quantization is supported.
             if input_tensor.type not in [TensorType.INT8, TensorType.UINT8]:
-                logger.e(
-                    logger.Code.NOT_IMPLEMENTED,
-                    "Conversion of ONNX `Conv` quantized with type "
-                    f"`{name_for_type(input_tensor.type)}` is not supported.",
-                )
+                raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Conv` quantized with type "
+                    f"`{name_for_type(input_tensor.type)}` is not supported.")
 
             # (U)INT8 Conv is basically QLinearConv -> use already prepared conversion code
             return QLinearConvConverter(self.context).convert(conv_node, t_op)
@@ -314,6 +307,4 @@ class ConvConverter(NodeConverter):
         if kernel_rank == 3:
             return self._convert_3d_conv(o_conv_attributes, t_op)
 
-        logger.e(
-            logger.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX Conv with a {kernel_rank}D kernel is not possible!"
-        )
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX Conv with a {kernel_rank}D kernel is not possible!")

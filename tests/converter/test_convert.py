@@ -14,12 +14,13 @@ import pytest
 from onnx import numpy_helper
 
 import tests.converter.enabled_onnx_tests as enabled_onnx_tests
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter import convert
 from tests.converter.full_model_testing_utils import load_test_artifacts, full_model_test, full_quantized_model_test, \
     load_full_model_specs
 from tests.executors import OnnxExecutor, TFLiteExecutor, compare_output_arrays
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 _ARTIFACTS_DIR = pathlib.Path(__file__).parent.parent.joinpath("artifacts")
 _ONNX_TESTS_DIR = os.path.join(pathlib.Path(__file__).parent.parent.parent,
@@ -54,14 +55,13 @@ def test_output_of_test_onnx_model_corresponds_to_generated_tflite(onnx_artifact
     conversion_error = test_args.get(enabled_onnx_tests.CONVERSION_ERROR, None)
 
     if conversion_error is not None:
-        with pytest.raises(logger.Error):
+        with pytest.raises(errors.ConversionError) as exc_info:
             bytes(convert.convert_model(model_path, ConversionConfig(conversion_args)))
-        assert (logger.conversion_log.get_node_error_code(conversion_error[enabled_onnx_tests.CONVERSION_ERROR_NODE]) ==
+        assert (exc_info.value.code ==
                 conversion_error[enabled_onnx_tests.CONVERSION_ERROR_ERROR])
-        assert (logger.conversion_log.get_node_error_message(
-            conversion_error[enabled_onnx_tests.CONVERSION_ERROR_NODE]) ==
-                conversion_error[enabled_onnx_tests.CONVERSION_ERROR_MSG])
+        assert conversion_error[enabled_onnx_tests.CONVERSION_ERROR_MSG] in str(exc_info.value)
         return
+
     else:
         converted_tflite = bytes(convert.convert_model(model_path, ConversionConfig(conversion_args)))
 

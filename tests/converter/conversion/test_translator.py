@@ -7,8 +7,9 @@
 
 import pytest
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.converter.conversion import translator
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 @pytest.mark.parametrize("rank,input_axis,output_axis", [
@@ -59,10 +60,10 @@ def test_channel_first_to_last(rank, input_axis, output_axis):
 def test_permutations_are_inverse(perm1, perm2, expected_output):
     if expected_output is None:
         # expecting error
-        with pytest.raises(logger.Error) as e:
+        with pytest.raises(errors.ConversionError) as e:
             translator.permutations_are_inverse(perm1, perm2)
 
-        assert e.type == logger.Error
+        assert e.type == errors.ConversionError
 
     else:
         assert translator.permutations_are_inverse(perm1, perm2) == expected_output
@@ -86,10 +87,10 @@ def test_permutations_are_inverse(perm1, perm2, expected_output):
 def test_combine_permutations(perm1, perm2, expected_output):
     if expected_output is None:
         # expecting error
-        with pytest.raises(logger.Error) as e:
+        with pytest.raises(errors.ConversionError) as e:
             translator.combine_permutations(perm1, perm2)
 
-        assert e.type == logger.Error
+        assert e.type == errors.ConversionError
 
     else:
         assert translator.combine_permutations(perm1, perm2) == expected_output

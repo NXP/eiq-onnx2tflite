@@ -11,7 +11,6 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.builder import quantization_verification
 from onnx2tflite.src.converter.conversion import translator
@@ -35,6 +34,11 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
 )
 from onnx2tflite.src.tflite_generator.custom_options.flex_transpose_options import FlexTranspose
 from onnx2tflite.src.tflite_optimizer import optimizer
+import logging
+from onnx2tflite.src import errors, messages
+from onnx2tflite.src.errors import ConversionError
+
+logger = logging.getLogger(__name__)
 
 
 class ModelBuilder:
@@ -96,11 +100,11 @@ class ModelBuilder:
 
             # Check if such tensor already exists
             if tensor_as_string in self._zeros_tensor_map:
-                logger.d(f"REUSING zero tensor of size {str_dims} with type {dtype.name}.")
+                logger.debug(f"REUSING zero tensor of size {str_dims} with type {dtype.name}.")
                 return self._zeros_tensor_map[tensor_as_string]
 
             # Create a new one and register it for potential future use.
-            logger.d(f"ADDING zero tensor of size {str_dims} with type {dtype.name}.")
+            logger.debug(f"ADDING zero tensor of size {str_dims} with type {dtype.name}.")
             data = np.zeros(dims, dtype)
             new_tensor = self.create_tensor_for_data(data, name)
 
@@ -132,10 +136,7 @@ class ModelBuilder:
         :return: The TFLite 'Pad' operator.
         """
         if on_input_index >= len(before_op.tmp_inputs):
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                f"ModelBuilder.create_pad_operator_before(): input index '{on_input_index}' is out of range!",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, f"ModelBuilder.create_pad_operator_before(): input index '{on_input_index}' is out of range!")
 
         input_tensor = before_op.tmp_inputs[on_input_index]
 
@@ -209,7 +210,7 @@ class ModelBuilder:
         old_replacement = self._skipped_output_map.get(from_tensor, None)
         if old_replacement is not None:
             if old_replacement != to_tensor:
-                logger.e(logger.Code.INTERNAL_ERROR, "redirect_tensor(): Tensor has already been redirected before!")
+                raise ConversionError(errors.Code.INTERNAL_ERROR, "redirect_tensor(): Tensor has already been redirected before!")
             else:
                 # Tensor has already been mapped to 'to_tensor'.
                 return
@@ -244,7 +245,7 @@ class ModelBuilder:
         :return: The new transposed TFLite tensor.
         """
         if not tensor_has_data(tflite_tensor):
-            logger.e(logger.Code.INTERNAL_ERROR, "ModelBuilder.create_transposed_tensor() requires a static tensor!")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "ModelBuilder.create_transposed_tensor() requires a static tensor!")
 
         new_tensor = self.duplicate_tensor(tflite_tensor, tflite_tensor.name + "_transposed")
 
@@ -290,7 +291,7 @@ class ModelBuilder:
 
     def swap_tensor_names(self, t1: tflite_model.Tensor, t2: tflite_model.Tensor) -> None:
         """Correctly swap the names of the 2 provided tensors."""
-        logger.internal_assert(
+        errors.internal_assert(
             self._tensor_name_map.get(t1.name, t1) == t1 and self._tensor_name_map.get(t2.name, t2) == t2,
             "ModelBuilder.swap_tensor_names(): The name to tensor mapping is not valid.",
         )
@@ -312,7 +313,7 @@ class ModelBuilder:
                         f"Couldn't preserve the shape of input tensor '{input_tensor.name}', because it has "
                         f"'{input_tensor.rank}' dimensions. TFLite Transpose only supports up to 6 dimensions."
                     )
-                    logger.e(logger.Code.IO_PRESERVATION_ERROR, msg)
+                    raise ConversionError(errors.Code.IO_PRESERVATION_ERROR, msg)
 
                 new_input = self.duplicate_tensor(input_tensor, input_tensor.name + "_channels_first")
                 new_input.shape = translator.channels_last_shape_to_channels_first(input_tensor.shape)
@@ -342,12 +343,9 @@ class ModelBuilder:
                 # Add a Transpose operator, to make the output channels first
 
                 if output_tensor.rank > 6:
-                    logger.e(
-                        logger.Code.IO_PRESERVATION_ERROR,
-                        f"Couldn't preserve the shape of output tensor '{output_tensor.name}', because it has "
+                    raise ConversionError(errors.Code.IO_PRESERVATION_ERROR, f"Couldn't preserve the shape of output tensor '{output_tensor.name}', because it has "
                         f"'{output_tensor.rank}' dimensions. TFLite Transpose only supports up to 6 "
-                        "dimensions.",
-                    )
+                        "dimensions.")
 
                 new_output = self.channels_first_version_of(output_tensor)
 
@@ -421,10 +419,7 @@ class ModelBuilder:
             try:
                 outputs.append(tensor.tmp_index)
             except Exception as _:  # noqa: BLE001
-                logger.e(
-                    logger.Code.GENERATED_MODEL_INVALID,
-                    f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!",
-                )
+                raise ConversionError(errors.Code.GENERATED_MODEL_INVALID, f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!")
 
         inputs = self.get_sub_graph().inputs
         for tensor in inputs.tmp_inputs:
@@ -433,12 +428,9 @@ class ModelBuilder:
                 inputs.append(tensor.tmp_index)
             except Exception as _:  # noqa: BLE001
                 if allow_inputs_stripping:
-                    logger.i(f"The input tensor '{tensor.name}' will not be present in generated TFLite graph.")
+                    logger.info(f"The input tensor '{tensor.name}' will not be present in generated TFLite graph.")
                 else:
-                    logger.e(
-                        logger.Code.GENERATED_MODEL_INVALID,
-                        f"The tensor '{tensor.name}' is among the model inputs, but does NOT appear in the graph!",
-                    )
+                    raise ConversionError(errors.Code.GENERATED_MODEL_INVALID, f"The tensor '{tensor.name}' is among the model inputs, but does NOT appear in the graph!")
 
         # Assign each operator its inputs and outputs indices
         for operator in self.get_sub_graph().operators.vector:
@@ -460,7 +452,7 @@ class ModelBuilder:
 
         if o_tensor.data is None:
             # No data was provided in the tensor
-            logger.w(f"ONNX Tensor '{o_tensor.name}' should contain data but doesn't! Generating empty buffer!")
+            logger.warning(f"ONNX Tensor '{o_tensor.name}' should contain data but doesn't! Generating empty buffer!")
             self.append_new_buffer(buffer)
             return None
 
@@ -497,7 +489,7 @@ class ModelBuilder:
         """
         o_tensor = o_vi.type.tensor_type
         if o_tensor is None:
-            logger.e(logger.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported yet!")
+            raise ConversionError(errors.Code.UNSUPPORTED_ONNX_TYPE, "ONNX: Only type 'tensor_type' is supported yet!")
 
         shape = translator.convert_shape(o_tensor.shape, o_vi.tensor_format.is_channels_first())
 
@@ -614,10 +606,10 @@ class ModelBuilder:
         :param t_op: TFLite operator to turn into Reshape.
         """
         if len(t_op.tmp_inputs) != 1:
-            logger.e(logger.Code.INTERNAL_ERROR, "turn_operator_to_identity(): Operator doesn't have 1 input!")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "turn_operator_to_identity(): Operator doesn't have 1 input!")
 
         if len(t_op.tmp_outputs) != 1:
-            logger.e(logger.Code.INTERNAL_ERROR, "turn_operator_to_identity(): Operator doesn't have 1 output!")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "turn_operator_to_identity(): Operator doesn't have 1 output!")
 
         # Reshape to the input's own static shape. This is a no-op.
         new_shape = list(t_op.tmp_inputs[0].shape.vector)
@@ -701,7 +693,7 @@ class ModelBuilder:
         :return: Tensor instance.
         """
         if name not in self._tensor_name_map:
-            logger.d(f"Tensor '{name}' is not yet in the tensors. Adding it!")
+            logger.debug(f"Tensor '{name}' is not yet in the tensors. Adding it!")
 
             new_tensor = tflite_model.Tensor(tflite_model.Shape([]), name)
             new_tensor.tmp_buffer = self.build_empty_buffer()
@@ -712,7 +704,7 @@ class ModelBuilder:
             if new_tensor := self._skipped_output_map.get(tensor, None):
                 # Tensor was redirected - return destination tensor
                 if not self._tensors_similar(tensor, new_tensor):
-                    logger.e(logger.Code.INTERNAL_ERROR, "Attempt to return non-matching tensor after redirect!")
+                    raise ConversionError(errors.Code.INTERNAL_ERROR, "Attempt to return non-matching tensor after redirect!")
 
                 return new_tensor
 
@@ -757,7 +749,7 @@ class ModelBuilder:
                 self.get_tensors().append(t_tensor)
                 self._tensor_name_map[t_tensor.name] = t_tensor
             else:
-                logger.w(f"Tensor '{t_tensor.name}' is already in the tensors!")
+                logger.warning(f"Tensor '{t_tensor.name}' is already in the tensors!")
 
         else:
             self._tensor_name_map[t_tensor.name] = t_tensor
@@ -793,15 +785,12 @@ class ModelBuilder:
         if isinstance(permutation, list):
             permutation = np.asarray(permutation, np.int32)
         elif isinstance(permutation, np.ndarray):
-            logger.internal_assert(
+            errors.internal_assert(
                 permutation.dtype == np.int32,
                 "model_builder._create_transpose_operator(): permutation doesn't have type int32.",
             )
         else:
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                "model_builder._create_transpose_operator(): permutation is not a list or a numpy array.",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "model_builder._create_transpose_operator(): permutation is not a list or a numpy array.")
 
         permutation_tensor = self.create_tensor_for_data(permutation, "perm")
 
@@ -815,18 +804,12 @@ class ModelBuilder:
             # 7D and bigger require the Flex delegate `Transpose`.
 
             if input_tensor.quantization is not None:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                    "which doesn't support quantization.",
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                    "which doesn't support quantization.")
 
             if not self.conversion_config.allow_select_ops:
-                logger.e(
-                    logger.Code.CONVERSION_IMPOSSIBLE,
-                    "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
-                    "which requires the use of Flex delegate. " + logger.Message.ALLOW_SELECT_OPS,
-                )
+                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                    "which requires the use of Flex delegate. " + messages.Message.ALLOW_SELECT_OPS)
 
             transpose = tflite_model.Operator(
                 custom_options=FlexTranspose(),
@@ -1179,10 +1162,10 @@ class ModelBuilder:
         """
         output_tensor = after_op.tmp_outputs[on_output_index]
 
-        logger.internal_assert(
+        errors.internal_assert(
             len(begin) == len(size), "create_slice_after(): Rank of 'begin' tensor and 'size' tensor don't match."
         )
-        logger.internal_assert(
+        errors.internal_assert(
             len(begin) == len(output_tensor.shape.vector),
             "create_slice_after(): Rank of 'begin' tensor and sliced tensor don't match.",
         )
@@ -1252,10 +1235,7 @@ class ModelBuilder:
         :return: A list of TFLite operators Reshape and Transpose, that need to be added to the model before 't_op'.
         """
         if main_output not in t_op.tmp_outputs:
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                "ModelBuilder.ensure_correct_broadcasting(): 'main_output' is not among the outputs of 't_op'!",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "ModelBuilder.ensure_correct_broadcasting(): 'main_output' is not among the outputs of 't_op'!")
 
         if not uses_shape_broadcasting(t_op):
             # Operator doesn't use shape broadcasting
@@ -1326,7 +1306,7 @@ class ModelBuilder:
         rank_diff = output_rank - input_rank
 
         if rank_diff < 0:
-            logger.e(logger.Code.INTERNAL_ERROR, "'tensor' rank must be <= output_rank!")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "'tensor' rank must be <= output_rank!")
 
         if rank_diff == 0:
             # The tensor is already broadcastable
@@ -1394,10 +1374,7 @@ class ModelBuilder:
         :return: A new static tensor, with a corrected shape for TFLite broadcasting.
         """
         if not tensor_has_data(tensor):
-            logger.e(
-                logger.Code.INTERNAL_ERROR,
-                "ModelBuilder._reshape_static_tensor_to_be_broadcastable(): 'tensor' is not static!",
-            )
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "ModelBuilder._reshape_static_tensor_to_be_broadcastable(): 'tensor' is not static!")
 
         tensor = self.duplicate_tensor(tensor)  # Work with a clean copy, in case the tensor is also used elsewhere.
         data = tensor.tmp_buffer.data
@@ -1405,7 +1382,7 @@ class ModelBuilder:
 
         rank_diff = output_rank - len(shape)
         if rank_diff < 0:
-            logger.e(logger.Code.INTERNAL_ERROR, "'tensor' rank must be <= output_rank!")
+            raise ConversionError(errors.Code.INTERNAL_ERROR, "'tensor' rank must be <= output_rank!")
 
         if tensor.tensor_format.is_channels_last():
             # The tensor was incorrectly converted to channels last. Extend it with 1s and convert properly.

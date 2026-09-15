@@ -4,8 +4,10 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
-from onnx2tflite.src import logger
 from onnx2tflite.src.onnx_parser.meta import meta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TopK(meta.ONNXOperatorAttributes):
@@ -27,4 +29,4 @@ class TopK(meta.ONNXOperatorAttributes):
             elif attr.name == "sorted":
                 self.sorted = attr.i
             else:
-                logger.w(f"ONNX `TopK` attribute '{attr.name}' is not supported.")
+                logger.warning(f"ONNX `TopK` attribute '{attr.name}' is not supported.")

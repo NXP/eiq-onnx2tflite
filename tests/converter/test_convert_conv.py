@@ -10,11 +10,12 @@ import onnx.helper
 import pytest
 from onnx import TensorProto
 
-from onnx2tflite.src import logger
 from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.tflite_generator.builtin_options import depthwise_conv_2d_options, conv_2d_options, conv_3d_options
 from tests import executors
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 
 
 def test_convert_conv__unsupported_type():
@@ -34,10 +35,10 @@ def test_convert_conv__unsupported_type():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.CONVERSION_IMPOSSIBLE
-    assert 'FLOAT64' in logger.conversion_log.get_node_error_message(0)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert 'FLOAT64' in str(exc_info.value)
 
 
 @pytest.mark.parametrize("kernel_shape", [[3, 3], [4, 5]], ids=lambda x: f"kernel_shape = {x}")
@@ -489,9 +490,9 @@ def test_convert_conv_with_invalid_rank():
     onnx_model = onnx.helper.make_model(graph)
     onnx.checker.check_model(onnx_model)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model)
-    assert e.value.error_code == logger.Code.CONVERSION_IMPOSSIBLE
+    assert e.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
 def test_convert_conv_with_not_enough_inputs():
@@ -506,9 +507,9 @@ def test_convert_conv_with_not_enough_inputs():
     )
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error) as e:
+    with pytest.raises(errors.ConversionError) as e:
         convert.convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert e.value.error_code == logger.Code.SHAPE_INFERENCE_ERROR  # onnx.checker catches the error first
+    assert e.value.code == errors.Code.SHAPE_INFERENCE_ERROR  # onnx.checker catches the error first
 
 
 def test_convert_conv_with_strides_and_skewed_padding():
@@ -703,6 +704,6 @@ def test_convert_3d_conv_with_unsupported_group(group):
 
     onnx_model = onnx.helper.make_model(graph)
 
-    with pytest.raises(logger.Error):
+    with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert logger.conversion_log.get_node_error_code(0) == logger.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
