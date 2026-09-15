@@ -10,6 +10,7 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.Padding import Padding
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
@@ -21,14 +22,13 @@ from onnx2tflite.src.converter.quantization_utils import (
     set_quantization_parameters_to_tensor,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import q_linear_average_pool_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options as tfl_average_pool_2d_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyMethodMayBeStatic
@@ -48,9 +48,8 @@ class QLinearAveragePoolConverter(NodeConverter):
             if q_ap_attributes.count_include_pad == 1:
                 raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 is not yet supported.")
 
-            else:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 and "
-                    "'count_include_pad' = 0 is not possible.")
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX QLinearAveragePool with 'ceil_mode' = 1 and "
+                "'count_include_pad' = 0 is not possible.")
 
     def _handle_padding(
         self,
@@ -289,6 +288,5 @@ class QLinearAveragePoolConverter(NodeConverter):
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX QLinearAveragePool with kernel shape "
                 f"'{q_ap_attributes.kernel_shape}' is not yet implemented.")
 
-        else:
-            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearAveragePool with kernel shape `{q_ap_attributes.kernel_shape}` is "
-                "not possible!")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX QLinearAveragePool with kernel shape `{q_ap_attributes.kernel_shape}` is "
+            "not possible!")

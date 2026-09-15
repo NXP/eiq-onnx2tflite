@@ -11,7 +11,9 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.instance_normalization_attributes import InstanceNormalization
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -21,8 +23,6 @@ from onnx2tflite.src.tflite_generator.builtin_options.mul_options import Mul
 from onnx2tflite.src.tflite_generator.builtin_options.squared_difference_options import SquaredDifference
 from onnx2tflite.src.tflite_generator.builtin_options.sub_options import Sub
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class InstanceNormalizationConverter(NodeConverter):

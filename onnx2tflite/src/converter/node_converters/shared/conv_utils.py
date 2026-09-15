@@ -5,6 +5,7 @@
 # See the LICENSE for more details.
 #
 
+import logging
 from collections.abc import Callable
 from copy import copy
 from typing import cast
@@ -17,8 +18,6 @@ from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes, q_linear_conv_attributes
-import logging
-
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import (
     concatenation_options,

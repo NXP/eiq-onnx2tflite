@@ -5,6 +5,7 @@
 # See the LICENSE for more details.
 #
 import itertools
+import logging
 import os.path
 import tempfile
 import traceback
@@ -28,11 +29,8 @@ from onnxruntime.quantization.registry import QDQRegistry
 
 from onnx2quant.preprocessor import Preprocessor
 from onnx2quant.quantization_config import QuantizationConfig
-import logging
-
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
-
 from onnx2tflite.src.model_inspector import ONNXModelInspector
 from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from onnx2tflite.src.onnx_parser import onnx_model

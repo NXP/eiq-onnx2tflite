@@ -5,8 +5,9 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
 import logging
+
+from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
 
 logger = logging.getLogger(__name__)
 

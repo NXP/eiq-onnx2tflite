@@ -5,18 +5,21 @@
 # License: MIT
 # See the LICENSE_MIT for more details.
 #
+import logging
 from copy import deepcopy
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors, messages
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.builder import quantization_verification
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import uses_shape_broadcasting
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.converter.tensor_utils import _buffer_has_data, all_tensors_are_static, tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.model_inspector import ONNXModelInspector
 from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
 from onnx2tflite.src.tensor_formatting import TensorFormat
@@ -34,9 +37,6 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
 )
 from onnx2tflite.src.tflite_generator.custom_options.flex_transpose_options import FlexTranspose
 from onnx2tflite.src.tflite_optimizer import optimizer
-import logging
-from onnx2tflite.src import errors, messages
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -211,9 +211,8 @@ class ModelBuilder:
         if old_replacement is not None:
             if old_replacement != to_tensor:
                 raise ConversionError(errors.Code.INTERNAL_ERROR, "redirect_tensor(): Tensor has already been redirected before!")
-            else:
-                # Tensor has already been mapped to 'to_tensor'.
-                return
+            # Tensor has already been mapped to 'to_tensor'.
+            return
 
         # 'to_tensor' might have been redirected too (and so on) -> find the root of the redirection.
         while to_tensor in self._skipped_output_map:
@@ -622,7 +621,6 @@ class ModelBuilder:
 
     def _validate_new_tensor_name(self, name: str) -> str:
         """Take tensor name 'name' and make it unique in the model. Returns a unique tensor name."""
-
         # Try adding numbers to the 'name' until it is unique
         suffix = 0
         new_name = name

@@ -5,20 +5,21 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder.model_builder import ModelBuilder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.model_inspector import ONNXModelInspector
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 

@@ -5,15 +5,15 @@
 # See the LICENSE for more details.
 #
 import abc
+import logging
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
-from onnx2tflite.src.tflite_generator import tflite_model
-import logging
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.tflite_generator import tflite_model
 
 logger = logging.getLogger(__name__)
 

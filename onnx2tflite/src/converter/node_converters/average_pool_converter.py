@@ -13,16 +13,16 @@ import numpy as np
 import onnx2tflite.src.onnx_parser.builtin_attributes.average_pool_attributes as onnx_average_pool_attributes
 from onnx2tflite.lib.tflite.Padding import Padding
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import average_pool_2d_options as tfl_average_pool_2d_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class AveragePoolConverter(NodeConverter):
@@ -107,8 +107,7 @@ class AveragePoolConverter(NodeConverter):
             if attrs.count_include_pad == 1:
                 raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX AveragePool with 'ceil_mode' = 1 is not yet supported.")
 
-            else:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX AveragePool with 'ceil_mode' = 1 and 'count_include_pad' = 0 is not possible.")
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX AveragePool with 'ceil_mode' = 1 and 'count_include_pad' = 0 is not possible.")
 
         t_op.builtin_options = tfl_average_pool_2d_options.AveragePool2D()
         ops = OpsList(middle_op=t_op)
@@ -185,5 +184,4 @@ class AveragePoolConverter(NodeConverter):
             #  Not sure if this is a realistic scenario and worth putting time into.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not yet implemented.")
 
-        else:
-            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not possible!")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX AveragePool with kernel shape '{attrs.kernel_shape}' is not possible!")

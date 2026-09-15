@@ -7,6 +7,7 @@
 #
 
 import itertools
+import logging
 from collections.abc import Callable
 from typing import Any, Optional
 
@@ -24,8 +25,6 @@ import onnx2tflite.lib.tflite.QuantizationParameters as libQuantizedParameters
 import onnx2tflite.lib.tflite.SubGraph as libSubGraphs
 import onnx2tflite.lib.tflite.Tensor as libTensor
 import onnx2tflite.lib.tflite.TensorType as libTensorType
-import logging
-
 from onnx2tflite.src import errors, tensor_formatting
 from onnx2tflite.src.errors import ConversionError
 

@@ -6,13 +6,13 @@
 #
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors, messages
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.custom_options.flex_erf_options import Erf
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
-from onnx2tflite.src import errors, messages
-from onnx2tflite.src.errors import ConversionError
 
 
 class ErfConverter(NodeConverter):

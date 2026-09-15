@@ -5,6 +5,8 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src.converter.builder.model_builder import tensor_has_data
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -12,7 +14,6 @@ from onnx2tflite.src.converter.quantization_utils import propagate_quantization
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS
-import logging
 
 logger = logging.getLogger(__name__)
 

@@ -15,12 +15,11 @@ So either all 3 are in the same module, or they are all in separate modules.
 'NodeProto' can be a part of 'onnx_model.py', but 'TensorProto' needs its own module.
 """
 
+import logging
 import typing
 
 import numpy as np
 import onnx
-
-import logging
 
 from onnx2tflite.src import errors, tensor_formatting
 from onnx2tflite.src.errors import ConversionError
@@ -135,7 +134,7 @@ class TensorProto(meta.ONNXObject):
             # Some models use empty tensor with dimension [0]. Avoid reshaping.
             if self.dims != [0]:
                 self.data = np.reshape(self.data, self.dims)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             raise ConversionError(errors.Code.INTERNAL_ERROR, f"Could not reshape data of tensor '{self.name}' to shape '{self.dims}'") from e
 
     def _assign_data(self) -> None:

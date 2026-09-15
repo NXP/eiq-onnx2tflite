@@ -11,6 +11,7 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.concatenation_options as tflite_concatenation_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
@@ -19,11 +20,10 @@ from onnx2tflite.src.converter.quantization_utils import (
     set_quantization_parameters_to_tensor,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.q_linear_concat_attributes import QLinearConcat
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class QLinearConcatConverter(NodeConverter):

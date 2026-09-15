@@ -6,11 +6,14 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 from collections.abc import Callable
 from enum import Enum
 
+from onnx2tflite.src import errors
 from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.builder import model_builder
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_optimizer.optimizations.combine_hard_sigmoid_and_mul_to_hard_swish import (
     CombineHardSigmoidAndMulIntoHardSwish,
 )
@@ -51,10 +54,6 @@ from onnx2tflite.src.tflite_optimizer.optimizations.remove_unused_tensors_and_bu
 from onnx2tflite.src.tflite_optimizer.optimizations.replace_average_pool_before_fully_connected_with_sum import (
     ReplaceAveragePoolBeforeFullyConnectedWithSum,
 )
-import logging
-
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_optimizer.optimizations.replace_input_invariant_transpose_to_reshape import (
     ReplaceInputInvariantTransposeWithReshape,
 )

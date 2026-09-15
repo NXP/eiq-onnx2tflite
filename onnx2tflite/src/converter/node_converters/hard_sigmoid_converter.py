@@ -13,19 +13,19 @@ from onnxruntime.quantization import quant_utils
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
     compute_scale_zero_point,
     get_symmetric_zero_point_for_type,
     quantize_static_float_tensor,
 )
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import hard_sigmoid_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_options, minimum_options, mul_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class HardSigmoidConverter(NodeConverter):

@@ -11,17 +11,17 @@ import numpy as np
 from onnx import TensorProto as onnxType
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
 from onnx2tflite.src.onnx_parser.builtin_attributes.constant_of_shape_attributes import ConstantOfShape
 from onnx2tflite.src.onnx_parser.onnx_tensor import TensorProto
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import broadcast_to_options, gather_options
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class ConstantOfShapeConverter(NodeConverter):

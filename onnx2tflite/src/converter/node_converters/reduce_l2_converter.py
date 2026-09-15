@@ -5,24 +5,24 @@
 # See the LICENSE for more details.
 #
 
+import logging
 from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared import reduce_utils
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_l2_attributes import ReduceL2
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import cast_options, square_options, sum_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 

@@ -8,14 +8,12 @@ from dataclasses import dataclass
 
 import onnx
 
-from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src import errors, messages
-from onnx2tflite.src.errors import ConversionError
-
+from onnx2tflite.src.conversion_config import ConversionConfig
 from onnx2tflite.src.converter.preprocessing_steps.duplicate_dequantize_linear_for_each_consumer import (
     DuplicateDequantizeLinearForEachConsumer,
 )
-
+from onnx2tflite.src.errors import ConversionError
 
 
 @dataclass
@@ -32,7 +30,7 @@ class ConversionPreprocessor:
             try:
                 preprocessing_step.run()
 
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ConversionError(errors.Code.PREPROCESSING_ERROR, "An unexpected error occurred during conversion preprocessing. Run the conversion again with the "
                     f"flag {messages.Style.cyan + preprocessing_step.disabling_flag() + messages.Style.end} to avoid "
                     "this.") from e

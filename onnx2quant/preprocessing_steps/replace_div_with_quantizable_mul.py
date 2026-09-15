@@ -5,12 +5,13 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 import onnx
 from onnx import TensorProto
 
+from onnx2tflite.src import messages
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
-import logging
-from onnx2tflite.src import errors, messages
 
 logger = logging.getLogger(__name__)
 

@@ -5,8 +5,9 @@
 # See the LICENSE for more details.
 #
 
-from onnx2tflite.src.onnx_parser.meta import meta
 import logging
+
+from onnx2tflite.src.onnx_parser.meta import meta
 
 logger = logging.getLogger(__name__)
 

@@ -6,11 +6,13 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
@@ -20,14 +22,12 @@ from onnx2tflite.src.converter.quantization_utils import (
     re_quantize_static_tensor,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import gemm_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_options, fully_connected_options, mul_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 

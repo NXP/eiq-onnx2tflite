@@ -5,9 +5,10 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 from onnx2tflite.src.onnx_parser.meta import meta
 from onnx2tflite.src.onnx_parser.meta.meta import ONNXIntListAttribute
-import logging
 
 logger = logging.getLogger(__name__)
 

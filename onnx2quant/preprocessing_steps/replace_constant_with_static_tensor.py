@@ -5,10 +5,11 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 import onnx
 
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
-import logging
 
 logger = logging.getLogger(__name__)
 

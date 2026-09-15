@@ -5,24 +5,24 @@
 # See the LICENSE for more details.
 #
 
+import logging
 from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors, messages
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import one_hot_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.one_hot_options import OneHot
 from onnx2tflite.src.tflite_generator.meta.types import name_for_type
-import logging
-from onnx2tflite.src import errors, messages
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -268,9 +268,8 @@ class OneHotConverter(NodeConverter):
             # The `values` tensor is dynamic. TODO Add a `Split` operator.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `OneHot` with a dynamic `values` input is not yet supported.")
 
-        else:
-            on_value_tensor = self.builder.create_tensor_for_data(on_value, "on_value")
-            off_value_tensor = self.builder.create_tensor_for_data(off_value, "off_value")
+        on_value_tensor = self.builder.create_tensor_for_data(on_value, "on_value")
+        off_value_tensor = self.builder.create_tensor_for_data(off_value, "off_value")
 
         # noinspection PyUnboundLocalVariable
         t_op.tmp_inputs = [indices, depth, on_value_tensor, off_value_tensor]

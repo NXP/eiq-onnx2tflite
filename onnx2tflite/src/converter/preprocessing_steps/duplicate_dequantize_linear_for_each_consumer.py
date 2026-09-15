@@ -4,13 +4,13 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
+import logging
 from collections import defaultdict
 
 import onnx
 from onnx.helper import make_tensor_value_info
 
 from onnx2tflite.src.preprocess.base_preprocessing_step import PreprocessingStep
-import logging
 
 logger = logging.getLogger(__name__)
 

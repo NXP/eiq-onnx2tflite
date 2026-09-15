@@ -9,14 +9,14 @@
 Representation of an ONNX Runtime 'QLinearGlobalAveragePool' operator.
 """
 
+import logging
 from collections.abc import Iterable
 
 import onnx
 
-from onnx2tflite.src.onnx_parser.meta import meta
-import logging
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.onnx_parser.meta import meta
 
 logger = logging.getLogger(__name__)
 

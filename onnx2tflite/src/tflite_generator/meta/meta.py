@@ -10,13 +10,13 @@
 Implementations of classes that all classes in /src/tflite_generator/ inherit from.
 """
 
+import logging
 from collections.abc import Callable, Iterator
 
 import flatbuffers as fb
 
 import onnx2tflite.lib.tflite.BuiltinOperator as bOp
 import onnx2tflite.lib.tflite.BuiltinOptions as bOpt
-import logging
 
 logger = logging.getLogger(__name__)
 

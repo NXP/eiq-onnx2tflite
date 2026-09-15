@@ -5,14 +5,14 @@
 # See the LICENSE for more details.
 #
 from onnx2tflite.lib.tflite.ActivationFunctionType import ActivationFunctionType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 def ensure_correct_tensor_formatting(

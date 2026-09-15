@@ -8,10 +8,9 @@ from abc import ABC, abstractmethod
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import errors, model_inspector
-from onnx2tflite.src.errors import ConversionError
-
 from onnx2tflite.src.conversion_context import ConversionContext
 from onnx2tflite.src.converter.builder import model_builder
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, name_for_type

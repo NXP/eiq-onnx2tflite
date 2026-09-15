@@ -6,13 +6,13 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 from collections.abc import Iterable
 
 import numpy as np
 import onnx
 
 from onnx2tflite.src.onnx_parser.meta import meta
-import logging
 
 logger = logging.getLogger(__name__)
 

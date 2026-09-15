@@ -10,6 +10,7 @@
 Module contains helper functions that work with TFLite data types.
 """
 
+import logging
 from collections.abc import Callable
 from enum import Enum
 from typing import Any
@@ -17,7 +18,6 @@ from typing import Any
 import flatbuffers as fb
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
-import logging
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
 

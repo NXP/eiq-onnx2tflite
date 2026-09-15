@@ -5,19 +5,20 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.sub_options as tflite_sub_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import uses_shape_broadcasting
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class SubConverter(NodeConverter):
             # If support is added in the future, propagate the quantization parameters.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `Sub` with quantized inputs is not yet supported.")
 
-        elif not t_op.is_qdq_quantized():
+        if not t_op.is_qdq_quantized():
             self.assert_type_allowed(x.type)
 
         y_only_zeros = self._is_zeros_tensor(y)

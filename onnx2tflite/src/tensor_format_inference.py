@@ -12,14 +12,14 @@ It stores this format in the tensors '.tensor_format' attribute.
 """
 
 import itertools
+import logging
 
 import numpy as np
 
-from onnx2tflite.src.onnx_parser import onnx_model
-from onnx2tflite.src.tensor_formatting import TensorFormat
-import logging
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.onnx_parser import onnx_model
+from onnx2tflite.src.tensor_formatting import TensorFormat
 
 logger = logging.getLogger(__name__)
 
@@ -277,7 +277,7 @@ class TensorFormatInference:
             raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"The shapes of tensors '{node.inputs[0]}' and '{node.outputs[0]}' around a '{node.op_type}' "
                 f"operator are not in the model. They are required for accurate conversion!")
 
-        elif main_output_rank == main_input_rank:
+        if main_output_rank == main_input_rank:
             # Operator maintains the number of dimensions -> try to propagate the format.
             self._match_formats_of_tensors(node.inputs[0], node.outputs[0])
 

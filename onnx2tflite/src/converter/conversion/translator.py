@@ -11,6 +11,7 @@ Module contains functions for context-free conversion of various
 things from ONNX to TFLite.
 """
 
+import logging
 import math
 from collections.abc import Collection, Sequence
 from typing import Any
@@ -22,13 +23,12 @@ import onnx
 
 import onnx2tflite.lib.tflite.Padding as tflPadding
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_tensor
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import TensorFlowDataType
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -692,52 +692,52 @@ def convert_data_type(o_type: onnx.TensorProto.DataType) -> TensorType | int:
     if o_type == onnx.TensorProto.UNDEFINED:
         raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'UNDEFINED' to TFLite.")
 
-    elif o_type == onnx.TensorProto.FLOAT:
+    if o_type == onnx.TensorProto.FLOAT:
         return TensorType.FLOAT32
 
-    elif o_type == onnx.TensorProto.UINT8:
+    if o_type == onnx.TensorProto.UINT8:
         return TensorType.UINT8
 
-    elif o_type == onnx.TensorProto.INT8:
+    if o_type == onnx.TensorProto.INT8:
         return TensorType.INT8
 
-    elif o_type == onnx.TensorProto.UINT16:
+    if o_type == onnx.TensorProto.UINT16:
         return TensorType.UINT16
 
-    elif o_type == onnx.TensorProto.INT16:
+    if o_type == onnx.TensorProto.INT16:
         return TensorType.INT16
 
-    elif o_type == onnx.TensorProto.INT32:
+    if o_type == onnx.TensorProto.INT32:
         return TensorType.INT32
 
-    elif o_type == onnx.TensorProto.INT64:
+    if o_type == onnx.TensorProto.INT64:
         return TensorType.INT64
 
-    elif o_type == onnx.TensorProto.STRING:
+    if o_type == onnx.TensorProto.STRING:
         return TensorType.STRING
 
-    elif o_type == onnx.TensorProto.BOOL:
+    if o_type == onnx.TensorProto.BOOL:
         return TensorType.BOOL
 
-    elif o_type == onnx.TensorProto.FLOAT16:
+    if o_type == onnx.TensorProto.FLOAT16:
         return TensorType.FLOAT16
 
-    elif o_type == onnx.TensorProto.DOUBLE:
+    if o_type == onnx.TensorProto.DOUBLE:
         return TensorType.FLOAT64
 
-    elif o_type == onnx.TensorProto.UINT32:
+    if o_type == onnx.TensorProto.UINT32:
         return TensorType.UINT32
 
-    elif o_type == onnx.TensorProto.UINT64:
+    if o_type == onnx.TensorProto.UINT64:
         return TensorType.UINT64
 
-    elif o_type == onnx.TensorProto.COMPLEX64:
+    if o_type == onnx.TensorProto.COMPLEX64:
         return TensorType.COMPLEX64
 
-    elif o_type == onnx.TensorProto.COMPLEX128:
+    if o_type == onnx.TensorProto.COMPLEX128:
         return TensorType.COMPLEX128
 
-    elif o_type == onnx.TensorProto.BFLOAT16:
+    if o_type == onnx.TensorProto.BFLOAT16:
         raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Cannot convert ONNX DataType 'BFLOAT16' to TFLite.")
 
 

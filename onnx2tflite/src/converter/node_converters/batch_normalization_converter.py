@@ -6,22 +6,22 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.batch_normalization_attributes import BatchNormalization
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import add_options, mul_options, sub_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -173,12 +173,11 @@ class BatchNormalizationConverter(NodeConverter):
                     raise ConversionError(errors.Code.INVALID_ONNX_MODEL, f"ONNX BatchNormalization with 'spatial=0' should have all "
                         f"operands with rank '{expected_operand_rank}' or '1'!")
 
-                else:
-                    # All operands have rank 1. The 'builder.ensure_correct_broadcasting()' must NOT be called.
-                    logger.warning(
-                        "ONNX BatchNormalization with 'spatial=0' should have operands with "
-                        f"rank '{expected_operand_rank}'!"
-                    )
+                # All operands have rank 1. The 'builder.ensure_correct_broadcasting()' must NOT be called.
+                logger.warning(
+                    "ONNX BatchNormalization with 'spatial=0' should have operands with "
+                    f"rank '{expected_operand_rank}'!"
+                )
 
             else:
                 # Make sure the operands can be correctly broadcasted with the input.

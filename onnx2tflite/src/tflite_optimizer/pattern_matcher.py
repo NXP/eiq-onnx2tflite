@@ -11,7 +11,9 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import cast
 
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder import model_builder
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_optimizer.graph_utils import (
     InputTensorToOpsMap,
@@ -23,8 +25,6 @@ from onnx2tflite.src.tflite_optimizer.graph_utils import (
 )
 from onnx2tflite.src.tflite_optimizer.operator_rules import OpRule
 from onnx2tflite.src.tflite_optimizer.tensor_rules import TensorRule
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class OperatorBlock(ABC):

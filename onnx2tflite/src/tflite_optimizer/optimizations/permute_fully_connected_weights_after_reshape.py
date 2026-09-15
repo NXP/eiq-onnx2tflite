@@ -4,13 +4,13 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
+import logging
+
 import numpy as np
 
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
-import logging
-
 from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     TensorDimensionsMatch,
     TensorHasRank,

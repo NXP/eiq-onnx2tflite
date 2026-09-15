@@ -5,17 +5,17 @@
 # See the LICENSE for more details.
 #
 import itertools
+import logging
 from collections import defaultdict
 
 import numpy as np
 import onnx
 from onnx import TensorProto
 
-from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
-from onnx2tflite.src.onnx_parser.onnx_model import RepeatedNodeProto
-import logging
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
+from onnx2tflite.src.onnx_parser.onnx_model import RepeatedNodeProto
 
 logger = logging.getLogger(__name__)
 

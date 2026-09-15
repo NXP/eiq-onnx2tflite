@@ -6,13 +6,13 @@
 #
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import equal_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS, name_for_type
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class EqualConverter(NodeConverter):
@@ -41,14 +41,12 @@ class EqualConverter(NodeConverter):
             # ONNXRT: Not supported by ONNX/ORT.
             if x.quantization is None:
                 raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX `Equal` with input type `{name_for_type(x.type)}` is not supported.")
-            else:
-                # The input is quantized. ONNX Runtime doesn't support int8/uint8 regardless of quantization.
-                # Using the QDQ quantizer will result in an intentionally invalid ONNX model, which can be converted to
-                #  TFLite and run without issues.
-                # Non QDQ quantized `Equal` is not supported by ONNX Runtime and is not supported by the converter.
-                #  Since it is impossible to detect if the Equal was QDQ quantized or not right now (because output has
-                #  type bool), there is no way to catch the potential invalid use. But it shouldn't be common at all.
-                pass
+            # The input is quantized. ONNX Runtime doesn't support int8/uint8 regardless of quantization.
+            # Using the QDQ quantizer will result in an intentionally invalid ONNX model, which can be converted to
+            #  TFLite and run without issues.
+            # Non QDQ quantized `Equal` is not supported by ONNX Runtime and is not supported by the converter.
+            #  Since it is impossible to detect if the Equal was QDQ quantized or not right now (because output has
+            #  type bool), there is no way to catch the potential invalid use. But it shouldn't be common at all.
 
         reshape_and_transpose_ops = self.builder.ensure_correct_broadcasting(t_op, t_op.tmp_outputs[0])
 

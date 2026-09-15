@@ -5,9 +5,10 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
-import logging
 
 logger = logging.getLogger(__name__)
 

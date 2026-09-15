@@ -13,6 +13,7 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.meta.types as tfl_types
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
@@ -22,12 +23,11 @@ from onnx2tflite.src.converter.quantization_utils import (
     set_quantization_parameters_to_tensor,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import batch_mat_mul_options, fully_connected_options
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyMethodMayBeStatic

@@ -7,13 +7,13 @@
 
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.not_equal_options import NotEqual
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class XorConverter(NodeConverter):

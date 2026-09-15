@@ -32,7 +32,7 @@ class Preprocessor:
             try:
                 preprocessing_step.run()
 
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 raise ConversionError(errors.Code.PREPROCESSING_ERROR, "An unexpected error occurred during preprocessing. Run the quantization again with the "
                     f"flag {messages.Style.cyan + preprocessing_step.disabling_flag() + messages.Style.end} to avoid "
                     "this.") from e

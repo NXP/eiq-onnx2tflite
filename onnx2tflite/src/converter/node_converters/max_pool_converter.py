@@ -6,24 +6,24 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 from typing import cast
 
 import numpy as np
 
 import onnx2tflite.src.onnx_parser.builtin_attributes.max_pool_attributes as onnx_max_pool_attributes
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import max_pool_2d_options as tfl_max_pool_2d_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -188,5 +188,4 @@ class MaxPoolConverter(NodeConverter):
             # Not sure if this is a realistic scenario and worth putting time into.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not yet implemented.")
 
-        else:
-            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX MaxPool with kernel shape '{attrs.kernel_shape}' is not possible!")

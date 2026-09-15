@@ -8,9 +8,9 @@
 from __future__ import annotations
 
 from enum import Enum
+
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
-
 
 
 class TensorFormat(Enum):

@@ -315,7 +315,7 @@ def run_quantization() -> None:
             args.calibration_dataset_mapping = _parse_calibration_dataset_mapping(args.calibration_dataset_mapping)
     except ConversionError:
         raise
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         raise ConversionError(
             errors.Code.INVALID_INPUT, f"Invalid input error ({type(e).__name__}). {traceback.format_exc()}"
         ) from e
@@ -331,7 +331,7 @@ def run_quantization() -> None:
     except ConversionError:
         # Just propagate the error
         raise
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         raise ConversionError(
             errors.Code.INTERNAL_ERROR, f"Internal error ({type(e).__name__}). {traceback.format_exc()}"
         ) from e

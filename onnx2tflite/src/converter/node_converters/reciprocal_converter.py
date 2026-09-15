@@ -8,14 +8,14 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.div_options import Div
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class ReciprocalConverter(NodeConverter):

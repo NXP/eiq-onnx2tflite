@@ -4,11 +4,13 @@
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
+import logging
 from typing import cast
 
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors, messages
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
@@ -17,6 +19,7 @@ from onnx2tflite.src.converter.quantization_utils import (
     re_quantize_static_tensor,
 )
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import scatter_nd_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
@@ -24,9 +27,6 @@ from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import scatter_nd_options
 from onnx2tflite.src.tflite_generator.builtin_options.select_v2_options import SelectV2
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES
-import logging
-from onnx2tflite.src import errors, messages
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +110,9 @@ class ScatterNDConverter(NodeConverter):
                 #  yet implemented.
                 raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX `ScatterND` with channels first inputs is not yet supported.")
 
-            else:
-                # The indices are dynamic. The preprocessing described in the comment above would be too complicated to
-                #  implement by adding extra operators.
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `ScatterND` with dynamic channels first inputs is not supported.")
+            # The indices are dynamic. The preprocessing described in the comment above would be too complicated to
+            #  implement by adding extra operators.
+            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `ScatterND` with dynamic channels first inputs is not supported.")
 
         # Create a TFLite operator which will compute the tensor at runtime.
         updated_values = self.builder.duplicate_tensor(x, empty_buffer=True)

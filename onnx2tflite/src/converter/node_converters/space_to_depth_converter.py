@@ -8,14 +8,14 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import space_to_depth_attributes
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.space_to_depth_options import SpaceToDepth
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class SpaceToDepthConverter(NodeConverter):

@@ -10,11 +10,11 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class PReluConverter(NodeConverter):

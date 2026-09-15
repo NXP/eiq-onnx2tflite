@@ -11,12 +11,14 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.q_linear_conv_converter import QLinearConvConverter
 from onnx2tflite.src.converter.node_converters.shared import conv_utils
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
@@ -28,8 +30,6 @@ from onnx2tflite.src.tflite_generator.builtin_options import (
     reshape_options,
 )
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 # noinspection PyPep8Naming

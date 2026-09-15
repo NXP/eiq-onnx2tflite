@@ -6,18 +6,19 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
+
 import onnx2tflite.src.tflite_generator.builtin_options.reshape_options as tfl_reshape_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared.reshape_transposition import ensure_reshape_transposition
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, FLOATS, INTS
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 

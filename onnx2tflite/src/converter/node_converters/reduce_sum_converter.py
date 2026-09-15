@@ -8,6 +8,7 @@
 from typing import cast
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.node_converters.shared import reduce_utils
@@ -15,13 +16,12 @@ from onnx2tflite.src.converter.node_converters.shared.reduce_utils import (
     convert_axes_from_attribute,
     convert_axes_from_input_tensor,
 )
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes.reduce_sum_attributes import ReduceSum
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import sum_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class ReduceSumConverter(NodeConverter):

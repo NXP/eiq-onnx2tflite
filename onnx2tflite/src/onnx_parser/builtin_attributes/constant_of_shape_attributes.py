@@ -6,17 +6,17 @@
 #
 
 
+import logging
 from collections.abc import Iterable
 from typing import Any
 
 import onnx
 from onnx import AttributeProto, TensorProto
 
-from onnx2tflite.src.onnx_parser import onnx_tensor
-from onnx2tflite.src.onnx_parser.meta import meta
-import logging
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.onnx_parser import onnx_tensor
+from onnx2tflite.src.onnx_parser.meta import meta
 
 logger = logging.getLogger(__name__)
 

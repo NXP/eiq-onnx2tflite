@@ -11,15 +11,13 @@ This file contains functions shared by the various files in the
 'conversion/builtin/' directory.
 """
 
+import logging
 from collections.abc import MutableSequence
 from typing import Any, Optional
-
-import logging
 
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator import tflite_model
-
 from onnx2tflite.src.tflite_generator.builtin_options import (
     average_pool_2d_options,
     conv_2d_options,

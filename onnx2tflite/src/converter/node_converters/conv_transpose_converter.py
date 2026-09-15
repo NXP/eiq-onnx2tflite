@@ -10,19 +10,19 @@ from typing import cast
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import common
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import convert_padding
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.onnx_parser.builtin_attributes import conv_transpose_attributes
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import transpose_conv_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, name_for_type
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 ConvAttributes = conv_transpose_attributes.ConvTranspose
 
@@ -154,7 +154,6 @@ class ConvTransposeConverter(NodeConverter):
 
         if kernel_rank == 1 or kernel_rank == 3:
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not implemented.")
-        elif kernel_rank == 2:
+        if kernel_rank == 2:
             return self._convert_2d_conv(o_conv_attributes, t_op)
-        else:
-            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not possible!")
+        raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX ConvTranspose with a {kernel_rank}D kernel is not possible!")

@@ -5,10 +5,11 @@
 # See the LICENSE for more details.
 #
 
+import logging
+
 from onnx import TensorProto
 
 from onnx2tflite.src.onnx_parser.meta import meta
-import logging
 
 logger = logging.getLogger(__name__)
 

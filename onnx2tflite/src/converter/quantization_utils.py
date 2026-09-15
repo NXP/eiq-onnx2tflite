@@ -13,12 +13,12 @@ from onnxruntime.quantization import quant_utils
 
 from onnx2tflite.lib.tflite import TensorType as tflTensorType
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
-from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
-from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.tflite_generator import tflite_model as tflite_model
 
 
 def quantization_is_equal(

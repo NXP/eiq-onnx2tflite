@@ -5,6 +5,7 @@
 # See the LICENSE for more details.
 #
 
+import logging
 import math
 from typing import cast
 
@@ -12,22 +13,19 @@ import numpy as np
 
 import onnx2tflite.src.onnx_parser.builtin_attributes.q_linear_softmax_attributes as onnx_ql_softmax_attribs
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
-import logging
-
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator.builtin_options import (
     reshape_options as tfl_reshape_options,
 )
-
 from onnx2tflite.src.tflite_generator.builtin_options import (
     softmax_options as tfl_softmax_options,
 )

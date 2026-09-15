@@ -11,11 +11,11 @@ from collections.abc import Iterable
 
 import onnx
 
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_tensor
 from onnx2tflite.src.onnx_parser.meta import meta
 from onnx2tflite.src.onnx_parser.onnx_tensor import SparseTensor, TensorProto
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class Constant(meta.ONNXOperatorAttributes):

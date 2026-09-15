@@ -9,15 +9,15 @@
 import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors, messages
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options import div_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS, INTS, UINTS
-from onnx2tflite.src import errors, messages
-from onnx2tflite.src.errors import ConversionError
 
 
 class DivConverter(NodeConverter):
@@ -69,8 +69,7 @@ class DivConverter(NodeConverter):
         if input_a.type == TensorType.INT64:
             if not self.context.conversion_config.cast_int64_to_int32:
                 raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "TFLite operator 'Div' doesn't support type INT64. " + messages.Message.CAST_INT64_TO_INT32)
-            else:
-                self._cast_from_int64_to_int32(ops, t_op)
+            self._cast_from_int64_to_int32(ops, t_op)
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)
 

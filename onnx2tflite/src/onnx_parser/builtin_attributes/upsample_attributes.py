@@ -5,13 +5,13 @@
 # See the LICENSE for more details.
 #
 
+import logging
 from collections.abc import Iterable
 
 import onnx
 
 from onnx2tflite.src.onnx_parser.meta import meta
 from onnx2tflite.src.onnx_parser.meta.meta import ONNXFloatListAttribute
-import logging
 
 logger = logging.getLogger(__name__)
 

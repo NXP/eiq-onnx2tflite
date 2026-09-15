@@ -9,14 +9,14 @@ import numpy as np
 
 import onnx2tflite.src.tflite_generator.builtin_options.add_options as tflite_add_options
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion.common import try_get_input
 from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import set_quantization_parameters_to_tensor
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 
 class QLinearAddConverter(NodeConverter):

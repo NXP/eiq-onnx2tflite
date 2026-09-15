@@ -6,8 +6,8 @@
 #
 
 from onnxruntime.quantization import CalibrationDataReader
-from onnx2tflite.src import errors
 
+from onnx2tflite.src import errors
 
 PER_CHANNEL_DEFAULT = False
 

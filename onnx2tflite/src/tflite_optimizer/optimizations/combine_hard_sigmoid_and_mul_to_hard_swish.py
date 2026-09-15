@@ -256,7 +256,7 @@ class CombineHardSigmoidAndMulIntoHardSwish(BaseOptimization):
                 OneOf([Op(["Mul"], ["x", "relu_o"], ["y"]), Op(["Mul"], ["relu_o", "x"], ["y"])]),
             ],
             [
-                TensorsHaveOneConsumer(["mul1_o", "add_o", "min_o", "relu_o",]),
+                TensorsHaveOneConsumer(["mul1_o", "add_o", "min_o", "relu_o"]),
                 TensorHasQuantizedStaticValue("alpha", value=1. / 6),
                 TensorHasQuantizedStaticValue("beta", value=0.5),
                 TensorHasQuantizedStaticValue("one", value=1),

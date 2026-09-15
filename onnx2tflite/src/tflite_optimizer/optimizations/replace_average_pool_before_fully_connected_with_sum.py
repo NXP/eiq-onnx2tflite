@@ -9,12 +9,12 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src.tflite_generator.builtin_options.sum_options import Sum
 from onnx2tflite.src.tflite_optimizer.optimizations.base_optimization import BaseOptimization
 from onnx2tflite.src.tflite_optimizer.pattern_matcher import Op, PatternMatcher
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     RuleOr,
     TensorDimensionsMatch,
@@ -26,7 +26,6 @@ from onnx2tflite.src.tflite_optimizer.tensor_rules import (
     TensorsHaveOneConsumer,
     TensorsHaveType,
 )
-
 
 
 class ReplaceAveragePoolBeforeFullyConnectedWithSum(BaseOptimization):

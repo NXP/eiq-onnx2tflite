@@ -7,27 +7,32 @@
 #
 
 
+import logging
 from typing import cast
 
 import numpy as np
 
 import onnx2tflite.src.onnx_parser.builtin_attributes.pad_attributes as onnx_pad_attributes
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList, try_get_input
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import propagate_quantization, quantize_static_float_tensor
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tflite_generator import tflite_model
-from onnx2tflite.src.tflite_generator.builtin_options import mirror_pad_options, pad_options, pad_v2_options, \
-    slice_options, concatenation_options
+from onnx2tflite.src.tflite_generator.builtin_options import (
+    concatenation_options,
+    mirror_pad_options,
+    pad_options,
+    pad_v2_options,
+    slice_options,
+)
 from onnx2tflite.src.tflite_generator.meta.types import ALL_TYPES, INTS, name_for_type
-from onnx2tflite.src.tflite_generator.tflite_model import Tensor, Operator
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.tflite_generator.tflite_model import Operator, Tensor
 
 logger = logging.getLogger(__name__)
 
@@ -217,8 +222,7 @@ class PadConverter(NodeConverter):
             # Conversion may be possible via other operators. Not sure. I haven't found a reasonable way to represent it
             #  in TFLite.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' version 2 in 'edge' mode is not implemented and may not be possible!")
-        else:
-            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX 'Pad' version 2 has invalid mode attribute '{o_pad.mode}'!")
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX 'Pad' version 2 has invalid mode attribute '{o_pad.mode}'!")
 
     def _prepare_constant_and_paddings_from_onnx_pad_v11_plus(
         self, t_op: tflite_model.Operator, builder: model_builder.ModelBuilder
@@ -383,19 +387,17 @@ class PadConverter(NodeConverter):
 
             return ops
 
-        elif o_pad.mode == "wrap":
+        if o_pad.mode == "wrap":
             # The 'wrap' mode has quite complicated behavior and I have not found reasonable way to represent it in
             #  TFLite. In some cases, it could be represented by TFLite MirrorPad in REFLECT mode, when that is fixed.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' version 11 or newer in 'wrap' mode is not "
                 "implemented and may not be possible!")
 
-        else:
-            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX 'Pad' has unexpected 'mode' attribute '{o_pad.mode}'.")
+        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR_ATTRIBUTE, f"ONNX 'Pad' has unexpected 'mode' attribute '{o_pad.mode}'.")
 
     def _create_edge_padding_for_axis(self, input_tensor: Tensor, padding_start: int, padding_end: int,
                                       axis: int) -> OpsList:
-        """
-        Construct axis padding (size=1) by duplicating edge values using Slice & Concatenation operations.
+        """Construct axis padding (size=1) by duplicating edge values using Slice & Concatenation operations.
         If there is both begin and end padding, this function returns following graph:
                        │
             ┌──────────┼──────────┐
@@ -478,8 +480,8 @@ class PadConverter(NodeConverter):
         if node.version <= 1:
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, "Conversion of ONNX 'Pad' version 1 is not supported.")
 
-        elif node.version < 11:  # Pad v2
+        if node.version < 11:  # Pad v2
             return self._convert_pad_v2(o_pad, t_op)
 
-        else:  # Pad v 11/13/18/19
-            return self._convert_pad_v11_plus(o_pad, t_op)
+        # Pad v 11/13/18/19
+        return self._convert_pad_v11_plus(o_pad, t_op)

@@ -6,14 +6,17 @@
 # See the LICENSE_MIT for more details.
 #
 
+import logging
 import math
 
 import onnx2tflite.src.onnx_parser.builtin_attributes.log_softmax_attributes as onnx_log_softmax_attributes
 import onnx2tflite.src.onnx_parser.builtin_attributes.softmax_attributes as onnx_softmax_attributes
 from onnx2tflite.lib.tflite.TensorType import TensorType
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.conversion import translator
 from onnx2tflite.src.converter.conversion.common import OpsList
 from onnx2tflite.src.converter.node_converter import NodeConverter
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model
 from onnx2tflite.src.tensor_formatting import TensorFormat
 from onnx2tflite.src.tflite_generator import tflite_model
@@ -21,9 +24,6 @@ from onnx2tflite.src.tflite_generator.builtin_options import log_softmax_options
 from onnx2tflite.src.tflite_generator.builtin_options import reshape_options as tfl_reshape_options
 from onnx2tflite.src.tflite_generator.builtin_options import softmax_options as tfl_softmax_options
 from onnx2tflite.src.tflite_generator.meta.types import FLOATS
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 

@@ -10,12 +10,13 @@
 Module contains high level functions to convert ONNX tensors to TFLite.
 """
 
+import logging
+
+from onnx2tflite.src import errors
 from onnx2tflite.src.converter.builder import model_builder
+from onnx2tflite.src.errors import ConversionError
 from onnx2tflite.src.onnx_parser import onnx_model, onnx_tensor
 from onnx2tflite.src.tflite_generator import tflite_model
-import logging
-from onnx2tflite.src import errors
-from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger(__name__)
 

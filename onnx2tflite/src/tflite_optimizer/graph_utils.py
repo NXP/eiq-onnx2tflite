@@ -6,10 +6,10 @@
 #
 
 from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
-from onnx2tflite.src.converter.builder import model_builder
-from onnx2tflite.src.tflite_generator import tflite_model
 from onnx2tflite.src import errors
+from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.tflite_generator import tflite_model
 
 InputTensorToOpsMap = dict[str, list[tflite_model.Operator]]
 OutputTensorToOpMap = dict[str, tflite_model.Operator]

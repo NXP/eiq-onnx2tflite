@@ -5,6 +5,7 @@
 # See the LICENSE for more details.
 #
 
+import logging
 import math
 import traceback
 from collections.abc import Callable
@@ -32,11 +33,10 @@ from onnxruntime.tools.symbolic_shape_infer import (
     is_literal,
 )
 
-from onnx2tflite.src.converter.conversion import common, translator
-from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
-import logging
 from onnx2tflite.src import errors
+from onnx2tflite.src.converter.conversion import common, translator
 from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.onnx_parser.meta.types import to_numpy_type
 
 logger = logging.getLogger(__name__)
 
@@ -1268,7 +1268,7 @@ class ModelShapeInference(SymbolicShapeInference):
                 f"{symbolic_shape_names}, and following input tensors are dynamic: {dynamic_inputs_names}. Make "
                 f"them static using arguments '--symbolic-dimension-into-static' and/or '--set-input-shape'.")
 
-        elif symbolic_shapes:
+        if symbolic_shapes:
             raise ConversionError(errors.Code.INVALID_INPUT, f"Model inputs contain following symbolic dimensions: {symbolic_shape_names}. Make these "
                 f"dimensions static using argument '--symbolic-dimension-into-static'.")
 
@@ -1434,8 +1434,7 @@ class ModelShapeInference(SymbolicShapeInference):
                     raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "The inference of the shapes of internal ONNX tensors was not successful. Best effort "
                         "model is stored in 'sym_shape_infer_temp.onnx'.")
 
-                else:
-                    raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "The inference of the shapes of internal ONNX tensors was not successful.")
+                raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "The inference of the shapes of internal ONNX tensors was not successful.")
 
             if inferred_tensor_data is not None:
                 inferred_tensor_data.clear()
@@ -1458,5 +1457,4 @@ class ModelShapeInference(SymbolicShapeInference):
                     f" `{node.op_type}` operator with input tensors {node.input} and output tensors "
                     f"{node.output}. Please report this issue.")
 
-            else:
-                raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Unexpected internal error during shape inference. Please report this issue.")
+            raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Unexpected internal error during shape inference. Please report this issue.")
