@@ -184,7 +184,7 @@ def test_convert_gather_nd__dynamic_indices__no_flag():
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert_model(onnx_model, conversion_config=SkipShapeInferenceConfig())
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert '--guarantee-non-negative-indices' in str(exc_info.value)
 
 

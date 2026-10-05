@@ -164,7 +164,7 @@ def test_convert_einsum__no_select_ops():
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model, conversion_config=config)
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert '--allow-select-ops' in str(exc_info.value)
 
 

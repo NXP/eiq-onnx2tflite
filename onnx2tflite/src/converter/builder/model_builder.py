@@ -806,7 +806,7 @@ class ModelBuilder:
                     "which doesn't support quantization.")
 
             if not self.conversion_config.allow_select_ops:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "Conversion requires the addition of a `Transpose` operator with more than 6 dimensions, "
                     "which requires the use of Flex delegate. " + messages.Message.ALLOW_SELECT_OPS)
 
             transpose = tflite_model.Operator(

@@ -139,5 +139,5 @@ def test_convert_abs__int64__no_flag():
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert '--cast-int64-to-int32' in str(exc_info.value)

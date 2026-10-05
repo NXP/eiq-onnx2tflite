@@ -119,7 +119,7 @@ class GatherElementsConverter(NodeConverter):
             # Dynamic `indices`. Build the coordinate tensor at runtime with `Concat`. Only the `axis` coordinate is
             #  dynamic, the rest are static constants.
             if not self.context.conversion_config.guarantee_non_negative_indices:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `GatherElements` with dynamic `indices` is not possible because they may "
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "Conversion of ONNX `GatherElements` with dynamic `indices` is not possible because they may "
                     "contain negative values, which is not supported by TFLite. "
                     + messages.Message.GUARANTEE_NON_NEGATIVE_INDICES)
 

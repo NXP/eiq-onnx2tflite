@@ -52,14 +52,14 @@ def _assert_supported_opset(model: onnx_model.ModelProto, conversion_context: Co
 
     if onnx_opset_version < MINIMUM_REQUIRED_OPSET:
         raise ConversionError(
-            errors.Code.NOT_IMPLEMENTED,
+            errors.Code.CONVERSION_REQUIRES_OVERRIDE,
             f"This model uses opset {onnx_opset_version}. Conversion of ONNX models"
             f" with opset < {MINIMUM_REQUIRED_OPSET} is not supported. " + messages.Message.IGNORE_OPSET_VERSION,
         )
 
     if onnx_opset_version > MAXIMUM_VERIFIED_OPSET:
         raise ConversionError(
-            errors.Code.NOT_IMPLEMENTED,
+            errors.Code.CONVERSION_REQUIRES_OVERRIDE,
             f"This model uses opset {onnx_opset_version}. Correct conversion of ONNX "
             f"models with opset > {MAXIMUM_VERIFIED_OPSET} is not guaranteed. " + messages.Message.IGNORE_OPSET_VERSION,
         )

@@ -68,7 +68,7 @@ class DivConverter(NodeConverter):
 
         if input_a.type == TensorType.INT64:
             if not self.context.conversion_config.cast_int64_to_int32:
-                raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "TFLite operator 'Div' doesn't support type INT64. " + messages.Message.CAST_INT64_TO_INT32)
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "TFLite operator 'Div' doesn't support type INT64. " + messages.Message.CAST_INT64_TO_INT32)
             self._cast_from_int64_to_int32(ops, t_op)
 
         self.assert_type_allowed(t_op.tmp_inputs[0].type)

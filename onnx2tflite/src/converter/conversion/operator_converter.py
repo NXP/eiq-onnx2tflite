@@ -232,7 +232,7 @@ class OperatorConverter:
                 try:
                     conversion_fn(node)
                 except errors.ConversionError as e:
-                    logger.error("Node %d ('%s'): %s", idx, node.op_type, e)
+                    logger.error("%s", e)
                     if first_error is None:
                         first_error = e
 

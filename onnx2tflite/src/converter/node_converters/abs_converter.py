@@ -43,7 +43,7 @@ class AbsConverter(NodeConverter):
         if x.type == TensorType.INT64:
             # Required by real model. Cast to int32.
             if not self.context.conversion_config.cast_int64_to_int32:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Direct conversion of ONNX `Abs` with type INT64 is not possible due to a TFLite "
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "Direct conversion of ONNX `Abs` with type INT64 is not possible due to a TFLite "
                     "limitation." + messages.Message.CAST_INT64_TO_INT32)
 
             # Recast the input.

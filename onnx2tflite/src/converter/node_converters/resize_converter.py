@@ -121,7 +121,7 @@ class ResizeConverter(NodeConverter):
 
     def _get_resize_inputs(
         self, node: onnx_model.NodeProto, t_op: tflite_model.Operator
-    ) -> (tflite_model.Tensor | None, tflite_model.Tensor | None):
+    ) -> tuple[tflite_model.Tensor | None, tflite_model.Tensor | None]:
         """Return the input tensors `scales` and `sizes` of the ONNX `Resize`.
 
         :param node: ONNX `Resize` operator.
@@ -217,7 +217,7 @@ class ResizeConverter(NodeConverter):
                 # User has decided to accept the rounding error and to convert the model anyway.
                 pass
             else:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Accurate conversion of ONNX `Resize` with `nearest_mode={o_resize.nearest_mode}` is not "
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, f"Accurate conversion of ONNX `Resize` with `nearest_mode={o_resize.nearest_mode}` is not "
                     f"possible because TFLite uses a different rounding approach. {messages.Style.cyan}If you "
                     "are wiling to accept the error caused by different rounding, run the converter again with"
                     " the flag `--accept-resize-rounding-error`.")

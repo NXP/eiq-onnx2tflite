@@ -60,7 +60,7 @@ class TransposeConverter(NodeConverter):
                 raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Transpose` with > 5 dimensions and quantized data is not supported.")
 
             if not self.context.conversion_config.allow_select_ops:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, f"Conversion of ONNX `Transpose` with {input_rank} dimensions without Flex delegate is not "
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, f"Conversion of ONNX `Transpose` with {input_rank} dimensions without Flex delegate is not "
                     "possible. " + messages.Message.ALLOW_SELECT_OPS)
 
             t_op.custom_options = FlexTranspose()

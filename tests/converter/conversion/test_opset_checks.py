@@ -31,7 +31,7 @@ def test_too_low_opset():
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert 'opset < 7 is not supported' in str(exc_info.value)
     assert '--skip-opset-version-check' in str(exc_info.value)
 
@@ -54,7 +54,7 @@ def test_too_high_opset():
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
-    assert exc_info.value.code == errors.Code.NOT_IMPLEMENTED
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert 'opset > 25 is not guaranteed' in str(exc_info.value)
     assert '--skip-opset-version-check' in str(exc_info.value)
 

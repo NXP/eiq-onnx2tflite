@@ -186,7 +186,7 @@ class OneHotConverter(NodeConverter):
                 pass
 
             else:
-                raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `OneHot` with dynamic `indices` input is not possible, because it may "
+                raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "Conversion of ONNX `OneHot` with dynamic `indices` input is not possible, because it may "
                     " contain negative values, which isn't supported by TFLite. "
                     + messages.Message.GUARANTEE_NON_NEGATIVE_INDICES)
 

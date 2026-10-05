@@ -184,7 +184,7 @@ def test_convert_one_hot__dynamic_indices(intermediate_tflite_model_provider):
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     message = str(exc_info.value)
     assert 'Conversion of ONNX `OneHot` with dynamic `indices` input is not possible' in message
     assert '--guarantee-non-negative-indices' in message

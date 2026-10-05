@@ -129,7 +129,7 @@ class GatherNDConverter(NodeConverter):
             pass
 
         else:
-            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `GatherND` with dynamic `indices` is not possible because they may contain"
+            raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "Conversion of ONNX `GatherND` with dynamic `indices` is not possible because they may contain"
                 " negative values, which is not supported by TFLite. " + messages.Message.GUARANTEE_NON_NEGATIVE_INDICES)
 
         t_op.builtin_options = gather_nd_options.GatherND()

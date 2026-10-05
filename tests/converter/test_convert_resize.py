@@ -439,7 +439,7 @@ def test_convert_resize__nearest__coordinate_transformation_mode__print_error():
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert '--accept-resize-rounding-error' in str(exc_info.value)
 
 
@@ -465,8 +465,10 @@ def test_convert_resize__invalid_scales(scales: list[int]):
     onnx_model = onnx.helper.make_model(graph)
 
     with pytest.raises(errors.ConversionError) as exc_info:
+        cc = ConversionConfig()
+        cc.accept_resize_rounding_error = True
         convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
 
 
 def test_convert_resize__invalid_channels_scale():
@@ -484,7 +486,9 @@ def test_convert_resize__invalid_channels_scale():
     onnx_model = onnx.helper.make_model(graph)
 
     with pytest.raises(errors.ConversionError) as exc_info:
-        convert.convert_model(onnx_model)
+        cc = ConversionConfig()
+        cc.accept_resize_rounding_error = True
+        convert.convert_model(onnx_model, conversion_config=cc)
     assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 

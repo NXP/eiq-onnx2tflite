@@ -316,7 +316,7 @@ def test_convert_scatter_nd__dynamic_indices():
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+    assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
     assert '--guarantee-non-negative-indices' in str(exc_info.value)
 
 

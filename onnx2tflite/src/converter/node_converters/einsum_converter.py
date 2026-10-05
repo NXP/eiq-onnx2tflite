@@ -78,7 +78,7 @@ class EinsumConverter(NodeConverter):
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX `Einsum` operator into the SELECT_TF_OP `FlexEinsum`."""
         if not self.context.conversion_config.allow_select_ops:
-            raise ConversionError(errors.Code.CONVERSION_IMPOSSIBLE, "Conversion of ONNX `Einsum` without SELECT_TF_OPS is not possible. " + messages.Message.ALLOW_SELECT_OPS)
+            raise ConversionError(errors.Code.CONVERSION_REQUIRES_OVERRIDE, "Conversion of ONNX `Einsum` without SELECT_TF_OPS is not possible. " + messages.Message.ALLOW_SELECT_OPS)
 
         num_inputs = len(t_op.tmp_inputs)
         if num_inputs not in {1, 2}:

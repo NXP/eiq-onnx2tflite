@@ -383,7 +383,7 @@ class RepeatedNodeProto(list[NodeProto]):
             try:
                 self.append(NodeProto(descriptor, opset_map[descriptor.domain], idx, init_node_attributes))
             except errors.ConversionError as e:
-                logger.error("Node %d ('%s'): %s", idx, descriptor.op_type, e)
+                logger.error("%s", e)
                 unsupported_nodes.add(descriptor.op_type)
 
         if len(unsupported_nodes) > 0:
