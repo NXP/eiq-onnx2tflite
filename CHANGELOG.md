@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-06
+
 ### Added
 
 - `[onnx2tflite|onnx2quant]` Support for QDQ variant of Elu operator (INT8 only)
@@ -18,16 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `[onnx2tflite]` Identity (no-op) operators are now represented using a lightweight `Reshape` instead of a `Transpose`/`FlexTranspose`.
 - `[onnx2tflite|onnx2quant]` Standardized logging and error handling. The custom `logger` facade (`logger.i/w/e/d`, the in-memory `conversion_log` store, and `loggingContext`) has been removed. Modules now use the standard library `logging` (`logging.getLogger(__name__)`).
-
-### Removed
-
 - `[onnx2tflite]` Removed the custom `src/logger.py` module, the per-node error tracking / in-memory conversion log, and the `utils/print_intermediate_errors.py` script.
-
 
 ### Fixed
 
 - `[onnx2quant]` Fixed quantization of Conv nodes with a dynamic (non-initializer) weight input.
-
 
 ## [0.11.0] - 2026-06-23
 
