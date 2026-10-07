@@ -6,15 +6,12 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["onnx2tflite*", "onnx2quant*"]
 
-[tool.setuptools.dynamic]
-version = { attr = "onnx2tflite.__version__" }
-
 [project]
 name = "eiq-onnx2tflite"
 authors = [
     { name = "NXP" },
 ]
-dynamic = ["version"]
+version = "0.0.0.dev0"
 description = "ONNX2TFLite project offers tools for ONNX models quantization and their conversion into TFLite"
 license = { text = "PROPRIETARY" }
 keywords = ["onnx2tflite", "onnx2quant", "nxp", "eiq", "toolkit", "converter", "quantizer", "onnx", "tflite"]
