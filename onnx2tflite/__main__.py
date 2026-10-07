@@ -21,11 +21,6 @@ from onnx2tflite.src.converter import convert
 from onnx2tflite.src.errors import ConversionError
 
 logger = logging.getLogger("onnx2tflite")
-syslog = logging.StreamHandler()
-syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
-logger.addHandler(syslog)
-logger.setLevel(logging.WARNING)
-
 
 
 def _get_user_choice_parser() -> argparse.ArgumentParser:
@@ -179,6 +174,8 @@ def parse_arguments() -> Namespace:
 
 
 def run_conversion() -> None:
+    logging.basicConfig(format="[%(levelname)s] %(message)s")
+
     """Create argument parser"""
     args = parse_arguments()
     output_tflite = args.output
@@ -192,8 +189,8 @@ def run_conversion() -> None:
         output_tflite = file_name + ".tflite"
 
     if args.verbose:
-        # Print all logging messages
-        logger.setLevel(logging.DEBUG)
+        logging.getLogger("onnx2tflite").setLevel(logging.INFO)
+        logging.getLogger("onnx2quant").setLevel(logging.INFO)
 
     if args.symbolic_dimensions_mapping:
         assert isinstance(args.symbolic_dimensions_mapping, list)

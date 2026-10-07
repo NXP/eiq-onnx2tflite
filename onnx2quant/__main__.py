@@ -22,12 +22,7 @@ from onnx2tflite.src import errors
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.errors import ConversionError
 
-logger = logging.getLogger("onnx2tflite")
-syslog = logging.StreamHandler()
-syslog.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s"))
-logger.addHandler(syslog)
-logger.setLevel(logging.WARNING)
-
+logger = logging.getLogger("onnx2quant")
 
 
 def _get_preprocessing_parser() -> argparse.ArgumentParser:
@@ -291,6 +286,8 @@ class NpyCalibrationDataReader(CalibrationDataReader):
 
 
 def run_quantization() -> None:
+    logging.basicConfig(format="[%(levelname)s] %(message)s")
+
     """Create argument parser"""
     args = _parse_arguments()
 
