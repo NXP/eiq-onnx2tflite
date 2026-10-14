@@ -559,3 +559,89 @@ def test_convert_clip_with_omitted_inputs(intermediate_tflite_model_provider):
     ops = intermediate_tflite_model_provider.get_operators()
     assert len(ops) == 1
     assert ops[0].builtin_options.operator_type == BuiltinOperator.RESHAPE  # Identity (must have at least 1 op).
+
+
+
+def test_convert_clip__mismatched_max_qparams():
+    """A single externally-quantized 'Clip' whose 'max' bound has a different
+    scale/zero-point than the data input. The resulting TFLite 'Minimum' used to
+    fail the integrity check; after the fix the bound is re-quantized to the
+    input's q-params and conversion succeeds.
+    """
+    shape = [3, 14, 15]
+
+    data = (np.random.random(shape) * 20.0 - 10.0).astype(np.float32)
+
+    x_scale, x_zp = 0.5, 0
+
+    # The 'max' clip bound is a static float initializer that the external
+    # quantizer quantized with its OWN (different) scale and zero-point. The
+    # 'QuantizeLinear' of a static initializer folds into a static quantized
+    # tensor carrying those distinct q-params.
+    max_scale, max_zp = 0.125, -4
+
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node("QuantizeLinear", ["x", "x_s", "x_zp"], ["x1"]),
+            # Static float 'max' initializer quantized with its own distinct q-params.
+            onnx.helper.make_node("QuantizeLinear", ["max_f", "max_s", "max_zp"], ["max1"]),
+            # Clip with omitted 'min' -> lowered to a single TFLite 'Minimum'.
+            onnx.helper.make_node("Clip", ["x1", "", "max1"], ["x2"]),
+            onnx.helper.make_node("DequantizeLinear", ["x2", "x_s", "x_zp"], ["y"]),
+        ],
+        "Clip distinct q-params",
+        [onnx.helper.make_tensor_value_info("x", TensorProto.FLOAT, shape)],
+        [onnx.helper.make_tensor_value_info("y", TensorProto.FLOAT, ())],
+        [
+            onnx.helper.make_tensor("x_s", TensorProto.FLOAT, [1], [x_scale]),
+            onnx.helper.make_tensor("x_zp", TensorProto.INT8, [1], [x_zp]),
+            onnx.helper.make_tensor("max_s", TensorProto.FLOAT, [1], [max_scale]),
+            onnx.helper.make_tensor("max_zp", TensorProto.INT8, [1], [max_zp]),
+            onnx.helper.make_tensor("max_f", TensorProto.FLOAT, [1], [12.0]),
+        ],
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    executors.convert_run_compare(onnx_model, data, atol=x_scale)
+
+
+def test_convert_clip__multiple_minimums_shared_max_constant():
+    """Multiple quantized 'Clip' ops (each lowered to a TFLite 'Minimum') that share 
+    the same 'max' constant whose q-params differ from the data inputs.
+    """
+    shape = [3, 14, 15]
+
+    data = (np.random.random(shape) * 20.0 - 10.0).astype(np.float32)
+
+    x_scale, x_zp = 0.5, 0
+    max_scale, max_zp = 0.125, -4
+
+    # Shared static 'max' initializer, quantized with its own distinct q-params.
+    nodes = [
+        onnx.helper.make_node("QuantizeLinear", ["max_f", "max_s", "max_zp"], ["max_shared"]),
+    ]
+
+    # Three branches, each quantizing 'x' and clipping it against the shared max.
+    for i in range(3):
+        nodes += [
+            onnx.helper.make_node("QuantizeLinear", ["x", "x_s", "x_zp"], [f"xq{i}"]),
+            onnx.helper.make_node("Clip", [f"xq{i}", "", "max_shared"], [f"xc{i}"]),
+            onnx.helper.make_node("DequantizeLinear", [f"xc{i}", "x_s", "x_zp"], [f"y{i}"]),
+        ]
+
+    graph = onnx.helper.make_graph(
+        nodes,
+        "Shared-constant repro",
+        [onnx.helper.make_tensor_value_info("x", TensorProto.FLOAT, shape)],
+        [onnx.helper.make_tensor_value_info(f"y{i}", TensorProto.FLOAT, ()) for i in range(3)],
+        [
+            onnx.helper.make_tensor("x_s", TensorProto.FLOAT, [1], [x_scale]),
+            onnx.helper.make_tensor("x_zp", TensorProto.INT8, [1], [x_zp]),
+            onnx.helper.make_tensor("max_s", TensorProto.FLOAT, [1], [max_scale]),
+            onnx.helper.make_tensor("max_zp", TensorProto.INT8, [1], [max_zp]),
+            onnx.helper.make_tensor("max_f", TensorProto.FLOAT, [1], [12.0]),
+        ],
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    executors.convert_run_compare(onnx_model, data, atol=x_scale)

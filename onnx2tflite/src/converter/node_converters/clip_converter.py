@@ -23,7 +23,9 @@ from onnx2tflite.src.converter.conversion.translator import (
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.quantization_utils import (
     propagate_quantization,
+    quantization_is_equal,
     quantize_static_float_tensor,
+    re_quantize_static_tensor,
     set_quantization_parameters_to_tensor,
 )
 from onnx2tflite.src.converter.tensor_utils import all_tensors_are_static, tensor_has_data
@@ -133,36 +135,47 @@ class ClipConverter(NodeConverter):
 
         return None
 
-    def _quantize_min_max_tensors(self, x, min_tensor, max_tensor) -> (tflite_model.Tensor, tflite_model.Tensor):
-        """Return the quantized `min_tensor` and `max_tensor`."""
-        if x.quantization is not None:
-            # Check type of min/max tensors and quantize them if necessary
-            scale = x.quantization.scale.vector
-            zp = x.quantization.zero_point.vector
 
-            if min_tensor.quantization is None:
-                if min_tensor.type == x.type:
-                    # QDQ model with undefined min tensor
-                    set_quantization_parameters_to_tensor(min_tensor, np.array(scale).astype(np.float32), np.array(zp))
-                elif tensor_has_data(min_tensor):
-                    # QDQ model with static min tensor
-                    min_tensor = quantize_static_float_tensor(self.builder, min_tensor, x.type, scale, zp)
-                else:
-                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX operator Clip with dynamic 'min' tensor and quantized by non-internal "
-                        "quantizer is currently not supported. Quantize model with internal quantizer.")
+    def _align_bound_tensor_quantization(
+        self, x: tflite_model.Tensor, bound_tensor: tflite_model.Tensor, scale: list, zp: list
+    ) -> tuple[tflite_model.Tensor, bool]:
+        """Make the clip bound tensor ('min' or 'max') share the data input 'x' quantization params.
 
-            if max_tensor.quantization is None:
-                if max_tensor.type == x.type:
-                    # QDQ model with undefined max tensor
-                    set_quantization_parameters_to_tensor(max_tensor, np.array(scale).astype(np.float32), np.array(zp))
-                elif tensor_has_data(max_tensor):
-                    # QDQ model with static max tensor
-                    max_tensor = quantize_static_float_tensor(self.builder, max_tensor, x.type, scale, zp)
-                else:
-                    raise ConversionError(errors.Code.NOT_IMPLEMENTED, "ONNX operator Clip with dynamic 'max' tensor and quantized by non-internal "
-                        "quantizer is currently not supported. Quantize model with internal quantizer.")
+        The TFLite 'Minimum'/'Maximum' kernels require all inputs to share identical scale and zero-point.
 
-        return min_tensor, max_tensor
+        :param x: The data input tensor of the Clip operator.
+        :param bound_tensor: The 'min' or 'max' clip bound tensor.
+        :param scale: The scale quantization parameter of 'x'.
+        :param zp: The zero-point quantization parameter of 'x'.
+        :return: A tuple of the (possibly re-quantized) bound tensor, and a flag that is True when the bound is a
+            dynamic tensor whose q-params differ from 'x' and therefore needs a 'Quantize' op inserted later.
+        """
+        if bound_tensor.quantization is None:
+            if bound_tensor.type == x.type:
+                # QDQ model with undefined bound tensor.
+                set_quantization_parameters_to_tensor(bound_tensor, np.array(scale).astype(np.float32), np.array(zp))
+            elif tensor_has_data(bound_tensor):
+                # QDQ model with static float bound tensor.
+                bound_tensor = quantize_static_float_tensor(self.builder, bound_tensor, x.type, scale, zp)
+            else:
+                # Dynamic bound without quantization. Propagate 'x' params so the shared-param rule is satisfied.
+                set_quantization_parameters_to_tensor(bound_tensor, np.array(scale).astype(np.float32), np.array(zp))
+
+        elif not quantization_is_equal(
+            np.array(bound_tensor.quantization.scale.vector), np.array(bound_tensor.quantization.zero_point.vector),
+            bound_tensor.type, np.array(scale), np.array(zp), x.type,
+        ):
+            # The external quantizer assigned the bound its own q-params, which differ from 'x'. The TFLite
+            #  'Minimum'/'Maximum' kernels require shared input q-params.
+            if tensor_has_data(bound_tensor):
+                # Static -> re-quantize its data to 'x' params in place.
+                bound_tensor = re_quantize_static_tensor(self.builder, bound_tensor, x.type, scale, zp)
+            else:
+                # Dynamic -> 'Quantize' op must be inserted before the consuming 'Maximum'/'Minimum'.
+                return bound_tensor, True
+
+        return bound_tensor, False
+
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert ONNX Clip operator into TFLite.
@@ -219,7 +232,17 @@ class ClipConverter(NodeConverter):
 
         # -- min_tensor and max_tensor are initialized, and may or may not contain static data. --
 
-        min_tensor, max_tensor = self._quantize_min_max_tensors(x, min_tensor, max_tensor)
+        min_needs_requantize = False
+        max_needs_requantize = False
+
+        if x.quantization is not None:
+            # Check type of min/max tensors and quantize them if necessary
+            scale = x.quantization.scale.vector
+            zp = x.quantization.zero_point.vector
+
+            min_tensor, min_needs_requantize = self._align_bound_tensor_quantization(x, min_tensor, scale, zp)
+            max_tensor, max_needs_requantize = self._align_bound_tensor_quantization(x, max_tensor, scale, zp)
+        
         if t_op.is_quantized_without_qdq():
             # Propagate the quantization parameters, in case they are ever useful in the future.
             propagate_quantization(x, y)
@@ -243,6 +266,12 @@ class ClipConverter(NodeConverter):
             max_op.tmp_inputs = [x, min_tensor]
             max_op.tmp_outputs = [y]
 
+            if min_needs_requantize:
+                # Dynamic 'min' bound with mismatched q-params -> re-quantize it to 'x' params before the Maximum.
+                scale = x.quantization.scale.vector
+                zp = x.quantization.zero_point.vector
+                ops_to_add.append(self.builder.create_quantize_operator_before(max_op, 1, x.type, scale, zp))
+
             ops_to_add.append(max_op)
 
         if not (tensor_has_data(max_tensor) and max_tensor.tmp_buffer.data.item() == get_max_value_for_type(np_type)):
@@ -258,6 +287,12 @@ class ClipConverter(NodeConverter):
 
             min_op.tmp_inputs = [input_tensor, max_tensor]
             min_op.tmp_outputs = [y]
+
+            if max_needs_requantize:
+                # Dynamic 'max' bound with mismatched q-params -> re-quantize it to 'x' params before the Minimum.
+                scale = x.quantization.scale.vector
+                zp = x.quantization.zero_point.vector
+                ops_to_add.append(self.builder.create_quantize_operator_before(min_op, 1, x.type, scale, zp))
 
             ops_to_add.append(min_op)
 
