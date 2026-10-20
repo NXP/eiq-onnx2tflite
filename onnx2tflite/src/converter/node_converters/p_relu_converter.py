@@ -40,9 +40,9 @@ class PReluConverter(NodeConverter):
             try:
                 np.broadcast_shapes(a.shape.vector, b.shape.vector)
 
-            except ValueError:
+            except ValueError as e:
                 # Shapes are not broadcastable. This shouldn't happen. Possible cause is an invalid ONNX model.
-                raise ConversionError(errors.Code.INTERNAL_ERROR, f"Failed to broadcast shapes '{a.shape.vector}' and '{b.shape.vector}' during PRelu conversion.")
+                raise ConversionError(errors.Code.INTERNAL_ERROR, f"Failed to broadcast shapes '{a.shape.vector}' and '{b.shape.vector}' during PRelu conversion.") from e
 
         t_op.builtin_options = None  # TFLite PRelu has no builtin options.
         t_op.opcode_index = self.context.tflite_builder.op_code_index_for_op_type(BuiltinOperator.PRELU)

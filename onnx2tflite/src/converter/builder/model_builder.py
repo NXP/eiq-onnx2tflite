@@ -417,19 +417,19 @@ class ModelBuilder:
             # noinspection PyBroadException
             try:
                 outputs.append(tensor.tmp_index)
-            except Exception as _:  # noqa: BLE001
-                raise ConversionError(errors.Code.GENERATED_MODEL_INVALID, f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!")
+            except Exception as e:  # noqa: BLE001
+                raise ConversionError(errors.Code.GENERATED_MODEL_INVALID, f"The tensor '{tensor.name}' is among the model outputs, but does NOT appear in the graph!") from e
 
         inputs = self.get_sub_graph().inputs
         for tensor in inputs.tmp_inputs:
             # noinspection PyBroadException
             try:
                 inputs.append(tensor.tmp_index)
-            except Exception as _:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001
                 if allow_inputs_stripping:
                     logger.info(f"The input tensor '{tensor.name}' will not be present in generated TFLite graph.")
                 else:
-                    raise ConversionError(errors.Code.GENERATED_MODEL_INVALID, f"The tensor '{tensor.name}' is among the model inputs, but does NOT appear in the graph!")
+                    raise ConversionError(errors.Code.GENERATED_MODEL_INVALID, f"The tensor '{tensor.name}' is among the model inputs, but does NOT appear in the graph!") from e
 
         # Assign each operator its inputs and outputs indices
         for operator in self.get_sub_graph().operators.vector:

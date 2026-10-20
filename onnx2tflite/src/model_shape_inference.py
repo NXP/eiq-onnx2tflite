@@ -470,9 +470,9 @@ class ModelShapeInference(SymbolicShapeInference):
                         # this case is handled separately
                         return index
                     return bound + index
-            except TypeError:
+            except TypeError as err:
                 # MODIFIED PART START
-                raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Shape inference of `Slice` failed unexpectedly.")
+                raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Shape inference of `Slice` failed unexpectedly.") from err
                 # MODIFIED PART END
             return index
 
@@ -531,9 +531,9 @@ class ModelShapeInference(SymbolicShapeInference):
                     try:
                         if not less_equal(e, new_sympy_shape[i]):
                             e = new_sympy_shape[i]  # noqa: PLW2901
-                    except Exception:  # noqa: BLE001
+                    except Exception as err:  # noqa: BLE001
                         # MODIFIED PART START
-                        raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Shape inference of `Slice` failed due to the use of symbolic shapes.")
+                        raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Shape inference of `Slice` failed due to the use of symbolic shapes.") from err
                         # MODIFIED PART END
 
                 s = handle_negative_index(s, new_sympy_shape[i])  # noqa: PLW2901
@@ -1455,6 +1455,6 @@ class ModelShapeInference(SymbolicShapeInference):
             if node is not None:
                 raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Unexpected internal error occurred during shape inference. A possible cause might be the"
                     f" `{node.op_type}` operator with input tensors {node.input} and output tensors "
-                    f"{node.output}. Please report this issue.")
+                    f"{node.output}. Please report this issue.") from e
 
-            raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Unexpected internal error during shape inference. Please report this issue.")
+            raise ConversionError(errors.Code.SHAPE_INFERENCE_ERROR, "Unexpected internal error during shape inference. Please report this issue.") from e

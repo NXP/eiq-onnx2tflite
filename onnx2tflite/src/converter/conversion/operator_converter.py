@@ -228,7 +228,7 @@ class OperatorConverter:
             #  first one is re-raised after all nodes are processed, so that its specific error code is preserved.
             first_error: errors.ConversionError | None = None
 
-            for idx, node in enumerate(o_nodes):
+            for node in o_nodes:
                 try:
                     conversion_fn(node)
                 except errors.ConversionError as e:
