@@ -7,10 +7,60 @@
 
 import numpy as np
 import onnx
+import pytest
 from onnx import TensorProto
 
 from onnx2quant.qdq_quantization import InputSpec, QDQQuantizer, RandomDataCalibrationDataReader
 from onnx2quant.quantization_config import QuantizationConfig
+from onnx2tflite.src import errors
+from onnx2tflite.src.errors import ConversionError
+from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
+
+
+@pytest.mark.parametrize(
+    "onnx_type",
+    [
+        TensorProto.FLOAT,
+        TensorProto.FLOAT16,
+        TensorProto.INT64,
+        TensorProto.INT32,
+        TensorProto.INT16,
+        TensorProto.INT8,
+        TensorProto.UINT8,
+        TensorProto.BOOL,
+    ],
+    ids=name_for_onnx_type,
+)
+def test_random_data_calibration_data_reader__supported_types(onnx_type):
+    shape = [2, 3, 4]
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node("Identity", ["x"], ["y"])],
+        "Random calibration data test",
+        [onnx.helper.make_tensor_value_info("x", onnx_type, shape)],
+        [onnx.helper.make_tensor_value_info("y", onnx_type, shape)],
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    reader = RandomDataCalibrationDataReader.from_onnx_model(onnx_model, num_samples=2)
+
+    numpy_type = to_numpy_type(onnx_type)
+    samples = [reader.get_next(), reader.get_next()]
+    assert reader.get_next() is None
+
+    for sample in samples:
+        assert sample["x"].dtype == numpy_type
+        assert list(sample["x"].shape) == shape
+        if numpy_type != np.bool_:
+            assert sample["x"].min() >= 0
+            assert sample["x"].max() <= (1 if np.issubdtype(numpy_type, np.floating) else 1000)
+
+
+def test_random_data_calibration_data_reader__unsupported_type():
+    with pytest.raises(ConversionError) as e:
+        RandomDataCalibrationDataReader({"x": InputSpec([2, 3], np.complex64)})
+
+    assert e.value.code == errors.Code.NOT_IMPLEMENTED
+    assert "complex64" in e.value.msg
 
 
 def test_quantizer__conv_dynamic_weight__weight_zero_point_is_zero():
