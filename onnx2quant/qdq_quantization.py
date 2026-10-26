@@ -448,21 +448,31 @@ class RandomDataCalibrationDataReader(CalibrationDataReader):
                 else:
                     input_type = input_metadata.type
 
-                    if input_type == np.float32:
+                    if input_type in (np.float32, np.float16):
                         sample[input_name] = self._generate_random_data(
                             rng, input_shape, input_metadata.min or 0.0, input_metadata.max or 1.0
-                        ).astype("float32")
+                        ).astype(input_type)
 
-                    elif input_type == np.int64:
+                    elif input_type in (np.int64, np.int32, np.int16, np.int8, np.uint8):
+                        # Default range [0, 1000] clipped to the range representable by the type.
+                        type_info = np.iinfo(input_type)
+                        min_ = max(input_metadata.min or 0.0, float(type_info.min))
+                        max_ = min(input_metadata.max or 1000.0, float(type_info.max))
                         sample[input_name] = self._generate_random_data(
-                            rng, input_shape, input_metadata.min or 0.0, input_metadata.max or 1000.0
-                        ).astype("int64")
+                            rng, input_shape, min_, max_
+                        ).astype(input_type)
 
                     elif input_type == np.bool_:
                         sample[input_name] = rng.random(input_shape, dtype=np.float32) < 0.5
 
                     else:
-                        raise NotImplementedError
+                        raise ConversionError(
+                            errors.Code.NOT_IMPLEMENTED,
+                            f"Random calibration dataset cannot be generated for input '{input_name}' "
+                            f"of type '{np.dtype(input_type).name}'. Supported types are: float32, "
+                            "float16, int64, int32, int16, int8, uint8 and bool. Provide a custom "
+                            "calibration dataset instead.",
+                        )
 
             self.data.append(sample)
 
