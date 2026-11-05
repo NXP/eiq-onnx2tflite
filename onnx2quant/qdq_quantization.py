@@ -1013,7 +1013,6 @@ class QDQQuantizer:
         QDQRegistry["DepthToSpace"] = QDQDirect8BitOp
         QDQRegistry["Elu"] = QDQElu
         QDQRegistry["Expand"] = QDQDirect8BitOp
-        QDQRegistry["Flatten"] = QDQDirect8BitOp
         QDQRegistry["GatherND"] = QDQDirect8BitOp
         QDQRegistry["Gelu"] = QDQOperatorBase
         QDQRegistry["GlobalAveragePool"] = QDQDirect8BitOp

@@ -48,13 +48,13 @@ def test_too_high_opset():
     )
     onnx_model = onnx.helper.make_model(
         graph,
-        opset_imports=[onnx.helper.make_opsetid(domain="", version=26)]  # Opset 26.
+        opset_imports=[onnx.helper.make_opsetid(domain="", version=27)]  # Opset 27.
     )
 
     with pytest.raises(errors.ConversionError) as exc_info:
         convert.convert_model(onnx_model)
 
     assert exc_info.value.code == errors.Code.CONVERSION_REQUIRES_OVERRIDE
-    assert 'opset > 25 is not guaranteed' in str(exc_info.value)
+    assert 'opset > 26 is not guaranteed' in str(exc_info.value)
     assert '--skip-opset-version-check' in str(exc_info.value)
 

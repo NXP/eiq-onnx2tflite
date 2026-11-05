@@ -58,7 +58,10 @@ def test_convert_range(start: float, limit: float, delta: float):
 @pytest.mark.parametrize(
     'start, limit, delta',
     [
-        pytest.param(0.1, 12.3, 0.1, id='0.1 to 12.3, delta = 0.1'),
+        pytest.param(0.1, 12.3, 0.1, id='0.1 to 12.3, delta = 0.1',
+                     marks=pytest.mark.xfail(reason="ORT 1.31 computes the number of elements in float64 (123), "
+                                                    "TFLite in float32 (122).")
+                     ),
         pytest.param(0.1, 1.1, 0.7, id='0.1 to 1.1, delta = 0.7'),
         pytest.param(-3.14159, 2.71828, 0.42, id='-pi to e, delta = 0.42'),
         pytest.param(-3.14159, 2.71828, -0.42, id='-pi to e, delta = -0.42 (wrong direction)',

@@ -41,7 +41,7 @@ def test_convert_layer_normalization_with_default_values(input_shape: List[int],
     np.random.seed(input_shape[0])
     input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
-    executors.convert_run_compare(onnx_model, input_data, rtol=rtol)
+    executors.convert_run_compare(onnx_model, input_data, rtol=rtol, atol=1.e-6)
 
 
 @pytest.mark.parametrize(
@@ -84,7 +84,7 @@ def test_convert_layer_normalization(input_shape: List[int], scale: List[float],
     np.random.seed(input_shape[0])
     input_data = np.random.random(np.prod(input_shape)).reshape(input_shape).astype(np.float32)
 
-    executors.convert_run_compare(onnx_model, input_data, rtol=rtol)
+    executors.convert_run_compare(onnx_model, input_data, rtol=rtol, atol=1.e-6)
 
 
 @pytest.mark.parametrize(

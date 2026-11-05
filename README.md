@@ -4,8 +4,8 @@
 )](https://eiq.nxp.com/repository/eiq-onnx2tflite/)
 ![python-badge](https://img.shields.io/badge/Python-3.11+-green)
 ![tensorflow-badge](https://img.shields.io/badge/TensorFlow-2.18.1-FF6F00?logo=tensorflow)
-![onnx-badge](https://img.shields.io/badge/ONNX-1.20.1-005CED?logo=onnx)
-![ORT-badge](https://img.shields.io/badge/ONNX_Runtime-1.24.3-lightgray?logo=onnx)
+![onnx-badge](https://img.shields.io/badge/ONNX-1.22.0-005CED?logo=onnx)
+![ORT-badge](https://img.shields.io/badge/ONNX_Runtime-1.31.1-lightgray?logo=onnx)
 ![onnx-opset](https://img.shields.io/badge/ONNX_Opset-7+-blue?logo=onnx)
 
 ONNX2TFLite converter is CLI tool which allows you to convert ONNX models (`*.onnx`) into the analogous model in

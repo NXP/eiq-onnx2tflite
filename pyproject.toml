@@ -24,8 +24,8 @@ dependencies = [
     "flatbuffers==24.3.25", # TensorFlow dependency
     "numpy",
     "protobuf",
-    "onnx~=1.20.1",
-    "onnxruntime~=1.24.3",
+    "onnx~=1.22.0",
+    "onnxruntime~=1.31.1",
     "sympy",
     "deprecated",
 ]

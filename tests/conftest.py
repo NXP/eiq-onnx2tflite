@@ -1,5 +1,5 @@
 #
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -16,6 +16,7 @@ import tensorflow as tf
 
 import onnx2tflite.lib.tflite.BuiltinOperator as libBuiltinOperator
 from onnx2tflite.src.conversion_config import ConversionConfig
+from onnx2tflite.src.converter import convert
 from onnx2tflite.src.converter.builder import model_builder
 from onnx2tflite.src.tflite_generator import tflite_model
 
@@ -39,6 +40,25 @@ def cifar10_tflite(artifacts_dir):
 @pytest.fixture(autouse=True)
 def init_seeds():
     np.random.seed(42)
+
+
+# Highest ai.onnx opset officially supported by the installed ONNX Runtime. ONNX may already define a newer
+# (unreleased) opset, which ORT refuses to load. Models built without explicit `opset_imports` use this one.
+TEST_DEFAULT_OPSET = convert.MAXIMUM_VERIFIED_OPSET
+
+
+@pytest.fixture(autouse=True, scope="session")
+def default_test_opset():
+    original_make_model = onnx.helper.make_model
+
+    def make_model(*args: object, **kwargs: object) -> onnx.ModelProto:
+        if kwargs.get("opset_imports") is None:
+            kwargs["opset_imports"] = [onnx.helper.make_opsetid("", TEST_DEFAULT_OPSET)]
+        return original_make_model(*args, **kwargs)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(onnx.helper, "make_model", make_model)
+        yield
 
 
 # noinspection SpellCheckingInspection

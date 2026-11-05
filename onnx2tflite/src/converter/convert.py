@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 MINIMUM_REQUIRED_OPSET = 7
 
 # A warning message will be printed for models with a higher opset.
-MAXIMUM_VERIFIED_OPSET = 25  # Corresponding to ONNX 1.20.1
+MAXIMUM_VERIFIED_OPSET = 26  # Highest opset officially supported by ONNX Runtime 1.31.1 (ONNX 1.22.0 defines 27)
 
 
 def _assert_supported_opset(model: onnx_model.ModelProto, conversion_context: ConversionContext) -> None:
