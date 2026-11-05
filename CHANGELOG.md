@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- `[onnx2tflite]` Align Clip min/max tensor quantization with data input
-
 ## [0.12.0] - 2026-10-06
 
 ### Added
@@ -19,15 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `[onnx2tflite]` Support for GatherElements operator (static and dynamic indices)
 - `[onnx2tflite]` Support for Atan operator
 - `[onnx2quant]` Add --op-types-to-quantize, --nodes-to-quantize, and --nodes-to-exclude CLI arguments to allow restricting quantization to specific operator types or nodes
+- `[onnx2tflite]` Support for `Reduce*` operators with `noop_with_empty_axes=1`
+- `[onnx2tflite]` Support for Equal operator with INT16 inputs
 
 ### Changed
 
-- `[onnx2tflite]` Identity (no-op) operators are now represented using a lightweight `Reshape` instead of a `Transpose`/`FlexTranspose`.
+- `[onnx2tflite|onnx2quant]` Migrated to ORT 1.31.1
+- `[onnx2tflite|onnx2quant]` Migrated to ONNX 1.22.0
 - `[onnx2tflite|onnx2quant]` Standardized logging and error handling. The custom `logger` facade (`logger.i/w/e/d`, the in-memory `conversion_log` store, and `loggingContext`) has been removed. Modules now use the standard library `logging` (`logging.getLogger(__name__)`).
+- `[onnx2tflite]` Maximum verified opset raised from 25 to 26
+- `[onnx2tflite]` Identity (no-op) operators are now represented using a lightweight `Reshape` instead of a `Transpose`/`FlexTranspose`.
 - `[onnx2tflite]` Removed the custom `src/logger.py` module, the per-node error tracking / in-memory conversion log, and the `utils/print_intermediate_errors.py` script.
 
 ### Fixed
 
+- `[onnx2tflite]` Align Clip min/max tensor quantization with data input
+- `[onnx2tflite]` Range now uses static data when the TFLite output element count would differ from ONNX Runtime
 - `[onnx2quant]` Fixed quantization of Conv nodes with a dynamic (non-initializer) weight input.
 
 ## [0.11.0] - 2026-06-23
