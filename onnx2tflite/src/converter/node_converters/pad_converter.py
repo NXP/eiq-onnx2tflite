@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023-2025 NXP
+# Copyright 2023-2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -92,8 +92,11 @@ class PadConverter(NodeConverter):
             data = np.asarray([""], np.bytes_)
 
         elif data_type == TensorType.BOOL:
-            # ONNXRT: ONNX Runtime and TFLite inference engine does not support this case, so it has not been tested.
-            data = np.asarray([False], np.bool_)
+            # ONNX Runtime supports BOOL `Pad`, but the TFLite `Pad` kernel does not.
+            raise ConversionError(
+                errors.Code.CONVERSION_IMPOSSIBLE,
+                "Conversion of ONNX 'Pad' with type BOOL is not possible, because TFLite 'Pad' doesn't support it.",
+            )
 
         else:
             np_type = translator.tf_lite_type_to_numpy(data_type)

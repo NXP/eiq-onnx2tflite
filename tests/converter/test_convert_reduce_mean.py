@@ -1,11 +1,12 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
 import numpy as np
 import onnx
+from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 import pytest
 from onnx import TensorProto
 
@@ -424,9 +425,53 @@ def test_convert_reduce_mean__noop_with_empty_axes(intermediate_tflite_model_pro
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
 
-    with pytest.raises(errors.ConversionError) as exc_info:
-        convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
+    x_data = (np.random.random(x_shape) + 1.).astype(np.float32)
+    executors.convert_run_compare(onnx_model, x_data)
+
+    # The operator does nothing, so it is converted to a no-op `Reshape`.
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
+
+
+def test_convert_reduce_mean__noop_with_empty_axes_tensor(intermediate_tflite_model_provider):
+    x_shape = [5, 10, 15]
+
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('ReduceMean', ['x', 'axes'], ['y'], noop_with_empty_axes=1),
+        ],
+        'ReduceMean test',
+        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, x_shape)],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
+        [onnx.helper.make_tensor('axes', TensorProto.INT64, [0], [])],
+    )
+    onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
+
+    x_data = (np.random.random(x_shape) + 1.).astype(np.float32)
+    executors.convert_run_compare(onnx_model, x_data)
+
+    # An empty `axes` tensor is treated the same as omitted `axes`.
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
+
+
+def test_convert_reduce_mean__noop_with_empty_axes__skipped(intermediate_tflite_model_provider):
+    x_shape = [5, 10, 15]
+
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('ReduceMean', ['x'], ['x1'], noop_with_empty_axes=1),
+            onnx.helper.make_node('Relu', ['x1'], ['y']),
+        ],
+        'ReduceMean test',
+        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, x_shape)],
+        [onnx.helper.make_tensor_value_info('y', TensorProto.FLOAT, ())],
+    )
+    onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
+
+    x_data = (np.random.random(x_shape) - 0.5).astype(np.float32)
+    executors.convert_run_compare(onnx_model, x_data)
+
+    # The no-op `ReduceMean` is not connected to both a graph input and output, so it is skipped entirely.
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RELU])
 
 
 def test_convert_reduce_mean__keepdims_true():

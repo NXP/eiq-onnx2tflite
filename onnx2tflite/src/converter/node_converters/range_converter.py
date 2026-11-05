@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -87,9 +87,14 @@ class RangeConverter(NodeConverter):
             raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has `delta` = 0, which is not allowed.")
 
         np_type = tf_lite_type_to_numpy(data_type)
-        if common.range_num_elements(start, limit, delta, np_type) != common.tflite_range_num_elements(
-            start, limit, delta, np_type
-        ):
+        num_elements = common.range_num_elements(start, limit, delta, np_type)
+        if num_elements == 0:
+            # ONNX allows instances such as 'start = 0, limit = 10, step = -1'. The output is an empty tensor. Whereas
+            #  TFLite simply crashes in those cases.
+            # Make sure TFLite will also produce empty output.
+            t_op.tmp_inputs[1] = t_op.tmp_inputs[0]  # Set `limit` = `start`.
+
+        elif num_elements != common.tflite_range_num_elements(start, limit, delta, np_type):
             # ONNX Runtime computes the number of elements in float64, while TFLite uses the tensor type. Due to
             #  rounding, the counts can differ. In that case, replace the `Range` with static data.
             logger.debug("ONNX `Range` output size would differ in TFLite. Replacing it with static data.")
@@ -102,12 +107,6 @@ class RangeConverter(NodeConverter):
             t_op.tmp_inputs = [self.builder.create_tensor_for_data(data, "range_data")]
             self.builder.turn_operator_to_identity(t_op)
             return [t_op]
-
-        if (start >= limit and delta > 0) or (start <= limit and delta < 0):
-            # ONNX allows instances such as 'start = 0, limit = 10, step = -1'. The output is an empty tensor. Whereas
-            #  TFLite simply crashes in those cases.
-            # Make sure TFLite will also produce empty output.
-            t_op.tmp_inputs[1] = t_op.tmp_inputs[0]  # Set `limit` = `start`.
 
         t_op.builtin_options = range_options.Range()
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -44,16 +44,64 @@ def convert_axes_from_attribute(t_op: tflite_model.Operator, builder: ModelBuild
     t_op.tmp_inputs.append(axes_tensor)
 
 
+def _axes_are_empty(t_op: tflite_model.Operator, inspector: ONNXModelInspector) -> bool:
+    """Determine if the `axes` input (index 1) of `t_op` is omitted, or is a tensor with 0 elements."""
+    axes_tensor = try_get_input(t_op, 1)
+    if axes_tensor is None:
+        return True
+
+    if tensor_has_data(axes_tensor):
+        return axes_tensor.tmp_buffer.data.size == 0
+
+    if (axes_data := inspector.try_get_inferred_tensor_data(axes_tensor.name)) is not None:
+        return axes_data.size == 0
+
+    # Dynamic `axes` with a known static shape containing a 0.
+    return 0 in axes_tensor.shape.vector
+
+
+def is_noop_reduction(t_op: tflite_model.Operator, noop_with_empty_axes: int, inspector: ONNXModelInspector) -> bool:
+    """Determine if the ONNX reduction operator represented by `t_op` does nothing.
+
+    That is the case, when `noop_with_empty_axes` == 1 and the `axes` input (index 1) is either not specified, or it
+     is an empty tensor (shape [0]). Both are treated as "empty axes" by ONNX.
+    """
+    return noop_with_empty_axes == 1 and _axes_are_empty(t_op, inspector)
+
+
+def convert_noop_reduction(
+    t_op: tflite_model.Operator, builder: ModelBuilder, inspector: ONNXModelInspector
+) -> list[tflite_model.Operator]:
+    """Convert an ONNX reduction operator, which does nothing, to a no-op TFLite operator.
+
+    The operator is skipped if possible, or turned into an identity op. If the input and output have different
+     quantization parameters (QDQ model), the builder turns it into a `Quantize` op to re-quantize the data.
+    Use `is_noop_reduction()` to detect this case.
+    """
+    t_op.tmp_inputs[1:] = []  # Remove the (optional or empty) `axes` input.
+    x = t_op.tmp_inputs[0]
+    y = t_op.tmp_outputs[0]
+
+    if builder.operator_can_be_skipped(t_op, inspector):
+        builder.redirect_tensor(y, x)
+        return []
+
+    builder.turn_operator_to_identity(t_op)
+    return [t_op]
+
+
 def convert_axes_from_input_tensor(
     t_op: tflite_model.Operator,
     builder: ModelBuilder,
     inspector: ONNXModelInspector,
     ops: OpsList,
-    noop_with_empty_axes: int,
     op_type: str,
 ) -> None:
     """Verify the `axes` tensor (on input index 1) of the `t_op`, which is expected to represent an ONNX reduction
     operator.
+
+    The case `noop_with_empty_axes` == 1 without `axes` must be resolved by the caller beforehand, using
+     `is_noop_reduction()`.
     """
     x = t_op.tmp_inputs[0]
     rank = x.rank
@@ -105,27 +153,6 @@ def convert_axes_from_input_tensor(
         t_op.tmp_inputs[1] = axes_tensor
 
     # No axes specified.
-
-    elif noop_with_empty_axes == 1:
-        # ONNXRT: According to the documentation, the operator should do nothing in this situation. But that's
-        #  not what happens in ONNX Runtime. ORT seems to simply ignore the `noop_with_empty_axes` attribute.
-        #  https://github.com/microsoft/onnxruntime/issues/19147
-        # For now, exit with error. If later ORT adds support for this attribute, simply uncomment the
-        #  following code.
-
-        # if self.builder.operator_can_be_skipped(t_op, self.inspector):
-        #     # Skip the operator.
-        #     self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
-        #     return []
-        #
-        # else:
-        #     # Return an operator which does nothing.
-        #     self.builder.turn_operator_to_identity(t_op)
-        #     return [t_op]
-
-        raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `{op_type}` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
-            " indicates that the operator should do nothing. This is however not supported by ONNX"
-            " Runtime, and therefore the conversion is also not supported.")
 
     else:
         # Default is to reduce all axes.

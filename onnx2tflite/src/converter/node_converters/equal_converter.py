@@ -21,7 +21,9 @@ class EqualConverter(NodeConverter):
     onnx_supported_types = FLOATS + INTS + UINTS + [TensorType.BOOL, TensorType.STRING]
     # https://github.com/tensorflow/tensorflow/blob/v2.15.0/tensorflow/lite/kernels/comparisons.cc#L173-L212
     tflite_supported_types = INTS + [TensorType.BOOL, TensorType.FLOAT32, TensorType.UINT8, TensorType.STRING]
-    verified_types = [TensorType.INT32, TensorType.INT64, TensorType.BOOL, TensorType.FLOAT32, TensorType.STRING]
+    verified_types = [
+        TensorType.INT16, TensorType.INT32, TensorType.INT64, TensorType.BOOL, TensorType.FLOAT32, TensorType.STRING
+    ]
 
     def convert(self, node: onnx_model.NodeProto, t_op: tflite_model.Operator) -> list[tflite_model.Operator]:
         """Convert the ONNX 'Equal' operator to TFLite 'Equal'."""
@@ -38,15 +40,11 @@ class EqualConverter(NodeConverter):
             self.assert_type_allowed(x.type)
 
         if x.type in {TensorType.INT8, TensorType.UINT8}:
-            # ONNXRT: Not supported by ONNX/ORT.
+            # ONNX Runtime supports non-quantized INT8/UINT8 `Equal`, but the TFLite kernel crashes (abort) for
+            #  non-quantized INT8/UINT8 inputs. So the conversion is not supported.
             if x.quantization is None:
                 raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX `Equal` with input type `{name_for_type(x.type)}` is not supported.")
-            # The input is quantized. ONNX Runtime doesn't support int8/uint8 regardless of quantization.
-            # Using the QDQ quantizer will result in an intentionally invalid ONNX model, which can be converted to
-            #  TFLite and run without issues.
-            # Non QDQ quantized `Equal` is not supported by ONNX Runtime and is not supported by the converter.
-            #  Since it is impossible to detect if the Equal was QDQ quantized or not right now (because output has
-            #  type bool), there is no way to catch the potential invalid use. But it shouldn't be common at all.
+            # The input is quantized (e.g. QDQ quantized model). TFLite supports this case.
 
         reshape_and_transpose_ops = self.builder.ensure_correct_broadcasting(t_op, t_op.tmp_outputs[0])
 

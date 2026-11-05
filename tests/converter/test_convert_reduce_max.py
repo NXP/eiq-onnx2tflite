@@ -7,6 +7,7 @@
 
 import numpy as np
 import onnx
+from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 import pytest
 from onnx import TensorProto
 
@@ -437,9 +438,11 @@ def test_convert_reduce_max__noop_with_empty_axes(intermediate_tflite_model_prov
     )
     onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
 
-    with pytest.raises(errors.ConversionError) as exc_info:
-        convert.convert_model(onnx_model)
-    assert exc_info.value.code == errors.Code.INVALID_ONNX_OPERATOR
+    x_data = (np.random.random(x_shape) + 1.).astype(np.float32)
+    executors.convert_run_compare(onnx_model, x_data)
+
+    # The operator does nothing, so it is converted to a no-op `Reshape`.
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RESHAPE])
 
 
 def test_convert_reduce_max__keepdims_true():

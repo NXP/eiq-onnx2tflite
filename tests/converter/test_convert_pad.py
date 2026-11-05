@@ -60,6 +60,24 @@ def test_convert_pad__unsupported_type():
     assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
 
 
+def test_convert_pad__bool():
+    # ONNX Runtime supports BOOL `Pad`, but TFLite does not.
+    shape = [2, 3]
+    pads = [1, 0, 0, 1]
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node("Pad", ['x', 'pads'], ['o'], mode='constant')],
+        'Pad test',
+        [onnx.helper.make_tensor_value_info("x", TensorProto.BOOL, shape)],
+        [onnx.helper.make_tensor_value_info("o", TensorProto.BOOL, ())],
+        [onnx.helper.make_tensor('pads', TensorProto.INT64, [len(pads)], pads)]
+    )
+    onnx_model = onnx.helper.make_model(graph)
+
+    with pytest.raises(errors.ConversionError) as exc_info:
+        convert.convert_model(onnx_model)
+    assert exc_info.value.code == errors.Code.CONVERSION_IMPOSSIBLE
+
+
 @pytest.mark.parametrize(
     "shape, pads",
     [

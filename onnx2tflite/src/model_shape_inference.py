@@ -738,7 +738,8 @@ class ModelShapeInference(SymbolicShapeInference):
         This includes `ReduceL2`, `ReduceMax`, `ReduceMean`, `ReduceProd` and potentially others.
         """
         keep_dims = get_attribute(node, "keepdims", 1)
-        if get_opset(self.out_mp_) >= 18:
+        axes_is_input = get_opset(self.out_mp_) >= 18
+        if axes_is_input:
             # ReduceMean/ReduceL2 v18+ uses 'axes' as input.
             axes = self._try_get_value(node, 1)
             if axes is None:
@@ -756,6 +757,10 @@ class ModelShapeInference(SymbolicShapeInference):
             axes = get_attribute(node, "axes")
 
         shape = self._get_shape(node, 0)
+        if axes is None and axes_is_input and get_attribute(node, "noop_with_empty_axes", 0) == 1:
+            # The operator does nothing.
+            axes = []
+
         if axes is None:
             # The default value is all axes.
             axes = np.arange(len(shape))
@@ -782,7 +787,8 @@ class ModelShapeInference(SymbolicShapeInference):
 
     def _infer_ReduceSum(self, node: onnx.NodeProto) -> None:  # noqa: N802
         keep_dims = get_attribute(node, "keepdims", 1)
-        if get_opset(self.out_mp_) >= 13:
+        axes_is_input = get_opset(self.out_mp_) >= 13
+        if axes_is_input:
             # ReduceSum v13+ uses 'axes' as input.
             axes = self._try_get_value(node, 1)
             if axes is None:
@@ -800,6 +806,10 @@ class ModelShapeInference(SymbolicShapeInference):
             axes = get_attribute(node, "axes")
 
         shape = self._get_shape(node, 0)
+        if axes is None and axes_is_input and get_attribute(node, "noop_with_empty_axes", 0) == 1:
+            # The operator does nothing.
+            axes = []
+
         if axes is None:
             # The default value is all axes.
             axes = np.arange(len(shape))

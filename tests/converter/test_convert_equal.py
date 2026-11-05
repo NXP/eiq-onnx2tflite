@@ -26,6 +26,7 @@ from onnx2tflite.src.errors import ConversionError
     [
         TensorProto.BOOL,
         TensorProto.FLOAT,
+        TensorProto.INT16,
         TensorProto.INT32,
         TensorProto.INT64,
         TensorProto.STRING
@@ -86,10 +87,9 @@ def test_convert_equal_with_types_unsupported_by_onnx(main_shape: List[int], dat
     "main_shape, data_type",
     [
         pytest.param([2, 4, 6, 8], TensorProto.INT8, id="INT8"),
-        pytest.param([2, 4, 6, 8], TensorProto.INT16, id="INT16"),
         pytest.param([2, 4, 6, 8], TensorProto.UINT8, id="UINT8"),
     ])
-def test_convert_equal_with_types_unsupported_by_onnx_try_convert(main_shape: List[int], data_type: TensorProto):
+def test_convert_equal_with_types_unsupported_by_tflite_kernel(main_shape: List[int], data_type: TensorProto):
     graph = onnx.helper.make_graph(
         [
             onnx.helper.make_node("Equal", ["input_1", "input_2"], ["output"]),

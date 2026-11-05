@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -63,10 +63,11 @@ class ReduceMaxConverter(NodeConverter):
         """
         attrs = cast(ReduceMax, node.attributes)
 
+        if reduce_utils.is_noop_reduction(t_op, attrs.noop_with_empty_axes, self.inspector):
+            return reduce_utils.convert_noop_reduction(t_op, self.builder, self.inspector)
+
         ops = OpsList(middle_op=t_op)
-        convert_axes_from_input_tensor(
-            t_op, self.builder, self.inspector, ops, attrs.noop_with_empty_axes, node.op_type
-        )
+        convert_axes_from_input_tensor(t_op, self.builder, self.inspector, ops, node.op_type)
 
         t_op.builtin_options = reduce_max_options.ReduceMax(bool(attrs.keepdims))
 

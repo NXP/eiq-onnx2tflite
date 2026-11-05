@@ -63,7 +63,8 @@ class DivConverter(NodeConverter):
         ops.add_pre(self.builder.ensure_correct_broadcasting(t_op, t_op.tmp_outputs[0]))
 
         if t_op.is_quantized_without_qdq():
-            # ONNXRT: INT8 and UINT8 are not supported by ONNX Runtime, so conversion cannot be verified.
+            # ONNX Runtime computes integer division for INT8/UINT8, while the TFLite UINT8/INT8 `Div` kernel
+            #  expects quantized tensors. The results differ, so the conversion is not supported.
             raise ConversionError(errors.Code.NOT_IMPLEMENTED, f"Conversion of ONNX `Div` with quantized inputs of type {input_a.type} is not supported.")
 
         if input_a.type == TensorType.INT64:

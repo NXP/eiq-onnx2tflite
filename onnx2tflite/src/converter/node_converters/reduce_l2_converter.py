@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -91,6 +91,9 @@ class ReduceL2Converter(NodeConverter):
         """
         reduce_l2_attributes = cast(ReduceL2, node.attributes)
 
+        if reduce_utils.is_noop_reduction(t_op, reduce_l2_attributes.noop_with_empty_axes, self.inspector):
+            return reduce_utils.convert_noop_reduction(t_op, self.builder, self.inspector)
+
         x = t_op.tmp_inputs[0]
         y = t_op.tmp_outputs[0]
 
@@ -139,27 +142,6 @@ class ReduceL2Converter(NodeConverter):
                 axes_cast_ops.append(cast_op)
 
         # No axes specified.
-
-        elif reduce_l2_attributes.noop_with_empty_axes == 1:
-            # ONNXRT: According to the documentation, the operator should do nothing in this situation. But that's not
-            #  what happens in ONNX Runtime. ORT seems to simply ignore the `noop_with_empty_axes` attribute.
-            # For now, exit with error. If later ORT adds support for this attribute, simply uncomment the
-            #  following code.
-            # TODO https://github.com/microsoft/onnxruntime/issues/19147
-
-            # if self.builder.operator_can_be_skipped(t_op, self.inspector):
-            #     # Skip the operator.
-            #     self.builder.redirect_tensor(t_op.tmp_outputs[0], t_op.tmp_inputs[0])
-            #     return []
-            #
-            # else:
-            #     # Return an operator which does nothing.
-            #     self.builder.turn_operator_to_identity(t_op)
-            #     return [t_op]
-
-            raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `ReduceL2` has `noop_with_empty_axes` == 1 and the `axes` are not specified, which"
-                " indicates that the operator should do nothing. This is however not supported by ONNX"
-                " Runtime, and therefore the conversion is also not supported.")
 
         else:
             # Default is to reduce all axes.

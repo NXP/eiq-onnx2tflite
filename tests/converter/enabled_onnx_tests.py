@@ -689,7 +689,7 @@ NODE = {
     "test_equal": {},
     "test_equal_bcast": {},
     # "test_equal_int8": {},
-    # "test_equal_int16": {},
+    "test_equal_int16": {},
     "test_equal_string": {},
     "test_equal_string_broadcast": {},
     # "test_equal_uint8": {},
