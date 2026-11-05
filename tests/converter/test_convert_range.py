@@ -1,14 +1,16 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
 #
 
+import numpy as np
 import onnx
 import pytest
 from onnx import TensorProto
 
+from onnx2tflite.lib.tflite.BuiltinOperator import BuiltinOperator
 from onnx2tflite.src.converter import convert
 from tests import executors
 from onnx2tflite.src import errors
@@ -58,10 +60,7 @@ def test_convert_range(start: float, limit: float, delta: float):
 @pytest.mark.parametrize(
     'start, limit, delta',
     [
-        pytest.param(0.1, 12.3, 0.1, id='0.1 to 12.3, delta = 0.1',
-                     marks=pytest.mark.xfail(reason="ORT 1.31 computes the number of elements in float64 (123), "
-                                                    "TFLite in float32 (122).")
-                     ),
+        pytest.param(0.1, 12.3, 0.1, id='0.1 to 12.3, delta = 0.1 (float32 and float64 counts differ)'),
         pytest.param(0.1, 1.1, 0.7, id='0.1 to 1.1, delta = 0.7'),
         pytest.param(-3.14159, 2.71828, 0.42, id='-pi to e, delta = 0.42'),
         pytest.param(-3.14159, 2.71828, -0.42, id='-pi to e, delta = -0.42 (wrong direction)',
@@ -86,6 +85,59 @@ def test_convert_range__fraction_values(start: float, limit: float, delta: float
 
     onnx_model = onnx.helper.make_model(graph)
     executors.convert_run_compare(onnx_model, {})
+
+
+def test_convert_range__count_mismatch__internal_tensor():
+    # The float32 and float64 element counts differ (122 vs 123). The `Range` output is consumed by `Add` (broadcast).
+    graph = onnx.helper.make_graph(
+        [
+            onnx.helper.make_node('Range', ['start', 'limit', 'delta'], ['r']),
+            onnx.helper.make_node('Add', ['r', 'x'], ['o'])
+        ],
+        'Range test',
+        [onnx.helper.make_tensor_value_info('x', TensorProto.FLOAT, [1])],
+        [onnx.helper.make_tensor_value_info('o', TensorProto.FLOAT, ())],
+        [
+            onnx.helper.make_tensor('start', TensorProto.FLOAT, [], [0.1]),
+            onnx.helper.make_tensor('limit', TensorProto.FLOAT, [], [12.3]),
+            onnx.helper.make_tensor('delta', TensorProto.FLOAT, [], [0.1])
+        ]
+    )
+
+    onnx_model = onnx.helper.make_model(graph)
+    input_data = (np.random.random([1]) + 1.).astype(np.float32)
+    executors.convert_run_compare(onnx_model, input_data)
+
+
+@pytest.mark.parametrize(
+    'start, limit, delta, input_type',
+    [
+        pytest.param(0, 10, -1, TensorProto.INT32, id='int32, 0 to 10, delta = -1'),
+        pytest.param(-3.14159, 2.71828, -0.42, TensorProto.FLOAT, id='float32, -pi to e, delta = -0.42'),
+    ])
+def test_convert_range__wrong_direction__keeps_range(start, limit, delta, input_type,
+                                                     intermediate_tflite_model_provider):
+    # Wrong-direction ranges are empty in ONNX. They must use the `limit = start` path, and not be replaced by static
+    #  data. (Running the model is not possible due to a TFLite bug, see the xfail tests above.)
+
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node('Range', ['start', 'limit', 'delta'], ['o'])],
+        'Range test',
+        [],
+        [onnx.helper.make_tensor_value_info('o', input_type, ())],
+        [
+            onnx.helper.make_tensor('start', input_type, [], [start]),
+            onnx.helper.make_tensor('limit', input_type, [], [limit]),
+            onnx.helper.make_tensor('delta', input_type, [], [delta])
+        ]
+    )
+
+    onnx_model = onnx.helper.make_model(graph)
+    convert.convert_model(onnx_model)
+
+    intermediate_tflite_model_provider.assert_converted_model_has_operators([BuiltinOperator.RANGE])
+    range_op = intermediate_tflite_model_provider.get_operators()[0]
+    assert range_op.tmp_inputs[1] is range_op.tmp_inputs[0]
 
 
 def test_convert_range__zero_delta():

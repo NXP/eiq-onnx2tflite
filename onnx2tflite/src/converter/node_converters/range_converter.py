@@ -11,6 +11,8 @@ import numpy as np
 
 from onnx2tflite.lib.tflite.TensorType import TensorType
 from onnx2tflite.src import errors
+from onnx2tflite.src.converter.conversion import common
+from onnx2tflite.src.converter.conversion.translator import tf_lite_type_to_numpy
 from onnx2tflite.src.converter.node_converter import NodeConverter
 from onnx2tflite.src.converter.tensor_utils import tensor_has_data
 from onnx2tflite.src.errors import ConversionError
@@ -83,6 +85,23 @@ class RangeConverter(NodeConverter):
         if delta == 0:
             # https://github.com/microsoft/onnxruntime/blob/d30c81d270894f41ccce7b102b1d4aedd9e628b1/onnxruntime/core/providers/cpu/generator/range.cc#L65
             raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has `delta` = 0, which is not allowed.")
+
+        np_type = tf_lite_type_to_numpy(data_type)
+        if common.range_num_elements(start, limit, delta, np_type) != common.tflite_range_num_elements(
+            start, limit, delta, np_type
+        ):
+            # ONNX Runtime computes the number of elements in float64, while TFLite uses the tensor type. Due to
+            #  rounding, the counts can differ. In that case, replace the `Range` with static data.
+            logger.debug("ONNX `Range` output size would differ in TFLite. Replacing it with static data.")
+            data = common.range_output_data(start, limit, delta, np_type)
+            y = t_op.tmp_outputs[0]
+            if not self.inspector.is_output_of_model(y.name):
+                y.tmp_buffer.data = data
+                return []
+
+            t_op.tmp_inputs = [self.builder.create_tensor_for_data(data, "range_data")]
+            self.builder.turn_operator_to_identity(t_op)
+            return [t_op]
 
         if (start >= limit and delta > 0) or (start <= limit and delta < 0):
             # ONNX allows instances such as 'start = 0, limit = 10, step = -1'. The output is an empty tensor. Whereas

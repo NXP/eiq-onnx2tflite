@@ -1,6 +1,6 @@
 #
 # Copyright 2023 Martin Pavella
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024,2026 NXP
 #
 # License: MIT
 # See the LICENSE_MIT for more details.
@@ -14,6 +14,8 @@ This file contains functions shared by the various files in the
 import logging
 from collections.abc import MutableSequence
 from typing import Any, Optional
+
+import numpy as np
 
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
@@ -48,6 +50,49 @@ def clamp(val: int, start: int, end: int) -> int:
         return end
 
     return val
+
+
+def range_num_elements(start: float, limit: float, delta: float, np_type: type) -> int:
+    """Return the number of elements of ONNX `Range`, computed the same way as ONNX Runtime does.
+
+    The operands are first cast to the tensor type, and then the count is computed in float64.
+    https://github.com/microsoft/onnxruntime/blob/v1.31.1/onnxruntime/core/providers/cpu/generator/range.cc
+    """
+    start, limit, delta = (np.asarray(v).astype(np_type).astype(np.float64) for v in (start, limit, delta))
+    return max(int(np.ceil((limit - start) / delta)), 0)
+
+
+def tflite_range_num_elements(start: float, limit: float, delta: float, np_type: type) -> int:
+    """Return the number of elements, which the TFLite `Range` kernel computes at runtime.
+
+    Unlike ONNX Runtime, TFLite computes the count in the type of the tensors (e.g. float32).
+    https://github.com/tensorflow/tensorflow/blob/v2.18.1/tensorflow/lite/kernels/range.cc
+    """
+    start, limit, delta = (np.asarray(v).astype(np_type) for v in (start, limit, delta))
+    if np.issubdtype(np_type, np.integer):
+        return int((abs(limit - start) + abs(delta) - 1) // abs(delta))
+
+    return int(np.ceil(np.abs((limit - start) / delta)))
+
+
+def range_output_data(start: float, limit: float, delta: float, np_type: type) -> np.ndarray:
+    """Return the output data of ONNX `Range`, computed the same way as ONNX Runtime does.
+
+    The values are accumulated in the tensor type (`value += delta`), which also matches the TFLite kernel.
+    """
+    num_elements = range_num_elements(start, limit, delta, np_type)
+    start = np.asarray(start).astype(np_type)
+    delta = np.asarray(delta).astype(np_type)
+
+    if np.issubdtype(np_type, np.integer):
+        # Integer accumulation is exact, so `arange` gives the same result.
+        return start + delta * np.arange(num_elements, dtype=np_type)
+
+    # Accumulate range values via 'cumsum' and deltas
+    data = np.full([num_elements], delta, np_type)
+    if num_elements > 0:
+        data[0] = start
+    return np.cumsum(data, dtype=np_type)
 
 
 def try_get_input(t_op: tflite_model.Operator, idx: int) -> tflite_model.Tensor | None:

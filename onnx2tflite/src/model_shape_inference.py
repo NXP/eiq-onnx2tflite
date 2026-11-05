@@ -711,21 +711,8 @@ class ModelShapeInference(SymbolicShapeInference):
             # https://github.com/microsoft/onnxruntime/blob/d30c81d270894f41ccce7b102b1d4aedd9e628b1/onnxruntime/core/providers/cpu/generator/range.cc#L65
             raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, "ONNX `Range` has `delta` = 0, which is not allowed.")
 
-        if float in {type(start), type(limit), type(delta)}:
-            # The `Range` uses float parameters. Computation of the output shape can be incorrect, because of float
-            #  errors. For example if start=0.1, limit=12.3 and delta=0.1, '(limit - start) / delta' should be 122, but
-            #  because of float errors, it is 122.0000000745058. `sympy.ceiling()` then turns it into 123, which is not
-            #  correct.
-            # Doing the computation in float32 instead of float64 seems to fix this.
-
-            start = np.float32(start)
-            limit = np.float32(limit)
-            delta = np.float32(delta)
-
-        # This equation is a combination of what ORT and TFLite do:
-        # https://github.com/microsoft/onnxruntime/blob/ee603ee3265dbf6eac112baf273b6b69bf696085/onnxruntime/core/providers/cuda/generator/range.cc#L67-L70
-        # https://github.com/tensorflow/tensorflow/blob/07cda44e5192ba122718049a2f9e9e3c65fc2dde/tensorflow/lite/kernels/range.cc#L54C34-L54C55
-        new_sympy_shape = [sympy.Max(sympy.ceiling((limit - start) / delta), 0)]
+        np_type = to_numpy_type(self.known_vi_[node.input[0]].type.tensor_type.elem_type)
+        new_sympy_shape = [common.range_num_elements(start, limit, delta, np_type)]
 
         self._update_computed_dims(new_sympy_shape)
         vi.CopyFrom(
@@ -739,8 +726,7 @@ class ModelShapeInference(SymbolicShapeInference):
         # Try to infer sympy data.
         # noinspection PyBroadException
         try:
-            np_type = to_numpy_type(vi.type.tensor_type.elem_type)
-            self.sympy_data_[node.output[0]] = np.arange(start, limit, delta).astype(np_type)
+            self.sympy_data_[node.output[0]] = common.range_output_data(start, limit, delta, np_type)
 
         except Exception as _:  # noqa: BLE001
             # This shouldn't happen. In case it somehow does happen, simply continue.
