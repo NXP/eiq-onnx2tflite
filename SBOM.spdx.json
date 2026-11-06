@@ -2,7 +2,7 @@
     "SPDXID": "SPDXRef-DOCUMENT",
     "spdxVersion": "SPDX-2.3",
     "creationInfo": {
-        "created": "2026-11-06T15:50:03Z",
+        "created": "2026-11-06T15:57:26Z",
         "creators": [
             "Organization: NXP",
             "Tool: Black Duck Hub - 2026.4.2"
@@ -18,7 +18,7 @@
             "name": "LA_OPT_Online Code Hosting NXP_Software_License - v1.4 May 2025"
         }
     ],
-    "documentNamespace": "https://blackducksoftware.github.io/spdx/eiq-onnx2tflite-152d09ca-4c45-4d47-8ebd-117852105a5c",
+    "documentNamespace": "https://blackducksoftware.github.io/spdx/eiq-onnx2tflite-2cbf0206-32d5-47d9-8289-288ad1b38185",
     "packages": [
         {
             "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
@@ -39,42 +39,18 @@
             "versionInfo": "0.12"
         },
         {
-            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---091b9733-fabf-4ff9-8a5a-dda9f7ff47ad",
-            "downloadLocation": "NOASSERTION",
-            "externalRefs": [
-                {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "75fbd0b3-8409-4c01-9ed8-b84b1fc3b2a3",
-                    "referenceType": "BlackDuck-Component"
-                },
-                {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "091b9733-fabf-4ff9-8a5a-dda9f7ff47ad",
-                    "referenceType": "BlackDuck-ComponentVersion"
-                }
-            ],
-            "filesAnalyzed": false,
-            "homepage": "https://github.com/jax-ml/ml_dtypes",
-            "licenseConcluded": "Apache-2.0",
-            "licenseDeclared": "Apache-2.0",
-            "name": "python3-ml-dtypes",
-            "originator": "Organization: python3-ml-dtypes",
-            "supplier": "Organization: python3-ml-dtypes",
-            "versionInfo": "0.5.4"
-        },
-        {
             "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---0d6863ea-d23d-42f1-941d-622e0319e444",
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "0d6863ea-d23d-42f1-941d-622e0319e444",
-                    "referenceType": "BlackDuck-ComponentVersion"
+                    "referenceLocator": "8702b4ea-e0ca-4129-b085-49a0a528142e",
+                    "referenceType": "BlackDuck-Component"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "8702b4ea-e0ca-4129-b085-49a0a528142e",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceLocator": "0d6863ea-d23d-42f1-941d-622e0319e444",
+                    "referenceType": "BlackDuck-ComponentVersion"
                 }
             ],
             "filesAnalyzed": false,
@@ -116,13 +92,13 @@
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "e43597c6-bf3a-4e01-9fea-4bb9f6c53417",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceLocator": "1e48d4e1-9601-4ea8-aef1-f9ba6d49025e",
+                    "referenceType": "BlackDuck-ComponentVersion"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "1e48d4e1-9601-4ea8-aef1-f9ba6d49025e",
-                    "referenceType": "BlackDuck-ComponentVersion"
+                    "referenceLocator": "e43597c6-bf3a-4e01-9fea-4bb9f6c53417",
+                    "referenceType": "BlackDuck-Component"
                 }
             ],
             "filesAnalyzed": false,
@@ -251,11 +227,6 @@
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
                 {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "523a9af4-ec53-46a0-a926-5c8fc16df7a9",
-                    "referenceType": "BlackDuck-Component"
-                },
-                {
                     "referenceCategory": "SECURITY",
                     "referenceLocator": "cpe:2.3:a:google:tensorflow:2.18.1:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
@@ -267,13 +238,18 @@
                 },
                 {
                     "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:pypi_package:tensorflow:2.18.1:*:*:*:*:*:*:*",
+                    "referenceLocator": "cpe:2.3:a:tensorflow:tensorflow:2.18.1:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
                 },
                 {
                     "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:tensorflow:tensorflow:2.18.1:*:*:*:*:*:*:*",
+                    "referenceLocator": "cpe:2.3:a:pypi_package:tensorflow:2.18.1:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "523a9af4-ec53-46a0-a926-5c8fc16df7a9",
+                    "referenceType": "BlackDuck-Component"
                 }
             ],
             "filesAnalyzed": false,
@@ -290,6 +266,16 @@
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
                 {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "bb4ab792-815c-4d01-ab28-6a59a9050816",
+                    "referenceType": "BlackDuck-Component"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:pypi_package:protobuf:5.29.6:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
                     "referenceCategory": "SECURITY",
                     "referenceLocator": "cpe:2.3:a:google:protobuf-python:5.29.6:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
@@ -298,16 +284,6 @@
                     "referenceCategory": "OTHER",
                     "referenceLocator": "6a96f7be-91e9-4ca1-9210-8e25dbc4af68",
                     "referenceType": "BlackDuck-ComponentVersion"
-                },
-                {
-                    "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:pypi_package:protobuf:5.29.6:*:*:*:*:*:*:*",
-                    "referenceType": "cpe23Type"
-                },
-                {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "bb4ab792-815c-4d01-ab28-6a59a9050816",
-                    "referenceType": "BlackDuck-Component"
                 }
             ],
             "filesAnalyzed": false,
@@ -422,13 +398,13 @@
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "d0a255b9-d0d5-4d29-a99c-e2e7daeb5204",
-                    "referenceType": "BlackDuck-ComponentVersion"
+                    "referenceLocator": "33b182b2-1de9-4443-afd7-019615af3a13",
+                    "referenceType": "BlackDuck-Component"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "33b182b2-1de9-4443-afd7-019615af3a13",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceLocator": "d0a255b9-d0d5-4d29-a99c-e2e7daeb5204",
+                    "referenceType": "BlackDuck-ComponentVersion"
                 }
             ],
             "filesAnalyzed": false,
@@ -538,11 +514,6 @@
             "spdxElementId": "SPDXRef-DOCUMENT",
             "relationshipType": "DESCRIBES",
             "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a"
-        },
-        {
-            "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
-            "relationshipType": "DYNAMIC_LINK",
-            "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---091b9733-fabf-4ff9-8a5a-dda9f7ff47ad"
         },
         {
             "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",

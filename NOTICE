@@ -20,7 +20,6 @@ NumPy 2.0.2: https://numpy.org/ : BSD 3-clause "New" or "Revised" License
 onnx 1.22.0: https://github.com/onnx/onnx : Apache License 2.0
 onnxruntime 1.31.1: https://onnxruntime.ai : MIT License
 Packaging 26.3: https://github.com/pypa/packaging : (BSD 2-clause "Simplified" License OR Apache License 2.0)
-python3-ml-dtypes 0.5.4: https://github.com/jax-ml/ml_dtypes : Apache License 2.0
 python-protobuf 5.29.6: https://code.google.com/p/protobuf/ : BSD 3-clause "New" or "Revised" License
 SymPy 1.14.0: http://sympy.org : BSD 3-clause "New" or "Revised" License
 TensorFlow 2.18.1: http://tensorflow.org : Apache License 2.0
@@ -30,7 +29,7 @@ wrapt 2.3.0: https://github.com/GrahamDumpleton/wrapt : BSD 2-clause "Simplified
 Licenses: 
 
 Apache License 2.0
-(FlatBuffers 24.3.25, ml-dtypes 0.5.4, onnx 1.22.0, Packaging 26.3, python3-ml-dtypes 0.5.4, TensorFlow 2.18.1)
+(FlatBuffers 24.3.25, ml-dtypes 0.5.4, onnx 1.22.0, Packaging 26.3, TensorFlow 2.18.1)
 
 Apache License
 Version 2.0, January 2004
