@@ -2,9 +2,9 @@
     "SPDXID": "SPDXRef-DOCUMENT",
     "spdxVersion": "SPDX-2.3",
     "creationInfo": {
-        "created": "2026-11-06T15:24:57Z",
+        "created": "2026-11-06T15:50:03Z",
         "creators": [
-            "Organization: NXP,
+            "Organization: NXP",
             "Tool: Black Duck Hub - 2026.4.2"
         ],
         "licenseListVersion": "3.28"
@@ -18,7 +18,7 @@
             "name": "LA_OPT_Online Code Hosting NXP_Software_License - v1.4 May 2025"
         }
     ],
-    "documentNamespace": "https://blackducksoftware.github.io/spdx/eiq-onnx2tflite-2df5999a-6ed1-4dee-8192-2fb9870f8a61",
+    "documentNamespace": "https://blackducksoftware.github.io/spdx/eiq-onnx2tflite-152d09ca-4c45-4d47-8ebd-117852105a5c",
     "packages": [
         {
             "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
@@ -68,13 +68,13 @@
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "8702b4ea-e0ca-4129-b085-49a0a528142e",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceLocator": "0d6863ea-d23d-42f1-941d-622e0319e444",
+                    "referenceType": "BlackDuck-ComponentVersion"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "0d6863ea-d23d-42f1-941d-622e0319e444",
-                    "referenceType": "BlackDuck-ComponentVersion"
+                    "referenceLocator": "8702b4ea-e0ca-4129-b085-49a0a528142e",
+                    "referenceType": "BlackDuck-Component"
                 }
             ],
             "filesAnalyzed": false,
@@ -116,13 +116,13 @@
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "1e48d4e1-9601-4ea8-aef1-f9ba6d49025e",
-                    "referenceType": "BlackDuck-ComponentVersion"
+                    "referenceLocator": "e43597c6-bf3a-4e01-9fea-4bb9f6c53417",
+                    "referenceType": "BlackDuck-Component"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "e43597c6-bf3a-4e01-9fea-4bb9f6c53417",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceLocator": "1e48d4e1-9601-4ea8-aef1-f9ba6d49025e",
+                    "referenceType": "BlackDuck-ComponentVersion"
                 }
             ],
             "filesAnalyzed": false,
@@ -135,9 +135,126 @@
             "versionInfo": "4.16.0"
         },
         {
+            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---22f46092-fb11-4b42-92a4-f0474205c075",
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "4f899c74-a646-4687-a056-3bbcc16bdb04",
+                    "referenceType": "BlackDuck-Component"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "22f46092-fb11-4b42-92a4-f0474205c075",
+                    "referenceType": "BlackDuck-ComponentVersion"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:pypi_package:numpy:2.0.2:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:numpy:numpy:2.0.2:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                }
+            ],
+            "filesAnalyzed": false,
+            "homepage": "https://numpy.org/",
+            "licenseConcluded": "BSD-3-Clause",
+            "licenseDeclared": "BSD-3-Clause",
+            "name": "NumPy",
+            "originator": "Organization: NumPy",
+            "supplier": "Organization: NumPy",
+            "versionInfo": "2.0.2"
+        },
+        {
+            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---345df716-4e26-4f50-a8f0-16338a3953b3",
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "345df716-4e26-4f50-a8f0-16338a3953b3",
+                    "referenceType": "BlackDuck-ComponentOrigin"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "ea42da12-a79c-4daf-a2fd-3290fee26c5c",
+                    "referenceType": "BlackDuck-ComponentVersion"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:crates_package:flatbuffers:24.3.25:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceLocator": "pkg:pypi/flatbuffers@24.3.25",
+                    "referenceType": "purl"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "ae906881-37fd-4af4-8fe7-e435fd2056af",
+                    "referenceType": "BlackDuck-Component"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:google:flatbuffers:24.3.25:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                }
+            ],
+            "filesAnalyzed": false,
+            "homepage": "http://google.github.io/flatbuffers/",
+            "licenseConcluded": "Apache-2.0",
+            "licenseDeclared": "Apache-2.0",
+            "name": "FlatBuffers",
+            "originator": "Organization: pypi",
+            "supplier": "Organization: pypi",
+            "versionInfo": "24.3.25"
+        },
+        {
+            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---38048ce1-ceca-4cdf-8f1e-a2ad185161e0",
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceLocator": "pkg:pypi/onnxruntime@1.31.1",
+                    "referenceType": "purl"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "9708f45e-a6d7-40c5-92ef-c5b2a5f132fd",
+                    "referenceType": "BlackDuck-Component"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "f270e21a-e13c-4a46-84d7-8b94ab164036",
+                    "referenceType": "BlackDuck-ComponentOrigin"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "38048ce1-ceca-4cdf-8f1e-a2ad185161e0",
+                    "referenceType": "BlackDuck-ComponentVersion"
+                }
+            ],
+            "filesAnalyzed": false,
+            "homepage": "https://onnxruntime.ai",
+            "licenseConcluded": "MIT",
+            "licenseDeclared": "MIT",
+            "name": "onnxruntime",
+            "originator": "Organization: pypi",
+            "supplier": "Organization: pypi",
+            "versionInfo": "1.31.1"
+        },
+        {
             "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---6a1d9e47-7f1c-4df3-9f6b-3c6a63a13c2f",
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "523a9af4-ec53-46a0-a926-5c8fc16df7a9",
+                    "referenceType": "BlackDuck-Component"
+                },
                 {
                     "referenceCategory": "SECURITY",
                     "referenceLocator": "cpe:2.3:a:google:tensorflow:2.18.1:*:*:*:*:*:*:*",
@@ -150,18 +267,13 @@
                 },
                 {
                     "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:tensorflow:tensorflow:2.18.1:*:*:*:*:*:*:*",
-                    "referenceType": "cpe23Type"
-                },
-                {
-                    "referenceCategory": "SECURITY",
                     "referenceLocator": "cpe:2.3:a:pypi_package:tensorflow:2.18.1:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
                 },
                 {
-                    "referenceCategory": "OTHER",
-                    "referenceLocator": "523a9af4-ec53-46a0-a926-5c8fc16df7a9",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:tensorflow:tensorflow:2.18.1:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
                 }
             ],
             "filesAnalyzed": false,
@@ -174,28 +286,62 @@
             "versionInfo": "2.18.1"
         },
         {
-            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---762c0b02-c630-4d80-9fb8-8c462c7cc542",
+            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---6a96f7be-91e9-4ca1-9210-8e25dbc4af68",
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:google:protobuf-python:5.29.6:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "6a96f7be-91e9-4ca1-9210-8e25dbc4af68",
+                    "referenceType": "BlackDuck-ComponentVersion"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:pypi_package:protobuf:5.29.6:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "bb4ab792-815c-4d01-ab28-6a59a9050816",
+                    "referenceType": "BlackDuck-Component"
+                }
+            ],
+            "filesAnalyzed": false,
+            "homepage": "https://code.google.com/p/protobuf/",
+            "licenseConcluded": "BSD-3-Clause",
+            "licenseDeclared": "BSD-3-Clause",
+            "name": "python-protobuf",
+            "originator": "Organization: python-protobuf",
+            "supplier": "Organization: python-protobuf",
+            "versionInfo": "5.29.6"
+        },
+        {
+            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---722a9c82-4484-40a3-8a76-eb3248b25851",
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "72ec6b13-e709-4500-a170-eda4a705e796",
+                    "referenceLocator": "a0c317a8-2e29-484d-b919-3e490c730edb",
                     "referenceType": "BlackDuck-Component"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "762c0b02-c630-4d80-9fb8-8c462c7cc542",
+                    "referenceLocator": "722a9c82-4484-40a3-8a76-eb3248b25851",
                     "referenceType": "BlackDuck-ComponentVersion"
                 }
             ],
             "filesAnalyzed": false,
-            "homepage": "https://www.onnxruntime.ai",
+            "homepage": "https://github.com/tantale/deprecated",
             "licenseConcluded": "MIT",
             "licenseDeclared": "MIT",
-            "name": "onnxruntime",
-            "originator": "Organization: onnxruntime",
-            "supplier": "Organization: onnxruntime",
-            "versionInfo": "1.31.1"
+            "name": "Deprecated",
+            "originator": "Organization: Deprecated",
+            "supplier": "Organization: Deprecated",
+            "versionInfo": "1.3.1"
         },
         {
             "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---a5bb0523-ad13-40a4-b585-655b6af01ce8",
@@ -227,18 +373,62 @@
             "versionInfo": "1.3.0"
         },
         {
+            "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---ca9f48c7-c91f-4365-85e0-87ad3376f99f",
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE-MANAGER",
+                    "referenceLocator": "pkg:pypi/onnx@1.22.0",
+                    "referenceType": "purl"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "ca9f48c7-c91f-4365-85e0-87ad3376f99f",
+                    "referenceType": "BlackDuck-ComponentOrigin"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:pypi_package:onnx:1.22.0:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:onnx:onnx:1.22.0:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "f87745d8-450a-4ef6-bb8a-d544aadd6707",
+                    "referenceType": "BlackDuck-ComponentVersion"
+                },
+                {
+                    "referenceCategory": "OTHER",
+                    "referenceLocator": "a4845a6e-c333-4053-9b60-5bcc14989687",
+                    "referenceType": "BlackDuck-Component"
+                }
+            ],
+            "filesAnalyzed": false,
+            "homepage": "https://github.com/onnx/onnx",
+            "licenseConcluded": "Apache-2.0",
+            "licenseDeclared": "Apache-2.0",
+            "name": "onnx",
+            "originator": "Organization: pypi",
+            "supplier": "Organization: pypi",
+            "versionInfo": "1.22.0"
+        },
+        {
             "SPDXID": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---d0a255b9-d0d5-4d29-a99c-e2e7daeb5204",
             "downloadLocation": "NOASSERTION",
             "externalRefs": [
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "33b182b2-1de9-4443-afd7-019615af3a13",
-                    "referenceType": "BlackDuck-Component"
+                    "referenceLocator": "d0a255b9-d0d5-4d29-a99c-e2e7daeb5204",
+                    "referenceType": "BlackDuck-ComponentVersion"
                 },
                 {
                     "referenceCategory": "OTHER",
-                    "referenceLocator": "d0a255b9-d0d5-4d29-a99c-e2e7daeb5204",
-                    "referenceType": "BlackDuck-ComponentVersion"
+                    "referenceLocator": "33b182b2-1de9-4443-afd7-019615af3a13",
+                    "referenceType": "BlackDuck-Component"
                 }
             ],
             "filesAnalyzed": false,
@@ -280,11 +470,6 @@
             "externalRefs": [
                 {
                     "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:google:flatbuffers:24.3.25:*:*:*:*:*:*:*",
-                    "referenceType": "cpe23Type"
-                },
-                {
-                    "referenceCategory": "SECURITY",
                     "referenceLocator": "cpe:2.3:a:crates_package:flatbuffers:24.3.25:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
                 },
@@ -292,6 +477,11 @@
                     "referenceCategory": "OTHER",
                     "referenceLocator": "ea42da12-a79c-4daf-a2fd-3290fee26c5c",
                     "referenceType": "BlackDuck-ComponentVersion"
+                },
+                {
+                    "referenceCategory": "SECURITY",
+                    "referenceLocator": "cpe:2.3:a:google:flatbuffers:24.3.25:*:*:*:*:*:*:*",
+                    "referenceType": "cpe23Type"
                 },
                 {
                     "referenceCategory": "OTHER",
@@ -304,8 +494,8 @@
             "licenseConcluded": "Apache-2.0",
             "licenseDeclared": "Apache-2.0",
             "name": "FlatBuffers",
-            "originator": "Organization: FlatBuffers",
-            "supplier": "Organization: FlatBuffers",
+            "originator": "Organization: unknown",
+            "supplier": "Organization: unknown",
             "versionInfo": "24.3.25"
         },
         {
@@ -324,12 +514,12 @@
                 },
                 {
                     "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:onnx:onnx:1.22.0:*:*:*:*:*:*:*",
+                    "referenceLocator": "cpe:2.3:a:pypi_package:onnx:1.22.0:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
                 },
                 {
                     "referenceCategory": "SECURITY",
-                    "referenceLocator": "cpe:2.3:a:pypi_package:onnx:1.22.0:*:*:*:*:*:*:*",
+                    "referenceLocator": "cpe:2.3:a:onnx:onnx:1.22.0:*:*:*:*:*:*:*",
                     "referenceType": "cpe23Type"
                 }
             ],
@@ -338,8 +528,8 @@
             "licenseConcluded": "Apache-2.0",
             "licenseDeclared": "Apache-2.0",
             "name": "onnx",
-            "originator": "Organization: onnx",
-            "supplier": "Organization: onnx",
+            "originator": "Organization: unknown",
+            "supplier": "Organization: unknown",
             "versionInfo": "1.22.0"
         }
     ],
@@ -371,13 +561,28 @@
         },
         {
             "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
+            "relationshipType": "DYNAMIC_LINK",
+            "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---22f46092-fb11-4b42-92a4-f0474205c075"
+        },
+        {
+            "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
+            "relationshipType": "DYNAMIC_LINK",
+            "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---38048ce1-ceca-4cdf-8f1e-a2ad185161e0"
+        },
+        {
+            "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
             "relationshipType": "CONTAINS",
             "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---6a1d9e47-7f1c-4df3-9f6b-3c6a63a13c2f"
         },
         {
             "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
             "relationshipType": "DYNAMIC_LINK",
-            "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---762c0b02-c630-4d80-9fb8-8c462c7cc542"
+            "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---6a96f7be-91e9-4ca1-9210-8e25dbc4af68"
+        },
+        {
+            "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
+            "relationshipType": "DYNAMIC_LINK",
+            "relatedSpdxElement": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a---722a9c82-4484-40a3-8a76-eb3248b25851"
         },
         {
             "spdxElementId": "SPDXRef-package-42504d8b-9023-42c9-a638-b4984f9fa33a",
