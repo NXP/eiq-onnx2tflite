@@ -757,6 +757,10 @@ class ModelShapeInference(SymbolicShapeInference):
             axes = get_attribute(node, "axes")
 
         shape = self._get_shape(node, 0)
+        if axes is not None and axes_is_input and len(axes) == 0:
+            # An empty `axes` tensor is treated the same as omitted `axes`.
+            axes = None
+
         if axes is None and axes_is_input and get_attribute(node, "noop_with_empty_axes", 0) == 1:
             # The operator does nothing.
             axes = []
@@ -806,6 +810,10 @@ class ModelShapeInference(SymbolicShapeInference):
             axes = get_attribute(node, "axes")
 
         shape = self._get_shape(node, 0)
+        if axes is not None and axes_is_input and len(axes) == 0:
+            # An empty `axes` tensor is treated the same as omitted `axes`.
+            axes = None
+
         if axes is None and axes_is_input and get_attribute(node, "noop_with_empty_axes", 0) == 1:
             # The operator does nothing.
             axes = []

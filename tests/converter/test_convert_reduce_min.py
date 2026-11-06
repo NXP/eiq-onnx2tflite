@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # License: LA_OPT_Online Code Hosting NXP_Software_License
 # See the LICENSE for more details.
@@ -14,6 +14,7 @@ from onnx import TensorProto
 from onnx2tflite.src.conversion_config import SkipShapeInferenceConfig
 from onnx2tflite.src.converter import convert
 from onnx2tflite.src.onnx_parser.meta.types import name_for_onnx_type, to_numpy_type
+from onnx2tflite.src.model_shape_inference import ModelShapeInference
 from tests import executors
 from onnx2tflite.src import errors
 from onnx2tflite.src.errors import ConversionError
@@ -555,3 +556,26 @@ def test_convert_reduce_min__quantized(type_: TensorProto.DataType):
     onnx_model = onnx.helper.make_model(graph)
 
     executors.convert_run_compare(onnx_model, data)
+
+
+@pytest.mark.parametrize("keepdims", [0, 1], ids=lambda k: f"keepdims={k}")
+def test_convert_reduce_min__static_empty_axes_noop_0(keepdims: int):
+    # An empty `axes` tensor with `noop_with_empty_axes=0` must reduce over all dimensions.
+    x_shape = [2, 3]
+    y_shape = [1, 1] if keepdims else []
+
+    graph = onnx.helper.make_graph(
+        [onnx.helper.make_node("ReduceMin", ["x", "axes"], ["y"], keepdims=keepdims, noop_with_empty_axes=0)],
+        "ReduceMin test",
+        [onnx.helper.make_tensor_value_info("x", TensorProto.FLOAT, x_shape)],
+        [onnx.helper.make_tensor_value_info("y", TensorProto.FLOAT, ())],
+        [onnx.helper.make_tensor("axes", TensorProto.INT64, [0], [])],
+    )
+    onnx_model = onnx.helper.make_model(graph, opset_imports=[onnx.helper.make_opsetid("", 18)])
+
+    x_data = (np.arange(np.prod(x_shape)).reshape(x_shape) + 1).astype(np.float32)
+    inferred_model = ModelShapeInference.infer_shapes(onnx_model)
+    y_dims = inferred_model.graph.output[0].type.tensor_type.shape.dim
+    assert [d.dim_value for d in y_dims] == y_shape
+
+    executors.convert_run_compare(onnx_model, x_data)

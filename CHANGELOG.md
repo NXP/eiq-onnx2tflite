@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `[onnx2tflite]` Align Clip min/max tensor quantization with data input
 - `[onnx2tflite]` Range now uses static data when the TFLite output element count would differ from ONNX Runtime
+- `[onnx2tflite]` `Reduce*` operators with a static empty `axes` tensor and `noop_with_empty_axes=0` now reduce over all dimensions
 - `[onnx2quant]` Fixed quantization of Conv nodes with a dynamic (non-initializer) weight input.
 
 ## [0.11.0] - 2026-06-23

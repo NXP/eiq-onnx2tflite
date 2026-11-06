@@ -44,7 +44,7 @@ def convert_axes_from_attribute(t_op: tflite_model.Operator, builder: ModelBuild
     t_op.tmp_inputs.append(axes_tensor)
 
 
-def _axes_are_empty(t_op: tflite_model.Operator, inspector: ONNXModelInspector) -> bool:
+def axes_are_empty(t_op: tflite_model.Operator, inspector: ONNXModelInspector) -> bool:
     """Determine if the `axes` input (index 1) of `t_op` is omitted, or is a tensor with 0 elements."""
     axes_tensor = try_get_input(t_op, 1)
     if axes_tensor is None:
@@ -66,7 +66,7 @@ def is_noop_reduction(t_op: tflite_model.Operator, noop_with_empty_axes: int, in
     That is the case, when `noop_with_empty_axes` == 1 and the `axes` input (index 1) is either not specified, or it
      is an empty tensor (shape [0]). Both are treated as "empty axes" by ONNX.
     """
-    return noop_with_empty_axes == 1 and _axes_are_empty(t_op, inspector)
+    return noop_with_empty_axes == 1 and axes_are_empty(t_op, inspector)
 
 
 def convert_noop_reduction(
@@ -74,8 +74,8 @@ def convert_noop_reduction(
 ) -> list[tflite_model.Operator]:
     """Convert an ONNX reduction operator, which does nothing, to a no-op TFLite operator.
 
-    The operator is skipped if possible, or turned into an identity op. If the input and output have different
-     quantization parameters (QDQ model), the builder turns it into a `Quantize` op to re-quantize the data.
+    The operator is skipped if possible, or turned into an identity op.
+    Note: Different input and output quantization parameters (QDQ model) are not handled yet by the identity op.
     Use `is_noop_reduction()` to detect this case.
     """
     t_op.tmp_inputs[1:] = []  # Remove the (optional or empty) `axes` input.
@@ -106,7 +106,12 @@ def convert_axes_from_input_tensor(
     x = t_op.tmp_inputs[0]
     rank = x.rank
 
-    if axes_tensor := try_get_input(t_op, 1):
+    if axes_are_empty(t_op, inspector):
+        # Omitted or empty `axes` with `noop_with_empty_axes` == 0 -> reduce over all dimensions.
+        axes_tensor = builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
+        t_op.tmp_inputs[1:] = [axes_tensor]
+
+    elif axes_tensor := try_get_input(t_op, 1):
         # ONNX uses int64, while TFLite requires int32 for the `axes` tensor.
         if axes_tensor.type != TensorType.INT64:
             raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `{op_type}` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of INT64.")
@@ -151,15 +156,6 @@ def convert_axes_from_input_tensor(
 
         # Assign the new `axes_tensor` to the ReduceX operator.
         t_op.tmp_inputs[1] = axes_tensor
-
-    # No axes specified.
-
-    else:
-        # Default is to reduce all axes.
-        axes_tensor = builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
-
-        t_op.tmp_inputs[1:] = []  # If the optional input was passed with name "", remove it.
-        t_op.tmp_inputs.append(axes_tensor)
 
 
 def ensure_reduce_transposition(builder, ops: OpsList) -> None:

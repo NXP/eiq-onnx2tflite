@@ -100,7 +100,11 @@ class ReduceL2Converter(NodeConverter):
         rank = x.rank
         axes_cast_ops = []
 
-        if axes_tensor := try_get_input(t_op, 1):
+        if reduce_utils.axes_are_empty(t_op, self.inspector):
+            # Omitted or empty `axes` with `noop_with_empty_axes` == 0 -> reduce over all dimensions.
+            axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
+
+        elif axes_tensor := try_get_input(t_op, 1):
             # ONNX uses int64, while TFLite requires int32 for the `axes` tensor.
             if axes_tensor.type != TensorType.INT64:
                 raise ConversionError(errors.Code.INVALID_ONNX_OPERATOR, f"ONNX `Cast` has `axes` of type `{name_for_type(axes_tensor.type)}`, instead of int64.")
@@ -140,12 +144,6 @@ class ReduceL2Converter(NodeConverter):
                 axes_tensor = new_axes  # For future references. Following code only cares about the final axes tensor.
 
                 axes_cast_ops.append(cast_op)
-
-        # No axes specified.
-
-        else:
-            # Default is to reduce all axes.
-            axes_tensor = self.builder.create_tensor_for_data(np.arange(rank).astype(np.int32), "axes")
 
         square_output = self.builder.duplicate_tensor(x, name_suffix="_squared", empty_buffer=True)
 
